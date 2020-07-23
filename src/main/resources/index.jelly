@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    This plugin defines an API for Jenkins to publish checks to SCM platforms.
+</div>
