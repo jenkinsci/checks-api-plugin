@@ -24,7 +24,7 @@ public class BuildStatusChecksPublisher {
     private static final String CHECKS_NAME = "Jenkins";
 
     @Extension
-    public class JobScheduledListener extends QueueListener {
+    public static class JobScheduledListener extends QueueListener {
         /**
          * {@inheritDoc}
          *
@@ -37,7 +37,7 @@ public class BuildStatusChecksPublisher {
     }
 
     @Extension
-    public class JobStartedListener extends RunListener<Run<?, ?>> {
+    public static class JobStartedListener extends RunListener<Run<?, ?>> {
         /**
          * {@inheritDoc}
          *
@@ -80,8 +80,8 @@ public class BuildStatusChecksPublisher {
         }
     }
 
-    private void publish(final ChecksPublisher publisher, final ChecksStatus status,
-                         final ChecksConclusion conclusion) {
+    private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
+                                final ChecksConclusion conclusion) {
         publisher.publish(new ChecksDetailsBuilder()
                 .withName(CHECKS_NAME)
                 .withStatus(status)
