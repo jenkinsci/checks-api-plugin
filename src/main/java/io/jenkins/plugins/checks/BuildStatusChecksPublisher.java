@@ -23,6 +23,15 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
 public class BuildStatusChecksPublisher {
     private static final String CHECKS_NAME = "Jenkins";
 
+    private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
+                                final ChecksConclusion conclusion) {
+        publisher.publish(new ChecksDetailsBuilder()
+                .withName(CHECKS_NAME)
+                .withStatus(status)
+                .withConclusion(conclusion)
+                .build());
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -93,14 +102,5 @@ public class BuildStatusChecksPublisher {
                 throw new IllegalStateException("Unsupported run result: " + result);
             }
         }
-    }
-
-    private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
-                                final ChecksConclusion conclusion) {
-        publisher.publish(new ChecksDetailsBuilder()
-                .withName(CHECKS_NAME)
-                .withStatus(status)
-                .withConclusion(conclusion)
-                .build());
     }
 }
