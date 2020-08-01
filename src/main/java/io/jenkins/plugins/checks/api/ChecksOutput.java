@@ -88,6 +88,7 @@ public class ChecksOutput {
          *         the title of the check run
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withTitle(final String title) {
             this.title = requireNonNull(title);
             return this;
@@ -104,6 +105,7 @@ public class ChecksOutput {
          *         the summary of the check run
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withSummary(final String summary) {
             this.summary = requireNonNull(summary);
             return this;
@@ -120,6 +122,7 @@ public class ChecksOutput {
          *         the details description in Markdown
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withText(final String text) {
             this.text = requireNonNull(text);
             return this;
@@ -132,6 +135,7 @@ public class ChecksOutput {
          *         the annotations list
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withAnnotations(final List<ChecksAnnotation> annotations) {
             this.annotations = new ArrayList<>(requireNonNull(annotations));
             return this;
@@ -155,6 +159,7 @@ public class ChecksOutput {
          *         the images list
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withImages(final List<ChecksImage> images) {
             this.images = new ArrayList<>(requireNonNull(images));
             return this;

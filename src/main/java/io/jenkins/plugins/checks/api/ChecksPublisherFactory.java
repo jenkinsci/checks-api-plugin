@@ -58,7 +58,7 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *         an item in the queue
      * @return a publisher suitable for the run
      */
-    public static ChecksPublisher fromItem(Queue.Item item) {
+    public static ChecksPublisher fromItem(final Queue.Item item) {
         return findAllPublisherFactories().stream()
                 .map(factory -> factory.createPublisher(item))
                 .filter(Optional::isPresent)

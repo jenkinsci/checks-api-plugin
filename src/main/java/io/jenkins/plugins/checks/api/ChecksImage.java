@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -26,6 +27,7 @@ public class ChecksImage {
      * @param caption
      *         a short description of the image
      */
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public ChecksImage(@Nullable final String alt, @Nullable final String imageUrl, @Nullable final String caption) {
         this.alt = alt;
         this.imageUrl = imageUrl;

@@ -45,7 +45,7 @@ public class BuildStatusChecksPublisher {
          * When a job enters queue, creates the check on "queued".
          */
         @Override
-        public void onEnterWaiting(Queue.WaitingItem wi) {
+        public void onEnterWaiting(final Queue.WaitingItem wi) {
             publish(ChecksPublisherFactory.fromItem(wi), ChecksStatus.QUEUED, ChecksConclusion.NONE);
         }
     }

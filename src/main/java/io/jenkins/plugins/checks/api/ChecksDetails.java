@@ -15,6 +15,7 @@ import static java.util.Objects.requireNonNull;
  * Details of a check. This class is a top class which contains all parameters needed for a check.
  */
 @Restricted(Beta.class)
+@SuppressWarnings("PMD.DataClass")
 public class ChecksDetails {
     private final String name;
     private final ChecksStatus status;
@@ -25,6 +26,7 @@ public class ChecksDetails {
     private final ChecksOutput output;
     private final List<ChecksAction> actions;
 
+    @SuppressWarnings("ParameterNumber")
     private ChecksDetails(final String name, final ChecksStatus status, final String detailsURL,
             final LocalDateTime startedAt, final ChecksConclusion conclusion, final LocalDateTime completedAt,
             final ChecksOutput output, final List<ChecksAction> actions) {
@@ -144,6 +146,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code name} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withName(final String name) {
             this.name = requireNonNull(name);
             return this;
@@ -161,6 +164,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code status} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withStatus(final ChecksStatus status) {
             this.status = requireNonNull(status);
             return this;
@@ -183,6 +187,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code detailsURL} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withDetailsURL(final String detailsURL) {
             this.detailsURL = requireNonNull(detailsURL);
             return this;
@@ -196,6 +201,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code startAt} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withStartedAt(final LocalDateTime startedAt) {
             this.startedAt = requireNonNull(startedAt);
             return this;
@@ -214,6 +220,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code conclusion} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withConclusion(final ChecksConclusion conclusion) {
             this.conclusion = requireNonNull(conclusion);
             return this;
@@ -227,6 +234,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code completedAt} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withCompletedAt(final LocalDateTime completedAt) {
             this.completedAt = requireNonNull(completedAt);
             return this;
@@ -240,6 +248,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code outputs} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withOutput(final ChecksOutput output) {
             this.output = new ChecksOutput(requireNonNull(output));
             return this;
@@ -253,6 +262,7 @@ public class ChecksDetails {
          * @return this builder
          * @throws NullPointerException if the {@code actions} is null
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksDetailsBuilder withActions(final List<ChecksAction> actions) {
             this.actions = new ArrayList<>(requireNonNull(actions));
             return this;

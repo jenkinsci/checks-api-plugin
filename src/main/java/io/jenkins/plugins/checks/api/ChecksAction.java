@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -31,6 +32,7 @@ public class ChecksAction {
      * @param identifier
      *         a reference for the action on the integrator's system
      */
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public ChecksAction(@Nullable final String label, @Nullable final String description,
             @Nullable final String identifier) {
         this.label = label;

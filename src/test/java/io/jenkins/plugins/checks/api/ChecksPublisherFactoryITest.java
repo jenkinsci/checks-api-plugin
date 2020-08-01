@@ -31,6 +31,7 @@ public class ChecksPublisherFactoryITest {
      * @throws Exception if fails to create freestyle project or build
      */
     @Test
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void shouldReturnNullChecksPublisherForRunWhenNoImplementationIsProvided() throws Exception {
         FreeStyleProject job = rule.createFreeStyleProject();
         FreeStyleBuild run = rule.buildAndAssertSuccess(job);
@@ -46,6 +47,7 @@ public class ChecksPublisherFactoryITest {
      * @throws Exception if fails to create freestyle project
      */
     @Test
+    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     public void shouldReturnNullChecksPublisherForQueueItemWhenNoImplementationIsProvided() throws Exception {
         FreeStyleProject job = rule.createFreeStyleProject();
         Queue.Item item = new Queue.WaitingItem(Calendar.getInstance(), job, Collections.emptyList());

@@ -11,6 +11,7 @@ import static java.util.Objects.*;
  * An annotation for specific lines of code.
  */
 @Restricted(Beta.class)
+@SuppressWarnings("PMD.DataClass")
 public class ChecksAnnotation {
     private final String path;
     private final Integer startLine;
@@ -22,6 +23,7 @@ public class ChecksAnnotation {
     private final String title;
     private final String rawDetails;
 
+    @SuppressWarnings("ParameterNumber")
     private ChecksAnnotation(final String path,
             final Integer startLine, final Integer endLine,
             final ChecksAnnotationLevel annotationLevel,
@@ -128,6 +130,7 @@ public class ChecksAnnotation {
          *         e.g. src/main/java/io/jenkins/plugins/checks/api/ChecksAnnotation.java
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withPath(final String path) {
             this.path = requireNonNull(path);
             return this;
@@ -153,6 +156,7 @@ public class ChecksAnnotation {
          *         the start line of code to annotate
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withStartLine(final Integer startLine) {
             this.startLine = requireNonNull(startLine);
             return this;
@@ -165,6 +169,7 @@ public class ChecksAnnotation {
          *         the end line of code to annotate
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withEndLine(final Integer endLine) {
             this.endLine = requireNonNull(endLine);
             return this;
@@ -178,6 +183,7 @@ public class ChecksAnnotation {
          *         the annotation level
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withAnnotationLevel(final ChecksAnnotationLevel level) {
             this.annotationLevel = requireNonNull(level);
             return this;
@@ -190,6 +196,7 @@ public class ChecksAnnotation {
          *         a short description
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withMessage(final String message) {
             this.message = requireNonNull(message);
             return this;
@@ -202,6 +209,7 @@ public class ChecksAnnotation {
          *         the start column of the annotation
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withStartColumn(final Integer startColumn) {
             this.startColumn = requireNonNull(startColumn);
             return this;
@@ -214,6 +222,7 @@ public class ChecksAnnotation {
          *         the end column of the annotation
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withEndColumn(final Integer endColumn) {
             this.endColumn = requireNonNull(endColumn);
             return this;
@@ -230,6 +239,7 @@ public class ChecksAnnotation {
          *         the title of the annotation
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withTitle(final String title) {
             this.title = requireNonNull(title);
             return this;
@@ -246,6 +256,7 @@ public class ChecksAnnotation {
          *         the details about this annotation
          * @return this builder
          */
+        @SuppressWarnings("HiddenField") // builder pattern
         public ChecksAnnotationBuilder withRawDetails(final String rawDetails) {
             this.rawDetails = requireNonNull(rawDetails);
             return this;
