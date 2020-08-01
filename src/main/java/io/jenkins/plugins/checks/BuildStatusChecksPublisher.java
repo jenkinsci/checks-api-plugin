@@ -66,15 +66,20 @@ public class BuildStatusChecksPublisher {
 
             if (result.isBetterOrEqualTo(Result.SUCCESS)) {
                 return ChecksConclusion.SUCCESS;
-            } else if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
+            }
+            else if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
                 return ChecksConclusion.NEUTRAL;
-            } else if (result.isBetterOrEqualTo(Result.FAILURE)) {
+            }
+            else if (result.isBetterOrEqualTo(Result.FAILURE)) {
                 return ChecksConclusion.FAILURE;
-            } else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
+            }
+            else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
                 return ChecksConclusion.SKIPPED;
-            } else if (result.isBetterOrEqualTo(Result.ABORTED)) {
+            }
+            else if (result.isBetterOrEqualTo(Result.ABORTED)) {
                 return ChecksConclusion.CANCELED;
-            } else {
+            }
+            else {
                 throw new IllegalStateException("Unsupported run result: " + result);
             }
         }
