@@ -23,6 +23,11 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
 public class BuildStatusChecksPublisher {
     private static final String CHECKS_NAME = "Jenkins";
 
+    /**
+     * {@inheritDoc}
+     *
+     * Listens to the queue and publishes checks in "queued" state for entering items.
+     */
     @Extension
     public static class JobScheduledListener extends QueueListener {
         /**
@@ -36,6 +41,11 @@ public class BuildStatusChecksPublisher {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Listens to the run and publishes checks for started and completed run.
+     */
     @Extension
     public static class JobStartedListener extends RunListener<Run<?, ?>> {
         /**
