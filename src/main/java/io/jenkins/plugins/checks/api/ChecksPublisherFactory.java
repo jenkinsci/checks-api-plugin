@@ -21,7 +21,10 @@ import io.jenkins.plugins.util.JenkinsFacade;
 public abstract class ChecksPublisherFactory implements ExtensionPoint {
     /**
      * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Run}.
+     *
+     * <p>
      * If you don't want to create publisher for the run, return {@code Optional.empty()}.
+     * </p>
      *
      * @param run
      *         a Jenkins run
@@ -33,7 +36,15 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
 
     /**
      * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Job}.
-     * If you don't want to create publisher for the job, return {@code Optional.empty()}.
+     *
+     * <p>
+     * By default，it will return {@code Optional.empty()} thus lead to a {@link NullChecksPublisher}.
+     * </p>
+     *
+     * <p>
+     * This method will be useful if you want create publisher for {@link hudson.model.Queue.Item} since you can cast
+     * the belonged {@link hudson.model.Queue.Task} to {@link Job}.
+     * </p>
      *
      * @param job
      *         a Jenkins job
@@ -41,7 +52,9 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *         a listener to the builds
      * @return the created {@link ChecksPublisher}
      */
-    protected abstract Optional<ChecksPublisher> createPublisher(Job<?, ?> job, TaskListener listener);
+    protected Optional<ChecksPublisher> createPublisher(Job<?, ?> job, TaskListener listener) {
+        return Optional.empty();
+    }
 
     /**
      * Returns a suitable publisher for the run.
