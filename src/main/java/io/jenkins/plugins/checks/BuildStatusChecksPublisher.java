@@ -62,7 +62,7 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onStarted(final Run run, final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromJob(run.getParent(), listener),
+            publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
         }
 
@@ -73,7 +73,7 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @NonNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromJob(run.getParent(), listener),
+            publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.COMPLETED, extractConclusion(run));
         }
 

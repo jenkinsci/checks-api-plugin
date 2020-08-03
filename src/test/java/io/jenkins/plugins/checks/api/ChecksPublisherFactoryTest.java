@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.api;
 
 import hudson.model.Job;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.ChecksPublisher.NullChecksPublisher;
 import io.jenkins.plugins.util.JenkinsFacade;
@@ -15,15 +16,32 @@ import static org.mockito.Mockito.when;
 
 class ChecksPublisherFactoryTest {
     @Test
+    void shouldReturnNullChecksPublisherForRunWhenNoImplementationIsProvided() {
+        Run<?, ?> run = mock(Run.class);
+        TaskListener listener = mock(TaskListener.class);
+
+        assertThat(ChecksPublisherFactory.fromRun(run, listener,
+                createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
+                .isInstanceOf(NullChecksPublisher.class);
+    }
+
+    @Test
+    void shouldReturnChecksPublisherForRunWhenImplementationIsProvided() {
+        Run<?, ?> run = mock(Run.class);
+        TaskListener listener = mock(TaskListener.class);
+
+        assertThat(ChecksPublisherFactory.fromRun(run, listener,
+                createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
+                .isInstanceOf(ChecksPublisherImpl.class);
+    }
+
+    @Test
     void shouldReturnNullChecksPublisherForJobWhenNoImplementationIsProvided() {
         Job<?, ?> job = mock(Job.class);
         TaskListener listener = mock(TaskListener.class);
-        JenkinsFacade jenkinsFacade = mock(JenkinsFacade.class);
 
-        when(jenkinsFacade.getExtensionsFor(ChecksPublisherFactory.class))
-                .thenReturn(Collections.emptyList());
-
-        assertThat(ChecksPublisherFactory.fromJob(job, listener, jenkinsFacade))
+        assertThat(ChecksPublisherFactory.fromJob(job, listener,
+                createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
                 .isInstanceOf(NullChecksPublisher.class);
     }
 
@@ -31,18 +49,38 @@ class ChecksPublisherFactoryTest {
     void shouldReturnChecksPublisherForJobWhenImplementationIsProvided() {
         Job<?, ?> job = mock(Job.class);
         TaskListener listener = mock(TaskListener.class);
+
+        assertThat(ChecksPublisherFactory.fromJob(job, listener,
+                createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
+                .isInstanceOf(ChecksPublisherImpl.class);
+    }
+
+    private JenkinsFacade createJenkinsFacadeWithNoChecksPublisherFactoryImplementation() {
+        JenkinsFacade jenkinsFacade = mock(JenkinsFacade.class);
+
+        when(jenkinsFacade.getExtensionsFor(ChecksPublisherFactory.class))
+                .thenReturn(Collections.emptyList());
+
+        return jenkinsFacade;
+    }
+
+    private JenkinsFacade createJenkinsFacadeWithChecksPublisherFactoryImplementation() {
         JenkinsFacade jenkinsFacade = mock(JenkinsFacade.class);
 
         when(jenkinsFacade.getExtensionsFor(ChecksPublisherFactory.class))
                 .thenReturn(Collections.singletonList(new ChecksPublisherFactoryImpl()));
 
-        assertThat(ChecksPublisherFactory.fromJob(job, listener, jenkinsFacade))
-                .isInstanceOf(ChecksPublisherImpl.class);
+        return jenkinsFacade;
     }
 
     private static class ChecksPublisherFactoryImpl extends ChecksPublisherFactory {
         @Override
         protected Optional<ChecksPublisher> createPublisher(final Job<?, ?> job, final TaskListener listener) {
+            return Optional.of(new ChecksPublisherImpl());
+        }
+
+        @Override
+        protected Optional<ChecksPublisher> createPublisher(final Run<?, ?> run, final TaskListener listener) {
             return Optional.of(new ChecksPublisherImpl());
         }
     }
