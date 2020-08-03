@@ -43,7 +43,11 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onEnterWaiting(final Queue.WaitingItem wi) {
-            publish(ChecksPublisherFactory.fromJob((Job<?, ?>)wi.task, null),
+            if  (!(wi.task instanceof Job)) {
+                return;
+            }
+
+            publish(ChecksPublisherFactory.fromJob((Job)wi.task, null),
                     ChecksStatus.QUEUED, ChecksConclusion.NONE);
         }
     }
