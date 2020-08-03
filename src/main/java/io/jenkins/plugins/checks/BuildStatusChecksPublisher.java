@@ -3,10 +3,7 @@ package io.jenkins.plugins.checks;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import hudson.Extension;
-import hudson.model.Queue;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 
 import hudson.model.listeners.RunListener;
 import hudson.model.queue.QueueListener;
@@ -46,7 +43,8 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onEnterWaiting(final Queue.WaitingItem wi) {
-            publish(ChecksPublisherFactory.fromItem(wi), ChecksStatus.QUEUED, ChecksConclusion.NONE);
+            publish(ChecksPublisherFactory.fromJob((Job<?, ?>)wi.task, null),
+                    ChecksStatus.QUEUED, ChecksConclusion.NONE);
         }
     }
 
@@ -64,7 +62,8 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onStarted(final Run run, final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
+            publish(ChecksPublisherFactory.fromJob(run.getParent(), listener),
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
         }
 
         /**
@@ -74,7 +73,8 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @NonNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run), ChecksStatus.COMPLETED, extractConclusion(run));
+            publish(ChecksPublisherFactory.fromJob(run.getParent(), listener),
+                    ChecksStatus.COMPLETED, extractConclusion(run));
         }
 
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
