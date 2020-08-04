@@ -3,11 +3,13 @@ package io.jenkins.plugins.checks.api;
 import java.util.List;
 import java.util.Optional;
 
-import hudson.model.Queue;
+import edu.hm.hafner.util.VisibleForTesting;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 import hudson.ExtensionPoint;
-import hudson.model.Run;
 
 import io.jenkins.plugins.checks.api.ChecksPublisher.NullChecksPublisher;
 import io.jenkins.plugins.util.JenkinsFacade;
@@ -20,54 +22,89 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
     /**
      * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Run}.
      *
+     * <p>
+     * If you don't want to create publisher for the run, return {@code Optional.empty()}.
+     * </p>
+     *
      * @param run
      *         a Jenkins run
+     * @param listener
+     *         a listener to the builds
      * @return the created {@link ChecksPublisher}
      */
-    protected abstract Optional<ChecksPublisher> createPublisher(Run<?, ?> run);
+    protected abstract Optional<ChecksPublisher> createPublisher(Run<?, ?> run, TaskListener listener);
 
     /**
-     * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Run}.
+     * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Job}.
      *
-     * @param item
-     *         an item in the queue
+     * <p>
+     * By default，it will return {@code Optional.empty()} thus lead to a {@link NullChecksPublisher}.
+     * </p>
+     *
+     * <p>
+     * This method will be useful if you want create publisher for {@link hudson.model.Queue.Item} since you can cast
+     * the belonged {@link hudson.model.Queue.Task} to {@link Job}.
+     * </p>
+     *
+     * @param job
+     *         a Jenkins job
+     * @param listener
+     *         a listener to the builds
      * @return the created {@link ChecksPublisher}
      */
-    protected abstract Optional<ChecksPublisher> createPublisher(Queue.Item item);
+    protected Optional<ChecksPublisher> createPublisher(Job<?, ?> job, TaskListener listener) {
+        return Optional.empty();
+    }
 
     /**
      * Returns a suitable publisher for the run.
      *
      * @param run
-     *         a Jenkins build
-     * @return a publisher suitable for the run
+     *         a Jenkins run
+     * @param listener
+     *         a listener for the builds
+     * @return a publisher suitable for the job
      */
-    public static ChecksPublisher fromRun(final Run<?, ?> run) {
-        return findAllPublisherFactories().stream()
-                .map(factory -> factory.createPublisher(run))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .findFirst()
-                .orElse(new NullChecksPublisher());
+    public static ChecksPublisher fromRun(final Run<?, ?> run, final TaskListener listener) {
+        return fromRun(run, listener, new JenkinsFacade());
     }
 
     /**
-     * Returns a suitable publisher for the waiting item.
+     * Returns a suitable publisher for the job.
      *
-     * @param item
-     *         an item in the queue
-     * @return a publisher suitable for the run
+     * @param job
+     *         a Jenkins job
+     * @param listener
+     *         a listener for the builds
+     * @return a publisher suitable for the job
      */
-    public static ChecksPublisher fromItem(final Queue.Item item) {
-        return findAllPublisherFactories().stream()
-                .map(factory -> factory.createPublisher(item))
+    public static ChecksPublisher fromJob(final Job<?, ?> job, final TaskListener listener) {
+        return fromJob(job, listener, new JenkinsFacade());
+    }
+
+    @VisibleForTesting
+    static ChecksPublisher fromRun(final Run<?, ?> run, final TaskListener listener,
+                                   final JenkinsFacade jenkinsFacade) {
+        return findAllPublisherFactories(jenkinsFacade).stream()
+                .map(factory -> factory.createPublisher(run, listener))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
                 .orElse(new NullChecksPublisher());
     }
 
-    private static List<ChecksPublisherFactory> findAllPublisherFactories() {
-        return new JenkinsFacade().getExtensionsFor(ChecksPublisherFactory.class);
+    @VisibleForTesting
+    static ChecksPublisher fromJob(final Job<?, ?> job, final TaskListener listener,
+                                   final JenkinsFacade jenkinsFacade) {
+        return findAllPublisherFactories(jenkinsFacade).stream()
+                .map(factory -> factory.createPublisher(job, listener))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .orElse(new NullChecksPublisher());
+    }
+
+    private static List<ChecksPublisherFactory> findAllPublisherFactories(final JenkinsFacade jenkinsFacade) {
+        return jenkinsFacade.getExtensionsFor(ChecksPublisherFactory.class);
     }
 }
