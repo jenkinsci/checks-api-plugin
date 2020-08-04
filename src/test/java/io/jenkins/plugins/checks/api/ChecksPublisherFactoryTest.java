@@ -20,8 +20,7 @@ class ChecksPublisherFactoryTest {
         Run<?, ?> run = mock(Run.class);
         TaskListener listener = mock(TaskListener.class);
 
-        assertThat(ChecksPublisherFactory.fromRun(run, listener,
-                createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
+        assertThat(ChecksPublisherFactory.fromRun(run, createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
                 .isInstanceOf(NullChecksPublisher.class);
     }
 
@@ -30,8 +29,7 @@ class ChecksPublisherFactoryTest {
         Run<?, ?> run = mock(Run.class);
         TaskListener listener = mock(TaskListener.class);
 
-        assertThat(ChecksPublisherFactory.fromRun(run, listener,
-                createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
+        assertThat(ChecksPublisherFactory.fromRun(run, createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
                 .isInstanceOf(ChecksPublisherImpl.class);
     }
 
@@ -40,8 +38,7 @@ class ChecksPublisherFactoryTest {
         Job<?, ?> job = mock(Job.class);
         TaskListener listener = mock(TaskListener.class);
 
-        assertThat(ChecksPublisherFactory.fromJob(job, listener,
-                createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
+        assertThat(ChecksPublisherFactory.fromJob(job, createJenkinsFacadeWithNoChecksPublisherFactoryImplementation()))
                 .isInstanceOf(NullChecksPublisher.class);
     }
 
@@ -50,8 +47,7 @@ class ChecksPublisherFactoryTest {
         Job<?, ?> job = mock(Job.class);
         TaskListener listener = mock(TaskListener.class);
 
-        assertThat(ChecksPublisherFactory.fromJob(job, listener,
-                createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
+        assertThat(ChecksPublisherFactory.fromJob(job, createJenkinsFacadeWithChecksPublisherFactoryImplementation()))
                 .isInstanceOf(ChecksPublisherImpl.class);
     }
 
@@ -75,12 +71,12 @@ class ChecksPublisherFactoryTest {
 
     private static class ChecksPublisherFactoryImpl extends ChecksPublisherFactory {
         @Override
-        protected Optional<ChecksPublisher> createPublisher(final Job<?, ?> job, final TaskListener listener) {
+        protected Optional<ChecksPublisher> createPublisher(final Job<?, ?> job) {
             return Optional.of(new ChecksPublisherImpl());
         }
 
         @Override
-        protected Optional<ChecksPublisher> createPublisher(final Run<?, ?> run, final TaskListener listener) {
+        protected Optional<ChecksPublisher> createPublisher(final Run<?, ?> run) {
             return Optional.of(new ChecksPublisherImpl());
         }
     }

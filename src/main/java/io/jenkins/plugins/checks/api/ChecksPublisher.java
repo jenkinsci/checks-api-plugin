@@ -1,7 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
 import hudson.model.Job;
-import hudson.model.TaskListener;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -20,7 +19,7 @@ public abstract class ChecksPublisher {
 
     /**
      * A null publisher. This publisher will be returned by
-     * {@link ChecksPublisherFactory#fromJob(Job, TaskListener)} only when there is no suitable publisher for the given {@code run}.
+     * {@link ChecksPublisherFactory#fromJob(Job)} only when there is no suitable publisher for the given {@code run}.
      */
     public static class NullChecksPublisher extends ChecksPublisher {
         @Override

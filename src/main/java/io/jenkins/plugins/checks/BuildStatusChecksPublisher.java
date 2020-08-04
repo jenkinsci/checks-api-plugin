@@ -47,7 +47,7 @@ public class BuildStatusChecksPublisher {
                 return;
             }
 
-            publish(ChecksPublisherFactory.fromJob((Job)wi.task, null),
+            publish(ChecksPublisherFactory.fromJob((Job)wi.task),
                     ChecksStatus.QUEUED, ChecksConclusion.NONE);
         }
     }
@@ -66,7 +66,7 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onStarted(final Run run, final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener),
+            publish(ChecksPublisherFactory.fromRun(run),
                     ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
         }
 
@@ -77,7 +77,7 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @NonNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener),
+            publish(ChecksPublisherFactory.fromRun(run),
                     ChecksStatus.COMPLETED, extractConclusion(run));
         }
 

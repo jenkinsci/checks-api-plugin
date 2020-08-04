@@ -6,7 +6,6 @@ import java.util.Optional;
 import edu.hm.hafner.util.VisibleForTesting;
 import hudson.model.Job;
 import hudson.model.Run;
-import hudson.model.TaskListener;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 import hudson.ExtensionPoint;
@@ -28,11 +27,9 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *
      * @param run
      *         a Jenkins run
-     * @param listener
-     *         a listener to the builds
      * @return the created {@link ChecksPublisher}
      */
-    protected abstract Optional<ChecksPublisher> createPublisher(Run<?, ?> run, TaskListener listener);
+    protected abstract Optional<ChecksPublisher> createPublisher(Run<?, ?> run);
 
     /**
      * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Job}.
@@ -48,11 +45,9 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *
      * @param job
      *         a Jenkins job
-     * @param listener
-     *         a listener to the builds
      * @return the created {@link ChecksPublisher}
      */
-    protected Optional<ChecksPublisher> createPublisher(Job<?, ?> job, TaskListener listener) {
+    protected Optional<ChecksPublisher> createPublisher(Job<?, ?> job) {
         return Optional.empty();
     }
 
@@ -61,12 +56,10 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *
      * @param run
      *         a Jenkins run
-     * @param listener
-     *         a listener for the builds
      * @return a publisher suitable for the job
      */
-    public static ChecksPublisher fromRun(final Run<?, ?> run, final TaskListener listener) {
-        return fromRun(run, listener, new JenkinsFacade());
+    public static ChecksPublisher fromRun(final Run<?, ?> run) {
+        return fromRun(run, new JenkinsFacade());
     }
 
     /**
@@ -74,19 +67,16 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      *
      * @param job
      *         a Jenkins job
-     * @param listener
-     *         a listener for the builds
      * @return a publisher suitable for the job
      */
-    public static ChecksPublisher fromJob(final Job<?, ?> job, final TaskListener listener) {
-        return fromJob(job, listener, new JenkinsFacade());
+    public static ChecksPublisher fromJob(final Job<?, ?> job) {
+        return fromJob(job, new JenkinsFacade());
     }
 
     @VisibleForTesting
-    static ChecksPublisher fromRun(final Run<?, ?> run, final TaskListener listener,
-                                   final JenkinsFacade jenkinsFacade) {
+    static ChecksPublisher fromRun(final Run<?, ?> run, final JenkinsFacade jenkinsFacade) {
         return findAllPublisherFactories(jenkinsFacade).stream()
-                .map(factory -> factory.createPublisher(run, listener))
+                .map(factory -> factory.createPublisher(run))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
@@ -94,10 +84,9 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
     }
 
     @VisibleForTesting
-    static ChecksPublisher fromJob(final Job<?, ?> job, final TaskListener listener,
-                                   final JenkinsFacade jenkinsFacade) {
+    static ChecksPublisher fromJob(final Job<?, ?> job, final JenkinsFacade jenkinsFacade) {
         return findAllPublisherFactories(jenkinsFacade).stream()
-                .map(factory -> factory.createPublisher(job, listener))
+                .map(factory -> factory.createPublisher(job))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
