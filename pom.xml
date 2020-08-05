@@ -24,6 +24,7 @@
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>1.2.2</plugin-util-api.version>
+    <workflow-step-api.version>2.22</workflow-step-api.version>
   </properties>
 
   <licenses>
@@ -53,6 +54,11 @@
       <version>${plugin-util-api.version}</version>
       <scope>test</scope>
       <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-step-api</artifactId>
+      <version>${workflow-step-api.version}</version>
     </dependency>
   </dependencies>
 
