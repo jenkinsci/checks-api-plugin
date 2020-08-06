@@ -1,9 +1,14 @@
 package io.jenkins.plugins.checks.api;
 
+import java.io.Serializable;
 import java.util.Optional;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.model.AbstractDescribableImpl;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import static java.util.Objects.*;
 
@@ -12,34 +17,27 @@ import static java.util.Objects.*;
  */
 @Restricted(Beta.class)
 @SuppressWarnings("PMD.DataClass")
-public class ChecksAnnotation {
-    private final String path;
-    private final Integer startLine;
-    private final Integer endLine;
-    private final ChecksAnnotationLevel annotationLevel;
-    private final String message;
-    private final Integer startColumn;
-    private final Integer endColumn;
-    private final String title;
-    private final String rawDetails;
+@SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+        justification = "Empty constructor used by stapler")
+public class ChecksAnnotation extends AbstractDescribableImpl<ChecksAnnotation> implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    @SuppressWarnings("ParameterNumber")
-    private ChecksAnnotation(final String path,
-            final Integer startLine, final Integer endLine,
-            final ChecksAnnotationLevel annotationLevel,
-            final String message,
-            final Integer startColumn, final Integer endColumn,
-            final String title,
-            final String rawDetails) {
-        this.path = path;
-        this.startLine = startLine;
-        this.endLine = endLine;
-        this.annotationLevel = annotationLevel;
-        this.message = message;
-        this.startColumn = startColumn;
-        this.endColumn = endColumn;
-        this.title = title;
-        this.rawDetails = rawDetails;
+    private String path;
+    private Integer startLine;
+    private Integer endLine;
+    private ChecksAnnotationLevel annotationLevel;
+    private String message;
+    private Integer startColumn;
+    private Integer endColumn;
+    private String title;
+    private String rawDetails;
+
+    /**
+     * Empty constructor used by stapler to support pipeline.
+     */
+    @DataBoundConstructor
+    public ChecksAnnotation() {
+        super();
     }
 
     /**
@@ -53,6 +51,72 @@ public class ChecksAnnotation {
                 that.getAnnotationLevel(), that.getMessage().orElse(null), that.getStartColumn().orElse(null),
                 that.getEndColumn().orElse(null), that.getTitle().orElse(null),
                 that.getRawDetails().orElse(null));
+    }
+
+    @SuppressWarnings("ParameterNumber")
+    private ChecksAnnotation(final String path,
+            final Integer startLine, final Integer endLine,
+            final ChecksAnnotationLevel annotationLevel,
+            final String message,
+            final Integer startColumn, final Integer endColumn,
+            final String title,
+            final String rawDetails) {
+        super();
+
+        this.path = path;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.annotationLevel = annotationLevel;
+        this.message = message;
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+        this.title = title;
+        this.rawDetails = rawDetails;
+    }
+
+    @DataBoundSetter
+    public void setPath(final String path) {
+        this.path = path;
+    }
+
+    @DataBoundSetter
+    public void setStartLine(final int startLine) {
+        this.startLine = startLine;
+    }
+
+    @DataBoundSetter
+    public void setEndLine(final int endLine) {
+        this.endLine = endLine;
+    }
+
+    @DataBoundSetter
+    public void setAnnotationLevel(final String annotationLevel) {
+        this.annotationLevel = ChecksAnnotationLevel.valueOf(annotationLevel);
+    }
+
+    @DataBoundSetter
+    public void setMessage(final String message) {
+        this.message = message;
+    }
+
+    @DataBoundSetter
+    public void setStartColumn(final int startColumn) {
+        this.startColumn = startColumn;
+    }
+
+    @DataBoundSetter
+    public void setEndColumn(final int endColumn) {
+        this.endColumn = endColumn;
+    }
+
+    @DataBoundSetter
+    public void setTitle(final String title) {
+        this.title = title;
+    }
+
+    @DataBoundSetter
+    public void setRawDetails(final String rawDetails) {
+        this.rawDetails = rawDetails;
     }
 
     public Optional<String> getPath() {
