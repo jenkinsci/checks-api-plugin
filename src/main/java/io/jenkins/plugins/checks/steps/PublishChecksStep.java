@@ -3,10 +3,8 @@ package io.jenkins.plugins.checks.steps;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.util.ListBoxModel;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
@@ -55,12 +53,7 @@ public class PublishChecksStep extends Step {
         @NonNull
         @Override
         public String getDisplayName() { // it's pipeline step, so where does the name shown?
-            return "Publish checks to SCM platforms";
-        }
-
-        // saw in slack plugin, what's used for?
-        public ListBoxModel doFillTokenCredentialIdItems(Item item) {
-            return new ListBoxModel();
+            return "Publish customized checks to SCM platforms";
         }
     }
 }
