@@ -1,17 +1,12 @@
 package io.jenkins.plugins.checks.api;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.model.AbstractDescribableImpl;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
 
 import static java.util.Objects.*;
 
@@ -20,24 +15,20 @@ import static java.util.Objects.*;
  * annotations, etc.
  */
 @Restricted(Beta.class)
-@SuppressWarnings("PMD.DataClass")
-@SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-        justification = "Empty constructor used by stapler")
-public class ChecksOutput extends AbstractDescribableImpl<ChecksOutput> implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class ChecksOutput {
+    private final String title;
+    private final String summary;
+    private final String text;
+    private final List<ChecksAnnotation> annotations;
+    private final List<ChecksImage> images;
 
-    private String title;
-    private String summary;
-    private String text;
-    private List<ChecksAnnotation> annotations;
-    private List<ChecksImage> images;
-
-    /**
-     * Empty constructor used by stapler to support pipeline.
-     */
-    @DataBoundConstructor
-    public ChecksOutput() {
-        super();
+    private ChecksOutput(final String title, final String summary, final String text,
+            final List<ChecksAnnotation> annotations, final List<ChecksImage> images) {
+        this.title = title;
+        this.summary = summary;
+        this.text = text;
+        this.annotations = annotations;
+        this.images = images;
     }
 
     /**
@@ -49,42 +40,6 @@ public class ChecksOutput extends AbstractDescribableImpl<ChecksOutput> implemen
     public ChecksOutput(final ChecksOutput that) {
         this(that.getTitle().orElse(null), that.getSummary().orElse(null), that.getText().orElse(null),
                 that.getChecksAnnotations(), that.getChecksImages());
-    }
-
-    private ChecksOutput(final String title, final String summary, final String text,
-            final List<ChecksAnnotation> annotations, final List<ChecksImage> images) {
-        super();
-
-        this.title = title;
-        this.summary = summary;
-        this.text = text;
-        this.annotations = annotations;
-        this.images = images;
-    }
-
-    @DataBoundSetter
-    public void setTitle(final String title) {
-        this.title = title;
-    }
-
-    @DataBoundSetter
-    public void setSummary(final String summary) {
-        this.summary = summary;
-    }
-
-    @DataBoundSetter
-    public void setText(final String text) {
-        this.text = text;
-    }
-
-    @DataBoundSetter
-    public void setAnnotations(final List<ChecksAnnotation> annotations) {
-        this.annotations = annotations;
-    }
-
-    @DataBoundSetter
-    public void setImages(final List<ChecksImage> images) {
-        this.images = images;
     }
 
     public Optional<String> getTitle() {

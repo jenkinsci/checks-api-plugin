@@ -29,8 +29,10 @@ public class PublishChecksStep extends Step implements Serializable {
     private ChecksConclusion conclusion;
     private LocalDateTime startedAt = LocalDateTime.now();
     private LocalDateTime completedAt = LocalDateTime.now();
-    private ChecksOutput output;
-    private List<ChecksAction> actions;
+
+    private String title;
+    private String summary;
+    private String text;
 
     /**
      * Empty constructor used by stapler to support pipeline.
@@ -71,13 +73,18 @@ public class PublishChecksStep extends Step implements Serializable {
     }
 
     @DataBoundSetter
-    public void setOutput(final ChecksOutput output) {
-        this.output = output;
+    public void setTitle(final String title) {
+        this.title = title;
     }
 
     @DataBoundSetter
-    public void setActions(final List<ChecksAction> actions) {
-        this.actions = actions;
+    public void setSummary(final String summary) {
+        this.summary = summary;
+    }
+
+    @DataBoundSetter
+    public void setText(final String text) {
+        this.text = text;
     }
 
     @Override
@@ -106,8 +113,11 @@ public class PublishChecksStep extends Step implements Serializable {
                     .withConclusion(step.conclusion)
                     .withStartedAt(step.startedAt)
                     .withCompletedAt(step.completedAt)
-                    .withOutput(step.output)
-                    .withActions(step.actions)
+                    .withOutput(new ChecksOutput.ChecksOutputBuilder()
+                            .withText(step.title)
+                            .withSummary(step.summary)
+                            .withTitle(step.text)
+                            .build())
                     .build();
 
             ChecksPublisher publisher
