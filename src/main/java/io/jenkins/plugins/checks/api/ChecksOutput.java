@@ -64,14 +64,13 @@ public class ChecksOutput {
     }
 
     @Override
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
     public String toString() {
         return "ChecksOutput{"
-                + "title=" + (title == null ? "null" : "'" + title + "'")
-                + ", summary=" + (summary == null ? "null" : "'" + summary + "'")
-                + ", text=" + (text == null ? "null" : "'" + text + "'")
-                + ", annotations=" + (annotations == null ? "null" : annotations)
-                + ", images=" + (images == null ? "null" : images)
+                + "title='" + title + '\''
+                + ", summary='" + summary + '\''
+                + ", text='" + text + '\''
+                + ", annotations=" + annotations
+                + ", images=" + images
                 + '}';
     }
 

@@ -65,9 +65,10 @@ class ChecksDetailsTest {
 
         assertThat(details.toString()).isEqualTo("ChecksDetails{"
                 + "name='Jenkins', detailsURL='https://ci.jenkins.io', status=COMPLETED, conclusion=SUCCESS"
-                + ", startedAt='2020-06-27T01:10', completedAt='2021-07-28T02:20'"
+                + ", startedAt=2020-06-27T01:10, completedAt=2021-07-28T02:20"
                 + ", output=" + output.toString()
-                + ", actions=" + actions.toString() + "}");
+                + ", actions=" + actions.toString()
+                + "}");
     }
 
     @Test

@@ -47,7 +47,8 @@ class ChecksAnnotationTest {
                 + ", startLine=20, endLine=20, annotationLevel=NOTICE"
                 + ", message='Avoid unused private fields such as 'LOGGER''"
                 + ", startColumn=33, endColumn=38, title='UnusedPrivateField'"
-                + ", rawDetails='" + RAW_DETAILS + "'}");
+                + ", rawDetails='" + RAW_DETAILS
+                + "'}");
     }
 
     @Test

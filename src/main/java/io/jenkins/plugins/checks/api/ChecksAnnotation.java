@@ -103,23 +103,19 @@ public class ChecksAnnotation {
     }
 
     @Override
-    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
     public String toString() {
         return "ChecksAnnotation{"
-                + "path=" + (path == null ? "null" : "'" + path + "'")
-                + ", startLine=" + (startLine == null ? "null" : startLine)
-                + ", endLine=" + (endLine == null ? "null" : endLine)
-                + ", annotationLevel=" + (annotationLevel == null ? "null" : annotationLevel)
-                + ", message=" + (message == null ? "null" : "'" + message + "'")
-                + ", startColumn=" + (startColumn == null ? "null" : startColumn)
-                + ", endColumn=" + (endColumn == null ? "null" : endColumn)
-                + ", title=" + (title == null ? "null" : "'" + title + "'")
-                + ", rawDetails=" + (rawDetails == null ? "null" : "'" + rawDetails + "'")
+                + "path='" + path + '\''
+                + ", startLine=" + startLine
+                + ", endLine=" + endLine
+                + ", annotationLevel=" + annotationLevel
+                + ", message='" + message + '\''
+                + ", startColumn=" + startColumn
+                + ", endColumn=" + endColumn
+                + ", title='" + title + '\''
+                + ", rawDetails='" + rawDetails + '\''
                 + '}';
     }
-
-
 
     /**
      * Builder for {@link ChecksAnnotation}.

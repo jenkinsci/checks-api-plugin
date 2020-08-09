@@ -43,7 +43,9 @@ class ChecksOutputTest {
 
         assertThat(checksOutput.toString()).isEqualTo("ChecksOutput{"
                 + "title='Coverage Report', summary='All code have been covered', text='# Markdown Supported Text'"
-                + ", annotations=" + annotations + ", images=" + images + "}");
+                + ", annotations=" + annotations
+                + ", images=" + images
+                + "}");
     }
 
     @Test

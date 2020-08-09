@@ -114,18 +114,16 @@ public class ChecksDetails {
     }
 
     @Override
-    @SuppressWarnings("PMD.NPathComplexity")
-    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
     public String toString() {
         return "ChecksDetails{"
-                + "name=" + (name == null ? "null" : "'" + name + "'")
-                + ", detailsURL=" + (detailsURL == null ? "null" : "'" + detailsURL + "'")
-                + ", status=" + (status == null ? "null" : status)
-                + ", conclusion=" + (conclusion == null ? "null" : conclusion)
-                + ", startedAt=" + (startedAt == null ? "null" : "'" + startedAt + "'")
-                + ", completedAt=" + (completedAt == null ? "null" : "'" + completedAt + "'")
-                + ", output=" + (output == null ? "null" : output)
-                + ", actions=" + (actions == null ? "null" : actions)
+                + "name='" + name + '\''
+                + ", detailsURL='" + detailsURL + '\''
+                + ", status=" + status
+                + ", conclusion=" + conclusion
+                + ", startedAt=" + startedAt
+                + ", completedAt=" + completedAt
+                + ", output=" + output
+                + ", actions=" + actions
                 + '}';
     }
 
