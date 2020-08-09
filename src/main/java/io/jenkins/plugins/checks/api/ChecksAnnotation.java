@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.api;
 
 import java.util.Optional;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -100,6 +101,25 @@ public class ChecksAnnotation {
         WARNING,
         FAILURE
     }
+
+    @Override
+    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CyclomaticComplexity"})
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
+    public String toString() {
+        return "ChecksAnnotation{"
+                + "path=" + (path == null ? "null" : "'" + path + "'")
+                + ", startLine=" + (startLine == null ? "null" : startLine)
+                + ", endLine=" + (endLine == null ? "null" : endLine)
+                + ", annotationLevel=" + (annotationLevel == null ? "null" : annotationLevel)
+                + ", message=" + (message == null ? "null" : "'" + message + "'")
+                + ", startColumn=" + (startColumn == null ? "null" : startColumn)
+                + ", endColumn=" + (endColumn == null ? "null" : endColumn)
+                + ", title=" + (title == null ? "null" : "'" + title + "'")
+                + ", rawDetails=" + (rawDetails == null ? "null" : "'" + rawDetails + "'")
+                + '}';
+    }
+
+
 
     /**
      * Builder for {@link ChecksAnnotation}.

@@ -60,4 +60,14 @@ public class ChecksImage {
     public Optional<String> getCaption() {
         return Optional.ofNullable(caption);
     }
+
+    @Override
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
+    public String toString() {
+        return "ChecksImage{"
+                + "alt=" + (alt == null ? "null" : "'" + alt + "'")
+                + ", imageUrl=" + (imageUrl == null ? "null" : "'" + imageUrl + "'")
+                + ", caption=" + (caption == null ? "null" : "'" + caption + "'")
+                + '}';
+    }
 }

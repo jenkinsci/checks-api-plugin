@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -110,6 +111,22 @@ public class ChecksDetails {
      */
     public List<ChecksAction> getActions() {
         return actions;
+    }
+
+    @Override
+    @SuppressWarnings("PMD.NPathComplexity")
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
+    public String toString() {
+        return "ChecksDetails{"
+                + "name=" + (name == null ? "null" : "'" + name + "'")
+                + ", detailsURL=" + (detailsURL == null ? "null" : "'" + detailsURL + "'")
+                + ", status=" + (status == null ? "null" : status)
+                + ", conclusion=" + (conclusion == null ? "null" : conclusion)
+                + ", startedAt=" + (startedAt == null ? "null" : "'" + startedAt + "'")
+                + ", completedAt=" + (completedAt == null ? "null" : "'" + completedAt + "'")
+                + ", output=" + (output == null ? "null" : output)
+                + ", actions=" + (actions == null ? "null" : actions)
+                + '}';
     }
 
     /**

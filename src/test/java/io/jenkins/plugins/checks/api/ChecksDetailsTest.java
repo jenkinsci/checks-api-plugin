@@ -2,7 +2,6 @@ package io.jenkins.plugins.checks.api;
 
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksOutput.ChecksOutputBuilder;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static io.jenkins.plugins.checks.api.ChecksDetailsAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests the class {@link ChecksDetails}.
@@ -55,13 +55,19 @@ class ChecksDetailsTest {
                 .hasDetailsURL(Optional.of(detailsURL))
                 .hasConclusion(ChecksConclusion.SUCCESS);
 
-        Assertions.assertThat(details.getOutput())
+        assertThat(details.getOutput())
                 .usingFieldByFieldValueComparator()
                 .contains(output);
 
-        Assertions.assertThat(details.getActions())
+        assertThat(details.getActions())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyElementsOf(actions);
+
+        assertThat(details.toString()).isEqualTo("ChecksDetails{"
+                + "name='Jenkins', detailsURL='https://ci.jenkins.io', status=COMPLETED, conclusion=SUCCESS"
+                + ", startedAt='2020-06-27T01:10', completedAt='2021-07-28T02:20'"
+                + ", output=" + output.toString()
+                + ", actions=" + actions.toString() + "}");
     }
 
     @Test
@@ -72,7 +78,7 @@ class ChecksDetailsTest {
                 new ChecksAction("action_2", "the second action", "2"));
         actions.forEach(builder::addAction);
 
-        Assertions.assertThat(builder.build().getActions())
+        assertThat(builder.build().getActions())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(actions);
     }

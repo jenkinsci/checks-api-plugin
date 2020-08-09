@@ -51,4 +51,14 @@ public class ChecksAction {
     public Optional<String> getIdentifier() {
         return Optional.ofNullable(identifier);
     }
+
+    @Override
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", justification = "Fields are nullable")
+    public String toString() {
+        return "ChecksAction{"
+                + "label=" + (label == null ? "null" : "'" + label + "'")
+                + ", description=" + (description == null ? "null" : "'" + description + "'")
+                + ", identifier=" + (identifier == null ? "null" : "'" + identifier + "'")
+                + '}';
+    }
 }
