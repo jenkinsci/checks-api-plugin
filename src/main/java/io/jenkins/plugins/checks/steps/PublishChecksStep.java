@@ -19,8 +19,6 @@ import java.util.*;
  * Pipeline step to publish customized checks.
  */
 @SuppressWarnings("PMD.DataClass")
-@SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-        justification = "Empty constructor used by stapler")
 public class PublishChecksStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
 
