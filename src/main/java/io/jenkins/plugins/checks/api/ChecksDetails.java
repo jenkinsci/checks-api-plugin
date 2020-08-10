@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -110,6 +111,20 @@ public class ChecksDetails {
      */
     public List<ChecksAction> getActions() {
         return actions;
+    }
+
+    @Override
+    public String toString() {
+        return "ChecksDetails{"
+                + "name='" + name + '\''
+                + ", detailsURL='" + detailsURL + '\''
+                + ", status=" + status
+                + ", conclusion=" + conclusion
+                + ", startedAt=" + startedAt
+                + ", completedAt=" + completedAt
+                + ", output=" + output
+                + ", actions=" + actions
+                + '}';
     }
 
     /**

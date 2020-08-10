@@ -101,6 +101,21 @@ public class ChecksAnnotation {
         FAILURE
     }
 
+    @Override
+    public String toString() {
+        return "ChecksAnnotation{"
+                + "path='" + path + '\''
+                + ", startLine=" + startLine
+                + ", endLine=" + endLine
+                + ", annotationLevel=" + annotationLevel
+                + ", message='" + message + '\''
+                + ", startColumn=" + startColumn
+                + ", endColumn=" + endColumn
+                + ", title='" + title + '\''
+                + ", rawDetails='" + rawDetails + '\''
+                + '}';
+    }
+
     /**
      * Builder for {@link ChecksAnnotation}.
      */

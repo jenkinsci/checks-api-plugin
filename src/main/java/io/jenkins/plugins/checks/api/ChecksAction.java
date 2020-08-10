@@ -51,4 +51,13 @@ public class ChecksAction {
     public Optional<String> getIdentifier() {
         return Optional.ofNullable(identifier);
     }
+
+    @Override
+    public String toString() {
+        return "ChecksAction{"
+                + "label='" + label + '\''
+                + ", description='" + description + '\''
+                + ", identifier='" + identifier + '\''
+                + '}';
+    }
 }
