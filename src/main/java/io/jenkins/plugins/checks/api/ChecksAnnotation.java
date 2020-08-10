@@ -2,7 +2,6 @@ package io.jenkins.plugins.checks.api;
 
 import java.util.Optional;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 

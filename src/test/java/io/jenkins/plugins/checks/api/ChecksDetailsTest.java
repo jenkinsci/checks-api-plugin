@@ -63,7 +63,7 @@ class ChecksDetailsTest {
                 .usingFieldByFieldElementComparator()
                 .containsExactlyElementsOf(actions);
 
-        assertThat(details.toString()).isEqualTo("ChecksDetails{"
+        assertThat(details).hasToString("ChecksDetails{"
                 + "name='Jenkins', detailsURL='https://ci.jenkins.io', status=COMPLETED, conclusion=SUCCESS"
                 + ", startedAt=2020-06-27T01:10, completedAt=2021-07-28T02:20"
                 + ", output=" + output.toString()

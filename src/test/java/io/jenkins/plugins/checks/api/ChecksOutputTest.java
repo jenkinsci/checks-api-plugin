@@ -41,7 +41,7 @@ class ChecksOutputTest {
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(images);
 
-        assertThat(checksOutput.toString()).isEqualTo("ChecksOutput{"
+        assertThat(checksOutput).hasToString("ChecksOutput{"
                 + "title='Coverage Report', summary='All code have been covered', text='# Markdown Supported Text'"
                 + ", annotations=" + annotations
                 + ", images=" + images

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static io.jenkins.plugins.checks.api.ChecksAnnotationAssert.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ChecksAnnotationTest {
     private static final String PATH =
@@ -42,7 +41,7 @@ class ChecksAnnotationTest {
                 .hasTitle(Optional.of(TITLE))
                 .hasRawDetails(Optional.of(RAW_DETAILS));
 
-        assertThat(annotation.toString()).isEqualTo("ChecksAnnotation{"
+        assertThat(annotation).hasToString("ChecksAnnotation{"
                 + "path='github-checks-api-plugin/src/main/java/io/jenkins/plugins/checks/CheckGHEventSubscriber.java'"
                 + ", startLine=20, endLine=20, annotationLevel=NOTICE"
                 + ", message='Avoid unused private fields such as 'LOGGER''"
