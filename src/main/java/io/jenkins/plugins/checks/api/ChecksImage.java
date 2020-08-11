@@ -12,6 +12,7 @@ import org.kohsuke.accmod.restrictions.Beta;
  * An image of a check. Users may use a image to show the code coverage, issues trend, etc.
  */
 @Restricted(Beta.class)
+@SuppressWarnings("PMD.DataClass")
 public class ChecksImage {
     private final String alt;
     private final String imageURL;
@@ -22,15 +23,15 @@ public class ChecksImage {
      *
      * @param alt
      *         the alternative text for the image
-     * @param imageUrl
+     * @param imageURL
      *         the full URL of the image
      * @param caption
      *         a short description of the image
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public ChecksImage(@Nullable final String alt, @Nullable final String imageUrl, @Nullable final String caption) {
+    public ChecksImage(@Nullable final String alt, @Nullable final String imageURL, @Nullable final String caption) {
         this.alt = alt;
-        this.imageURL = imageUrl;
+        this.imageURL = imageURL;
         this.caption = caption;
     }
 
@@ -45,10 +46,20 @@ public class ChecksImage {
 
     /**
      * Returns the image URL.
+     * TODO: Exists for backward-compatibility, will be removed in 1.0.0.
      *
      * @return the image URL
      */
     public Optional<String> getImageUrl() {
+        return getImageURL();
+    }
+
+    /**
+     * Returns the image URL.
+     *
+     * @return the image URL
+     */
+    public Optional<String> getImageURL() {
         return Optional.ofNullable(imageURL);
     }
 

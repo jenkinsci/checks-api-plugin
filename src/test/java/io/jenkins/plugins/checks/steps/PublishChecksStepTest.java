@@ -12,7 +12,6 @@ import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -55,9 +54,6 @@ class PublishChecksStepTest {
         step.setConclusion(ChecksConclusion.FAILURE);
         step.setDetailsURL("ci.jenkins.io");
 
-        String startedAt = LocalDateTime.now().toString();
-        String completedAt = LocalDateTime.now().toString();
-
         StepContext context = mock(StepContext.class);
         when(context.get(Run.class)).thenReturn(mock(Run.class));
         when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
@@ -71,8 +67,6 @@ class PublishChecksStepTest {
                         .withStatus(ChecksStatus.IN_PROGRESS)
                         .withConclusion(ChecksConclusion.FAILURE)
                         .withDetailsURL("ci.jenkins.io")
-                        .withStartedAt(LocalDateTime.parse(startedAt))
-                        .withCompletedAt(LocalDateTime.parse(completedAt))
                         .withOutput(new ChecksOutput.ChecksOutputBuilder()
                                 .withTitle("Jenkins Build")
                                 .withSummary("a check made by Jenkins")
