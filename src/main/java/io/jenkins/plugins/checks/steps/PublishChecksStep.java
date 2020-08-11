@@ -1,7 +1,6 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;

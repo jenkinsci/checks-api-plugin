@@ -14,7 +14,7 @@ import org.kohsuke.accmod.restrictions.Beta;
 @Restricted(Beta.class)
 public class ChecksImage {
     private final String alt;
-    private final String imageUrl;
+    private final String imageURL;
     private final String caption;
 
     /**
@@ -30,7 +30,7 @@ public class ChecksImage {
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public ChecksImage(@Nullable final String alt, @Nullable final String imageUrl, @Nullable final String caption) {
         this.alt = alt;
-        this.imageUrl = imageUrl;
+        this.imageURL = imageUrl;
         this.caption = caption;
     }
 
@@ -49,7 +49,7 @@ public class ChecksImage {
      * @return the image URL
      */
     public Optional<String> getImageUrl() {
-        return Optional.ofNullable(imageUrl);
+        return Optional.ofNullable(imageURL);
     }
 
     /**
