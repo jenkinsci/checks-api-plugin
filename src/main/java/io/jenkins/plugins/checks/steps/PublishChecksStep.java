@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.steps;
 
+import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Run;
@@ -11,7 +12,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -30,8 +30,6 @@ public class PublishChecksStep extends Step implements Serializable {
     private String detailsURL = StringUtils.EMPTY;
     private ChecksStatus status = ChecksStatus.COMPLETED;
     private ChecksConclusion conclusion = ChecksConclusion.SUCCESS;
-    private LocalDateTime startedAt = LocalDateTime.now();
-    private LocalDateTime completedAt = LocalDateTime.now();
 
     /**
      * Constructor used in pipeline with required fields.
@@ -76,16 +74,6 @@ public class PublishChecksStep extends Step implements Serializable {
         this.conclusion = conclusion;
     }
 
-    @DataBoundSetter
-    public void setStartedAt(final String startedAt) {
-        this.startedAt = LocalDateTime.parse(startedAt);
-    }
-
-    @DataBoundSetter
-    public void setCompletedAt(final String completedAt) {
-        this.completedAt = LocalDateTime.parse(completedAt);
-    }
-
     @Override
     public StepExecution start(final StepContext stepContext) {
         return new PublishChecksStepExecution(stepContext, this);
@@ -127,12 +115,18 @@ public class PublishChecksStep extends Step implements Serializable {
 
         @Override
         protected Void run() throws Exception {
+            ChecksPublisherFactory.fromRun(getContext().get(Run.class), getContext().get(TaskListener.class))
+                    .publish(extractChecksDetails());
+
+            return null;
+        }
+
+        @VisibleForTesting
+        ChecksDetails extractChecksDetails() {
             ChecksDetails.ChecksDetailsBuilder builder = new ChecksDetails.ChecksDetailsBuilder()
                     .withName(step.name)
                     .withStatus(step.status)
                     .withConclusion(step.conclusion)
-                    .withStartedAt(step.startedAt)
-                    .withCompletedAt(step.completedAt)
                     .withOutput(new ChecksOutput.ChecksOutputBuilder()
                             .withTitle(step.title)
                             .withSummary(step.summary)
@@ -143,10 +137,7 @@ public class PublishChecksStep extends Step implements Serializable {
                 builder.withDetailsURL(step.detailsURL);
             }
 
-            ChecksPublisherFactory.fromRun(getContext().get(Run.class), getContext().get(TaskListener.class))
-                    .publish(builder.build());
-
-            return null;
+            return builder.build();
         }
     }
 }

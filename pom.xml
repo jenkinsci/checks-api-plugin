@@ -70,6 +70,7 @@
         <configuration>
           <packages combine.children="append">
             <package>io.jenkins.plugins.checks.api</package>
+            <package>io.jenkins.plugins.checks.steps</package>
           </packages>
           <entryPointClassPackage>io.jenkins.plugins.checks.assertions</entryPointClassPackage>
         </configuration>
