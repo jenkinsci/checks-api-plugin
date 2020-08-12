@@ -62,6 +62,17 @@ public class ChecksOutput {
         return images;
     }
 
+    @Override
+    public String toString() {
+        return "ChecksOutput{"
+                + "title='" + title + '\''
+                + ", summary='" + summary + '\''
+                + ", text='" + text + '\''
+                + ", annotations=" + annotations
+                + ", images=" + images
+                + '}';
+    }
+
     /**
      * Builder for {@link ChecksOutput}.
      */

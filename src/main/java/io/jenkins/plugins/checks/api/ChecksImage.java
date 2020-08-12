@@ -71,4 +71,13 @@ public class ChecksImage {
     public Optional<String> getCaption() {
         return Optional.ofNullable(caption);
     }
+
+    @Override
+    public String toString() {
+        return "ChecksImage{"
+                + "alt='" + alt + '\''
+                + ", imageUrl='" + imageUrl + '\''
+                + ", caption='" + caption + '\''
+                + '}';
+    }
 }

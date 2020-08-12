@@ -1,0 +1,14 @@
+@startuml
+
+skinparam componentStyle uml2
+skinparam component {
+  BorderColor #a0a0a0
+  BackgroundColor #f8f8f8
+}
+
+[API] <<..checks.api>>
+[Steps] <<..checks>>
+
+[Steps] --> [API]
+
+@enduml

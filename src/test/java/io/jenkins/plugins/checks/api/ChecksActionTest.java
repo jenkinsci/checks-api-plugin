@@ -13,5 +13,8 @@ class ChecksActionTest {
         assertThat(action.getLabel()).isPresent().hasValue("re-run");
         assertThat(action.getDescription()).isPresent().hasValue("re-run the Jenkins build");
         assertThat(action.getIdentifier()).isPresent().hasValue("re-run id");
+
+        assertThat(action).hasToString("ChecksAction{"
+                + "label='re-run', description='re-run the Jenkins build', identifier='re-run id'}");
     }
 }

@@ -40,6 +40,14 @@ class ChecksAnnotationTest {
                 .hasStartColumn(Optional.of(33)).hasEndColumn(Optional.of(38))
                 .hasTitle(Optional.of(TITLE))
                 .hasRawDetails(Optional.of(RAW_DETAILS));
+
+        assertThat(annotation).hasToString("ChecksAnnotation{"
+                + "path='github-checks-api-plugin/src/main/java/io/jenkins/plugins/checks/CheckGHEventSubscriber.java'"
+                + ", startLine=20, endLine=20, annotationLevel=NOTICE"
+                + ", message='Avoid unused private fields such as 'LOGGER''"
+                + ", startColumn=33, endColumn=38, title='UnusedPrivateField'"
+                + ", rawDetails='" + RAW_DETAILS
+                + "'}");
     }
 
     @Test

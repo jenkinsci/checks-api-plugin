@@ -112,6 +112,20 @@ public class ChecksDetails {
         return actions;
     }
 
+    @Override
+    public String toString() {
+        return "ChecksDetails{"
+                + "name='" + name + '\''
+                + ", detailsURL='" + detailsURL + '\''
+                + ", status=" + status
+                + ", conclusion=" + conclusion
+                + ", startedAt=" + startedAt
+                + ", completedAt=" + completedAt
+                + ", output=" + output
+                + ", actions=" + actions
+                + '}';
+    }
+
     /**
      * Builder for {@link ChecksDetails}.
      */

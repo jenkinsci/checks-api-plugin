@@ -19,7 +19,7 @@
 
   <properties>
     <java.level>8</java.level>
-    <revision>0.2.3</revision>
+    <revision>0.2.4</revision>
     <changelist>-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
