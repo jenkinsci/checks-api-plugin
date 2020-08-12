@@ -76,7 +76,7 @@ public class ChecksImage {
     public String toString() {
         return "ChecksImage{"
                 + "alt='" + alt + '\''
-                + ", imageUrl='" + imageUrl + '\''
+                + ", imageUrl='" + imageURL + '\''
                 + ", caption='" + caption + '\''
                 + '}';
     }
