@@ -90,10 +90,7 @@ public class BuildStatusChecksPublisher {
             if (result.isBetterOrEqualTo(Result.SUCCESS)) {
                 return ChecksConclusion.SUCCESS;
             }
-            else if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
-                return ChecksConclusion.NEUTRAL;
-            }
-            else if (result.isBetterOrEqualTo(Result.FAILURE)) {
+            else if (result.isBetterOrEqualTo(Result.UNSTABLE) || result.isBetterOrEqualTo(Result.FAILURE)) {
                 return ChecksConclusion.FAILURE;
             }
             else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
