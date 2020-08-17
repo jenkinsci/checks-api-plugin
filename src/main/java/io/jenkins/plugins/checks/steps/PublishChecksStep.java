@@ -24,8 +24,7 @@ public class PublishChecksStep extends Step implements Serializable {
     private final String name;
     private final String summary;
 
-    private String title;
-
+    private String title = StringUtils.EMPTY;
     private String text = StringUtils.EMPTY;
     private String detailsURL = StringUtils.EMPTY;
     private ChecksStatus status = ChecksStatus.COMPLETED;
@@ -45,8 +44,6 @@ public class PublishChecksStep extends Step implements Serializable {
 
         this.name = name;
         this.summary = summary;
-
-        this.title = name;
     }
 
     @DataBoundSetter
@@ -128,7 +125,7 @@ public class PublishChecksStep extends Step implements Serializable {
                     .withStatus(step.status)
                     .withConclusion(step.conclusion)
                     .withOutput(new ChecksOutput.ChecksOutputBuilder()
-                            .withTitle(step.title)
+                            .withTitle(StringUtils.defaultIfEmpty(step.title, step.name))
                             .withSummary(step.summary)
                             .withText(step.text)
                             .build());
