@@ -35,15 +35,19 @@ public class BuildStatusChecksPublisher {
 
     /**
      * {@inheritDoc}
+     *
      * <p>
      * Listens to the queue and publishes checks in "queued" state for entering items.
+     * </p>
      */
     @Extension
     public static class JobScheduledListener extends QueueListener {
         /**
          * {@inheritDoc}
+         *
          * <p>
          * When a job enters queue, creates the check on "queued".
+         * </p>
          */
         @Override
         public void onEnterWaiting(final Queue.WaitingItem wi) {
@@ -58,8 +62,10 @@ public class BuildStatusChecksPublisher {
 
     /**
      * {@inheritDoc}
+     *
      * <p>
      * Listens to the SCM checkout and publishes checks.
+     * </p>
      */
     @Extension
     public static class JobCheckoutListener extends SCMListener {
@@ -67,6 +73,7 @@ public class BuildStatusChecksPublisher {
          * {@inheritDoc}
          * <p>
          * When checkout finished, update the check to "in progress".
+         * </p>
          */
         @Override
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
@@ -78,15 +85,19 @@ public class BuildStatusChecksPublisher {
 
     /**
      * {@inheritDoc}
+     *
      * <p>
      * Listens to the run and publishes checks.
+     * </p>
      */
     @Extension
     public static class JobCompletedListener extends RunListener<Run<?, ?>> {
         /**
          * {@inheritDoc}
+         *
          * <p>
          * When a job completes, completes the check.
+         * </p>
          */
         @Override
         public void onCompleted(final Run run, @Nullable final TaskListener listener) {
