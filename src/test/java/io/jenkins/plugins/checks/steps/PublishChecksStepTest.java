@@ -27,19 +27,18 @@ class PublishChecksStepTest {
         when(context.get(Run.class)).thenReturn(mock(Run.class));
         when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
 
-        StepExecution execution =
-                new PublishChecksStep("Jenkins", "a check made by Jenkins").start(context);
+        StepExecution execution = new PublishChecksStep().start(context);
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
                 .usingRecursiveComparison()
-                .ignoringFields("startedAt", "completedAt")
                 .isEqualTo(new ChecksDetails.ChecksDetailsBuilder()
-                        .withName("Jenkins")
+                        .withName(StringUtils.EMPTY)
                         .withStatus(ChecksStatus.COMPLETED)
                         .withConclusion(ChecksConclusion.SUCCESS)
+                        .withDetailsURL(StringUtils.EMPTY)
                         .withOutput(new ChecksOutput.ChecksOutputBuilder()
-                                .withTitle("Jenkins")
-                                .withSummary("a check made by Jenkins")
+                                .withTitle(StringUtils.EMPTY)
+                                .withSummary(StringUtils.EMPTY)
                                 .withText(StringUtils.EMPTY)
                                 .build())
                         .build());
@@ -47,12 +46,14 @@ class PublishChecksStepTest {
 
     @Test
     void shouldPublishCheckWithSetValues() throws IOException, InterruptedException {
-        PublishChecksStep step = new PublishChecksStep("Jenkins", "a check made by Jenkins");
+        PublishChecksStep step = new PublishChecksStep();
+        step.setName("Jenkins");
+        step.setSummary("a check made by Jenkins");
         step.setTitle("Jenkins Build");
         step.setText("a failed build");
         step.setStatus(ChecksStatus.IN_PROGRESS);
         step.setConclusion(ChecksConclusion.FAILURE);
-        step.setDetailsURL("ci.jenkins.io");
+        step.setDetailsURL("http://ci.jenkins.io");
 
         StepContext context = mock(StepContext.class);
         when(context.get(Run.class)).thenReturn(mock(Run.class));
@@ -66,7 +67,7 @@ class PublishChecksStepTest {
                         .withName("Jenkins")
                         .withStatus(ChecksStatus.IN_PROGRESS)
                         .withConclusion(ChecksConclusion.FAILURE)
-                        .withDetailsURL("ci.jenkins.io")
+                        .withDetailsURL("http://ci.jenkins.io")
                         .withOutput(new ChecksOutput.ChecksOutputBuilder()
                                 .withTitle("Jenkins Build")
                                 .withSummary("a check made by Jenkins")

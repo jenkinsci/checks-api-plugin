@@ -1,0 +1,32 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form">
+
+  <f:entry title="${%title.name}" field="name">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="${%title.summary}" field="summary">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="${%title.title}" field="title">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="${%title.text}" field="text">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="${%title.detailsURL}" field="detailsURL">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="${%title.status}" description="${%description.status}" field="status">
+    <f:select default="COMPLETED"/>
+  </f:entry>
+
+  <f:entry title="${%title.conclusion}" description="${%description.conclusion}" field="conclusion">
+    <f:select default="SUCCESS"/>
+  </f:entry>
+
+</j:jelly>
