@@ -81,7 +81,6 @@ class PublishChecksStepTest {
         PublishChecksStep.PublishChecksStepDescriptor descriptor = new PublishChecksStep.PublishChecksStepDescriptor();
         assertThat(descriptor.getFunctionName()).isEqualTo("publishChecks");
         assertThat(descriptor.getDisplayName()).isEqualTo("Publish customized checks to SCM platforms");
-        assertThat(descriptor.getRequiredContext())
-                .containsAll(new HashSet(Arrays.asList(Run.class, TaskListener.class)));
+        assertThat(descriptor.getRequiredContext().toArray()).containsExactlyInAnyOrder(Run.class, TaskListener.class);
     }
 }
