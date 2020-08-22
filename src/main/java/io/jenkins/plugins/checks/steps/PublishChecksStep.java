@@ -12,6 +12,7 @@ import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -171,7 +172,7 @@ public class PublishChecksStep extends Step implements Serializable {
         }
 
         @Override
-        protected Void run() throws Exception {
+        protected Void run() throws IOException, InterruptedException {
             ChecksPublisherFactory.fromRun(getContext().get(Run.class), getContext().get(TaskListener.class))
                     .publish(extractChecksDetails());
 
