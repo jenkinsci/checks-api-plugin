@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.api;
 
 import hudson.model.Job;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.util.PluginLogger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -19,11 +20,26 @@ public abstract class ChecksPublisher {
     public abstract void publish(ChecksDetails details);
 
     /**
-     * A null publisher. This publisher will be returned by
-     * {@link ChecksPublisherFactory#fromJob(Job, TaskListener)} only when there is no suitable publisher for the given {@code run}.
+     * A null publisher. This publisher will be returned by {@link ChecksPublisherFactory#fromJob(Job, TaskListener)}
+     * only when there is no suitable publisher for the given {@code run}.
      */
     public static class NullChecksPublisher extends ChecksPublisher {
+        private final PluginLogger logger;
+
+        /**
+         * Construct a null checks publisher with {@link PluginLogger}.
+         * @param logger
+         *         the plugin logger
+         */
+        public NullChecksPublisher(final PluginLogger logger) {
+            super();
+
+            this.logger = logger;
+        }
+
         @Override
-        public void publish(final ChecksDetails details) { }
+        public void publish(final ChecksDetails details) {
+            logger.log("No suitable checks publisher found.");
+        }
     }
 }

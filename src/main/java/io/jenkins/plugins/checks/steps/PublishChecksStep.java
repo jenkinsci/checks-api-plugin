@@ -161,7 +161,7 @@ public class PublishChecksStep extends Step implements Serializable {
     /**
      * This step's execution to actually publish checks.
      */
-    static class PublishChecksStepExecution extends SynchronousNonBlockingStepExecution<ChecksDetails> {
+    static class PublishChecksStepExecution extends SynchronousNonBlockingStepExecution<Void> {
         private static final long serialVersionUID = 1L;
         private final PublishChecksStep step;
 
@@ -171,7 +171,7 @@ public class PublishChecksStep extends Step implements Serializable {
         }
 
         @Override
-        protected ChecksDetails run() throws Exception {
+        protected Void run() throws Exception {
             ChecksPublisherFactory.fromRun(getContext().get(Run.class), getContext().get(TaskListener.class))
                     .publish(extractChecksDetails());
 
