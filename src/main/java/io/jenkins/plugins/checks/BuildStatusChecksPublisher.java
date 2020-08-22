@@ -1,17 +1,21 @@
 package io.jenkins.plugins.checks;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.model.*;
-
 import hudson.model.listeners.RunListener;
+import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
+import hudson.scm.SCM;
+import hudson.scm.SCMRevisionState;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
+
+import java.io.File;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
@@ -32,18 +36,22 @@ public class BuildStatusChecksPublisher {
     /**
      * {@inheritDoc}
      *
+     * <p>
      * Listens to the queue and publishes checks in "queued" state for entering items.
+     * </p>
      */
     @Extension
     public static class JobScheduledListener extends QueueListener {
         /**
          * {@inheritDoc}
          *
+         * <p>
          * When a job enters queue, creates the check on "queued".
+         * </p>
          */
         @Override
         public void onEnterWaiting(final Queue.WaitingItem wi) {
-            if  (!(wi.task instanceof Job)) {
+            if (!(wi.task instanceof Job)) {
                 return;
             }
 
@@ -55,30 +63,45 @@ public class BuildStatusChecksPublisher {
     /**
      * {@inheritDoc}
      *
-     * Listens to the run and publishes checks for started and completed run.
+     * <p>
+     * Listens to the SCM checkout and publishes checks.
+     * </p>
      */
     @Extension
-    public static class JobStartedListener extends RunListener<Run<?, ?>> {
+    public static class JobCheckoutListener extends SCMListener {
         /**
          * {@inheritDoc}
-         *
-         * When a job starts, updates the check to "in progress".
+         * <p>
+         * When checkout finished, update the check to "in progress".
+         * </p>
          */
         @Override
-        public void onStarted(final Run run, final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener),
-                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
+        public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
+                               final TaskListener listener, @Nullable final File changelogFile,
+                               @Nullable final SCMRevisionState pollingBaseline) {
+            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
         }
+    }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * Listens to the run and publishes checks.
+     * </p>
+     */
+    @Extension
+    public static class JobCompletedListener extends RunListener<Run<?, ?>> {
         /**
          * {@inheritDoc}
          *
+         * <p>
          * When a job completes, completes the check.
+         * </p>
          */
         @Override
-        public void onCompleted(final Run run, @NonNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener),
-                    ChecksStatus.COMPLETED, extractConclusion(run));
+        public void onCompleted(final Run run, @Nullable final TaskListener listener) {
+            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run));
         }
 
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
@@ -90,10 +113,7 @@ public class BuildStatusChecksPublisher {
             if (result.isBetterOrEqualTo(Result.SUCCESS)) {
                 return ChecksConclusion.SUCCESS;
             }
-            else if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
-                return ChecksConclusion.NEUTRAL;
-            }
-            else if (result.isBetterOrEqualTo(Result.FAILURE)) {
+            else if (result.isBetterOrEqualTo(Result.UNSTABLE) || result.isBetterOrEqualTo(Result.FAILURE)) {
                 return ChecksConclusion.FAILURE;
             }
             else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
