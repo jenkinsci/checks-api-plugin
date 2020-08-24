@@ -2,9 +2,9 @@ package io.jenkins.plugins.checks.api;
 
 import java.util.Optional;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
-
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -33,8 +33,8 @@ public class ChecksAction {
      *         a reference for the action on the integrator's system
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public ChecksAction(@Nullable final String label, @Nullable final String description,
-            @Nullable final String identifier) {
+    public ChecksAction(@CheckForNull final String label, @CheckForNull final String description,
+            @CheckForNull final String identifier) {
         this.label = label;
         this.description = description;
         this.identifier = identifier;

@@ -2,9 +2,9 @@ package io.jenkins.plugins.checks.api;
 
 import java.util.Optional;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
-
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 
@@ -28,7 +28,7 @@ public class ChecksImage {
      *         a short description of the image
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public ChecksImage(@Nullable final String alt, @Nullable final String imageUrl, @Nullable final String caption) {
+    public ChecksImage(@CheckForNull final String alt, @CheckForNull final String imageUrl, @CheckForNull final String caption) {
         this.alt = alt;
         this.imageUrl = imageUrl;
         this.caption = caption;
