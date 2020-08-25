@@ -29,7 +29,8 @@ public class ChecksImage {
      *         a short description of the image
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public ChecksImage(@CheckForNull final String alt, @CheckForNull final String imageUrl, @CheckForNull final String caption) {
+    public ChecksImage(@CheckForNull final String alt, @CheckForNull final String imageURL,
+                       @CheckForNull final String caption) {
         this.alt = alt;
         this.imageURL = imageURL;
         this.caption = caption;
