@@ -21,11 +21,11 @@
     <f:textbox />
   </f:entry>
 
-  <f:entry title="${%title.status}" description="${%description.status}" field="status">
+  <f:entry title="${%title.status}" field="status">
     <f:select default="COMPLETED"/>
   </f:entry>
 
-  <f:entry title="${%title.conclusion}" description="${%description.conclusion}" field="conclusion">
+  <f:entry title="${%title.conclusion}" field="conclusion">
     <f:select default="SUCCESS"/>
   </f:entry>
 

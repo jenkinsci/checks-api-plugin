@@ -15,6 +15,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Pipeline step to publish customized checks.
@@ -134,13 +135,7 @@ public class PublishChecksStep extends Step implements Serializable {
          * @return a model with all {@link ChecksStatus}es.
          */
         public ListBoxModel doFillStatusItems() {
-            ListBoxModel options = new ListBoxModel();
-            for (ChecksStatus status : ChecksStatus.values()) {
-                options.add(StringUtils.capitalize(status.name().toLowerCase(Locale.ENGLISH).replace("_", " ")),
-                        status.name());
-            }
-
-            return options;
+            return asListBoxModel(ChecksStatus.values());
         }
 
         /**
@@ -149,13 +144,18 @@ public class PublishChecksStep extends Step implements Serializable {
          * @return a model with all {@link ChecksConclusion}s.
          */
         public ListBoxModel doFillConclusionItems() {
-            ListBoxModel options = new ListBoxModel();
-            for (ChecksConclusion conclusion : ChecksConclusion.values()) {
-                options.add(StringUtils.capitalize(conclusion.name().toLowerCase(Locale.ENGLISH).replace("_", " ")),
-                        conclusion.name());
-            }
+            return asListBoxModel(ChecksConclusion.values());
+        }
 
-            return options;
+        private ListBoxModel asListBoxModel(final Enum<?>... enums) {
+            return Arrays.stream(enums)
+                    .map(Enum::name)
+                    .map(name -> new ListBoxModel.Option(asDisplayName(name), name))
+                    .collect(Collectors.toCollection(ListBoxModel::new));
+        }
+
+        private String asDisplayName(final String name) {
+            return StringUtils.capitalize(name.toLowerCase(Locale.ENGLISH).replace("_", " "));
         }
     }
 

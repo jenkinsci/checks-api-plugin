@@ -12,8 +12,6 @@ import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static io.jenkins.plugins.checks.assertions.Assertions.assertThat;
