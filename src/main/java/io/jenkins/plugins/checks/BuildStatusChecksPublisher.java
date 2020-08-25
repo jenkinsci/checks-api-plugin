@@ -61,8 +61,8 @@ public class BuildStatusChecksPublisher {
                 return;
             }
 
-            publish(ChecksPublisherFactory.fromJob((Job) wi.task, TaskListener.NULL), ChecksStatus.QUEUED,
-                    ChecksConclusion.NONE);
+            publish(ChecksPublisherFactory.fromJob((Job)wi.task, TaskListener.NULL),
+                    ChecksStatus.QUEUED, ChecksConclusion.NONE);
         }
     }
 

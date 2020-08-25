@@ -8,6 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.util.PluginLogger;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 import hudson.ExtensionPoint;
@@ -105,7 +106,7 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
-                .orElse(new NullChecksPublisher());
+                .orElse(new NullChecksPublisher(createLogger(listener)));
     }
 
     @VisibleForTesting
@@ -116,10 +117,14 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst()
-                .orElse(new NullChecksPublisher());
+                .orElse(new NullChecksPublisher(createLogger(listener)));
     }
 
     private static List<ChecksPublisherFactory> findAllPublisherFactories(final JenkinsFacade jenkinsFacade) {
         return jenkinsFacade.getExtensionsFor(ChecksPublisherFactory.class);
+    }
+
+    private static PluginLogger createLogger(final TaskListener listener) {
+        return new PluginLogger(listener.getLogger(), "Checks API");
     }
 }

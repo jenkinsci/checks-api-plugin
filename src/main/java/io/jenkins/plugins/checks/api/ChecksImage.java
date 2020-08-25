@@ -12,9 +12,10 @@ import org.kohsuke.accmod.restrictions.Beta;
  * An image of a check. Users may use a image to show the code coverage, issues trend, etc.
  */
 @Restricted(Beta.class)
+@SuppressWarnings("PMD.DataClass")
 public class ChecksImage {
     private final String alt;
-    private final String imageUrl;
+    private final String imageURL;
     private final String caption;
 
     /**
@@ -22,15 +23,16 @@ public class ChecksImage {
      *
      * @param alt
      *         the alternative text for the image
-     * @param imageUrl
+     * @param imageURL
      *         the full URL of the image
      * @param caption
      *         a short description of the image
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    public ChecksImage(@CheckForNull final String alt, @CheckForNull final String imageUrl, @CheckForNull final String caption) {
+    public ChecksImage(@CheckForNull final String alt, @CheckForNull final String imageURL,
+                       @CheckForNull final String caption) {
         this.alt = alt;
-        this.imageUrl = imageUrl;
+        this.imageURL = imageURL;
         this.caption = caption;
     }
 
@@ -45,11 +47,21 @@ public class ChecksImage {
 
     /**
      * Returns the image URL.
+     * TODO: Exists for backward-compatibility, will be removed in 1.0.0.
      *
      * @return the image URL
      */
     public Optional<String> getImageUrl() {
-        return Optional.ofNullable(imageUrl);
+        return getImageURL();
+    }
+
+    /**
+     * Returns the image URL.
+     *
+     * @return the image URL
+     */
+    public Optional<String> getImageURL() {
+        return Optional.ofNullable(imageURL);
     }
 
     /**
@@ -65,7 +77,7 @@ public class ChecksImage {
     public String toString() {
         return "ChecksImage{"
                 + "alt='" + alt + '\''
-                + ", imageUrl='" + imageUrl + '\''
+                + ", imageUrl='" + imageURL + '\''
                 + ", caption='" + caption + '\''
                 + '}';
     }
