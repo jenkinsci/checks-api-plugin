@@ -11,9 +11,9 @@ Then, the implementations of this API will decide on how to make use of these pa
 
 Current consumers of this plugin include [Warnings Next Generation Plugin](https://github.com/jenkinsci/warnings-ng-plugin) and [Code Coverage API Plugin](https://github.com/jenkinsci/code-coverage-api-plugin); current implementations include [GitHub Checks Plugin](https://github.com/jenkinsci/github-checks-plugin).
 
-# Consumers Guide
+## Consumers Guide
 
-## A Simple Example
+### A Simple Example
 
 Imagine that you want to publish a check with some details of a Jenkins build. 
 You need to first construct a `ChecksDetails` object:
@@ -37,7 +37,7 @@ publisher.publish(details);
 
 The publisher returned is based on the implementations you installed on your Jenkins instance.
 
-## Checks Parameters
+### Checks Parameters
 
 The checks are highly customized by consumers due to a number of optional parameters provided.
 Consumers can set these parameters through the checks models:
@@ -48,20 +48,20 @@ Consumers can set these parameters through the checks models:
 - `ChecksImage`: an image of a check, providing an intuitive graph for the build like issues trend, coverage chart;
 - `ChecksAction`: an action of a check, providing further actions to be performed by users, like rerun a Jenkins build; 
 
-## Checks Publishers
+### Checks Publishers
 
 The publishers are created through the static factory method (`fromRun` or `fromJob`) of `ChecksPublisherFactory`.
 The factory will iterate all available implementations of the `ChecksPublisher` in order to find the suitable publisher for the Jenkins `Run` or `Job`.
 
-# Embedded Features
+## Embedded Features
 
-## Build Status Check
+### Build Status Check
 
 ![GitHub Status](docs/images/github-status.png)
 
 By listening to the Jenkins builds, this plugin will automatically publish statuses (pending, in progress, and completed) to different SCM platforms based on the remote repository the build is using.
 
-## Pipeline Usage
+### Pipeline Usage
 
 Instead of depending on consumers plugins, the users can publish their checks directly in the pipeline script:
 
@@ -69,6 +69,6 @@ Instead of depending on consumers plugins, the users can publish their checks di
 publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through pipeline', text: 'you can publish checks in pipeline script', detailsURL: 'https://github.com/jenkinsci/checks-api-plugin#pipeline-usage'
 ```
 
-# Acknowledgements
+## Acknowledgements
 
 This plugin is started as a [Google Summer of Code 2020 project](https://summerofcode.withgoogle.com/projects/#5139745388101632), you can find more about it on [Jenkins GSoC SIG](https://www.jenkins.io/sigs/gsoc/).
