@@ -25,6 +25,7 @@
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>1.2.2</plugin-util-api.version>
     <pipeline-stage-step.version>2.5</pipeline-stage-step.version>
+    <commons-io.version>2.7</commons-io.version>
   </properties>
 
   <licenses>
@@ -67,6 +68,12 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-cps</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
     </dependency>
 
     <!-- node -->
