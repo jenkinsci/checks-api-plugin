@@ -1,21 +1,27 @@
 package io.jenkins.plugins.checks;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
+import java.io.File;
+
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.model.*;
+import hudson.model.Job;
+import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
-
-import java.io.File;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
@@ -77,8 +83,8 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
-                               final TaskListener listener, @Nullable final File changelogFile,
-                               @Nullable final SCMRevisionState pollingBaseline) {
+                               final TaskListener listener, @CheckForNull final File changelogFile,
+                               @CheckForNull final SCMRevisionState pollingBaseline) {
             publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
         }
     }
@@ -100,7 +106,7 @@ public class BuildStatusChecksPublisher {
          * </p>
          */
         @Override
-        public void onCompleted(final Run run, @Nullable final TaskListener listener) {
+        public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
             publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run));
         }
 
