@@ -17,6 +17,8 @@ Known consumers:
 Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
 
+This plugin, alone with it's [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain hundreds of Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
+
 ## Embedded Features
 
 ### Build Status Check
