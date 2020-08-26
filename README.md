@@ -7,9 +7,14 @@
 
 Inspired by the [GitHub Checks API](https://docs.github.com/en/rest/reference/checks#runs), this plugin aims to provide a general API to allow Jenkins plugins publishing checks (or reports) to remote source code management (SCM) platforms (e.g. GitHub, GitLab, BitBucket, etc.).
 By consuming this API, other plugins can publish check with customized parameters for a Jenkins build, such as status, summary, warnings, code annotations, or even images.
-Then, the implementations of this API will decide on how to make use of these parameters and where to publish the checks.
+Implementations of this API decide on how to make use of these parameters and where to publish the checks.
 
-Current consumers of this plugin include [Warnings Next Generation Plugin](https://github.com/jenkinsci/warnings-ng-plugin) and [Code Coverage API Plugin](https://github.com/jenkinsci/code-coverage-api-plugin); current implementations include [GitHub Checks Plugin](https://github.com/jenkinsci/github-checks-plugin).
+Known consumers:
+* [Warnings Next Generation Plugin](https://plugins.jenkins.io/warnings-ng)
+* [Code Coverage API Plugin](https://plugins.jenkins.io/code-coverage-api)
+
+Implementations:
+* [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
 
 ## Consumers Guide
 
@@ -20,15 +25,15 @@ You need to first construct a `ChecksDetails` object:
 
 ```
 ChecksDetails details = new ChecksDetailsBuilder()
- .withName("Jenkins CI")
- .withStatus(ChecksStatus.COMPLETED)
- .withConclusion(ChecksConclusion.SUCCESS)
- .withDetailsURL("https://ci.jenkins.io")
- .withCompletedAt(LocalDateTime.now(ZoneOffset.UTC))
- .build();
+        .withName("Jenkins CI")
+        .withStatus(ChecksStatus.COMPLETED)
+        .withConclusion(ChecksConclusion.SUCCESS)
+        .withDetailsURL(DisplayURLProvider.get().getRunURL(run))
+        .withCompletedAt(LocalDateTime.now(ZoneOffset.UTC))
+        .build();
 ```
 
-Then you can create a publisher based on a Jenkins `run` to publish the check you just constructed:
+Then you can create a publisher based on a Jenkins `Run` to publish the check you just constructed:
 
 ```
 ChecksPublisher publisher = ChecksPublisher.fromRun(run);
@@ -42,11 +47,11 @@ The publisher returned is based on the implementations you installed on your Jen
 The checks are highly customized by consumers due to a number of optional parameters provided.
 Consumers can set these parameters through the checks models:
 
-- `ChecksDetails`: the top-level model of a check, including all other models and some basic parameters like status and conclusion;
-- `ChecksOutput`: the output of a check, providing some displayed details like title, summary, URL, and code annotations;
+- `ChecksDetails`: the top-level model of a check, including all other models and some basic parameters like status and conclusion
+- `ChecksOutput`: the output of a check, providing some displayed details like title, summary, URL, and code annotations
 - `ChecksAnnotation`: a code annotation of a check, providing a specific comment for one or multiple lines of code;
-- `ChecksImage`: an image of a check, providing an intuitive graph for the build like issues trend, coverage chart;
-- `ChecksAction`: an action of a check, providing further actions to be performed by users, like rerun a Jenkins build; 
+- `ChecksImage`: an image of a check, providing an intuitive graph for the build like issues trend, coverage chart, must be a public URL that SCM platforms can fetch from
+- `ChecksAction`: an action of a check, providing further actions to be performed by users, like rerun a Jenkins build
 
 ### Checks Publishers
 
