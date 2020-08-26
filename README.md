@@ -17,7 +17,7 @@ Known consumers:
 Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
 
-This plugin, alone with it's [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain hundreds of Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
+This plugin, along with it's [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain over 1500 of Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
 
 ## Embedded Features
 
@@ -38,8 +38,15 @@ publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through 
 ## Guides
 
 - [Consumers Guide](docs/consumers-guide.md)
-- [Implementation Guide](docs/implementation-guide.md)
 
 ## Acknowledgements
 
-This plugin is started as a [Google Summer of Code 2020 project](https://summerofcode.withgoogle.com/projects/#5139745388101632), you can find more about it on [Jenkins GSoC SIG](https://www.jenkins.io/sigs/gsoc/).
+This plugin was started as a [Google Summer of Code 2020 project](https://summerofcode.withgoogle.com/projects/#5139745388101632), you can find more about it on [Jenkins GSoC SIG](https://www.jenkins.io/sigs/gsoc/).
+
+## Contributing
+
+Refer to our [contribution guidelines](https://github.com/jenkinsci/.github/blob/master/CONTRIBUTING.md)
+
+## LICENSE
+
+Licensed under MIT, see [LICENSE](LICENSE)

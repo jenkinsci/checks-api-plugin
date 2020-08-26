@@ -4,6 +4,7 @@
 ### A Simple Example
 
 Imagine that you want to publish a check with some details of a Jenkins build. 
+
 You need to first construct a `ChecksDetails` object:
 
 ```
@@ -28,6 +29,7 @@ The publisher returned is based on the implementations you installed on your Jen
 ### Checks Parameters
 
 The checks are highly customized by consumers due to a number of optional parameters provided.
+
 Consumers can set these parameters through the checks models:
 
 - `ChecksDetails`: the top-level model of a check, including all other models and some basic parameters like status and conclusion
