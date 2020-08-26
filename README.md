@@ -39,13 +39,14 @@ publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through 
 
 - [Consumers Guide](docs/consumers-guide.md)
 
-## Acknowledgements
-
-This plugin was started as a [Google Summer of Code 2020 project](https://summerofcode.withgoogle.com/projects/#5139745388101632), you can find more about it on [Jenkins GSoC SIG](https://www.jenkins.io/sigs/gsoc/).
-
 ## Contributing
 
 Refer to our [contribution guidelines](https://github.com/jenkinsci/.github/blob/master/CONTRIBUTING.md)
+
+## Acknowledgements
+
+This plugin was started as a [Google Summer of Code 2020 project](https://summerofcode.withgoogle.com/projects/#5139745388101632), special thanks to the support from [Jenkins GSoC SIG](https://www.jenkins.io/sigs/gsoc/) and the entire community.
+
 
 ## LICENSE
 
