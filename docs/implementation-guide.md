@@ -20,8 +20,8 @@ If no suitable publisher found, a `NullCheckksPublisher` which does nothing will
 
 Your task is to override the `createPublisher` method and return an instance of your `ChecksPublisher` when the `Run` or `Job` fit.
 
-For example, when implementing a factory for GitHub checks publisher, you may want to check if some configurations (GitHub App credentials, repository url) is valid before returning the publisher to consumers:
-```
+For example, when implementing a factory for GitHub checks publisher, you may want to check if some configurations (GitHub App credentials, repository url) are valid before returning the publisher to consumers:
+```java
 @Extension
 public class GitHubChecksPublisherFactory extends ChecksPublisherFactory {
     @Override
@@ -55,7 +55,7 @@ After getting the `ChecksPublisher`, the consumers will then invoke the `publish
 By overriding the `publish` method, you should publish checks to the target SCM platform based on the checks parameters or some other context parameters (like repository, branch, commit) from the `Run` or `Job`.
 
 For example, if you want to publish checks to GitHub, you may need a implementation like this:
-```
+```java
 public class GitHubChecksPublisher extends ChecksPublisher {
     private final TaskListener listener;
     private final GitHubChecksContext context;
@@ -84,7 +84,7 @@ public class GitHubChecksPublisher extends ChecksPublisher {
 
             GitHubChecksDetails gitHubDetails = new GitHubChecksDetails(details); // extract checks parameters for GitHub
 
-            publish(gitHub, context, gitHubDetails); // actually publishes the check using thrid party libraries
+            publish(gitHub, context, gitHubDetails); // actually publishes the check using third party libraries
             listener.getLogger().log("GitHub check (name: %s, status: %s) has been published.", gitHubDetails.getName(), gitHubDetails.getStatus());
         }
         catch (Exception e) {
