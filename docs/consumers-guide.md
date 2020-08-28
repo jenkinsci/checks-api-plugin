@@ -1,7 +1,7 @@
 
-## Consumers Guide
+# Consumers Guide
 
-### A Simple Example
+## A Simple Example
 
 Imagine that you want to publish a check with some details of a Jenkins build. 
 
@@ -26,7 +26,7 @@ publisher.publish(details);
 
 The publisher returned is based on the implementations you installed on your Jenkins instance.
 
-### Checks Parameters
+## Checks Parameters
 
 The checks are highly customized by consumers due to a number of optional parameters provided.
 
@@ -38,7 +38,7 @@ Consumers can set these parameters through the checks models:
 - `ChecksImage`: an image of a check, providing an intuitive graph for the build like issues trend, coverage chart, must be a public URL that SCM platforms can fetch from
 - `ChecksAction`: an action of a check, providing further actions to be performed by users, like rerun a Jenkins build
 
-### Checks Publishers
+## Checks Publishers
 
 The publishers are created through the static factory method (`fromRun` or `fromJob`) of `ChecksPublisherFactory`.
 The factory will iterate all available implementations of the `ChecksPublisher` in order to find the suitable publisher for the Jenkins `Run` or `Job`.
