@@ -38,6 +38,7 @@ publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through 
 ## Guides
 
 - [Consumers Guide](docs/consumers-guide.md)
+- [Implementation Guide](docs/implementation-guide.md)
 
 ## Contributing
 
