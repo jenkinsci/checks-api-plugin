@@ -20,24 +20,25 @@ If no suitable publisher found, a `NullCheckksPublisher` which does nothing will
 
 Your task is to override the `createPublisher` method and return an instance of your `ChecksPublisher` when the `Run` or `Job` fit.
 
-For example, when implementing the GitHub checks publisher, the GitHub App credentials is a prerequesite.
-Thus, you may want to check if the users have configured the GitHub App credentials for the project:
+For example, when implementing a factory for GitHub checks publisher, you may want to check if some configurations (GitHub App credentials, repository url) is valid before returning the publisher to consumers:
 ```
 @Extension
 public class GitHubChecksPublisherFactory extends ChecksPublisherFactory {
     @Override
     protected Optional<ChecksPublisher> createPublisher(final Run<?, ?> run, final TaskListener listener) {
-        if (hasGitHubAppCredentials(run)) {
-            return Optiona.of(new GitHubChecksPublisher(run));
-        }
-
-        return Optional.empty();
+        GitHubChecksContext context = new GitHubChecksContext(run); // create a context to help extract configurations
+        return createPublisher(context, listener);
     }
 
     @Override
     protected Optional<ChecksPublisher> createPublisher(final Job<?, ?> job, final TaskListener listener) {
-        if (hasGitHubAppCredentials(job)) {
-            return Optiona.of(new GitHubChecksPublisher(job));
+        GitHubChecksContext context = new GitHubChecksContext(job); // create a context to help extract configurations
+        return createPublisher(context, listener);
+    }
+
+    private Optional<ChecksPublisher> createPublisher(final GitHubChecksContext context, final TaskListener listener) {
+        if (context.isValid()) {
+            return Optiona.of(new GitHubChecksPublisher(context, listener));
         }
 
         return Optional.empty();
@@ -53,30 +54,20 @@ After getting the `ChecksPublisher`, the consumers will then invoke the `publish
 
 By overriding the `publish` method, you should publish checks to the target SCM platform based on the checks parameters or some other context parameters (like repository, branch, commit) from the `Run` or `Job`.
 
+For example, if you want to publish checks to GitHub, you may need a implementation like this:
 ```
 public class GitHubChecksPublisher extends ChecksPublisher {
-    private static final Logger LOGGER = Logger.getLogger(GitHubChecksPublisher.class.getName());
-
-    private final Job<?, ?> job;
-
-    /**
-     * Creates a publisher from run.
-     *
-     * @param run
-     *         a Jenkins run
-     */
-    public GitHubChecksPublisher(final Run<?, ?> run) {
-        this.job = run.getParent();
-    }
+    private final TaskListener listener;
+    private final GitHubChecksContext context;
 
     /**
-     * Creates a publisher from job.
+     * Creates a publisher from context.
      *
-     * @param job
-     *         a Jenkins job
+     * @param context
+     *         a context for this check which helps extract repository, branch, commit, credentials, etc.
      */
-    public GitHubChecksPublisher(final Job<?, ?> Job) {
-        this.job = job;
+    public GitHubChecksPublisher(final GitHubChecksContext context) {
+        this.context = context;
     }
 
     /**
@@ -88,17 +79,16 @@ public class GitHubChecksPublisher extends ChecksPublisher {
     @Override
     public void publish(final ChecksDetails details) {
         try {
-            GitHubAppCredentials credentials = getGitHubAppCredentials(job);
+            GitHubAppCredentials credentials = context.getCredentials();
             GitHub gitHub = Connector.connect(credentials.getApiUri(), gitHubUrl, credentials); // connect to GitHub
 
-            GitHubChecksContext context = new GitHubChecksContext(job); // extract context parameters
             GitHubChecksDetails gitHubDetails = new GitHubChecksDetails(details); // extract checks parameters for GitHub
 
             publish(gitHub, context, gitHubDetails); // actually publishes the check using thrid party libraries
-            LOGGER.log("GitHub check (name: %s, status: %s) has been published.", gitHubDetails.getName(), gitHubDetails.getStatus());
+            listener.getLogger().log("GitHub check (name: %s, status: %s) has been published.", gitHubDetails.getName(), gitHubDetails.getStatus());
         }
         catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed publishing GitHub checks: " + details, e);
+            listener.getLogger().log(Level.WARNING, "Failed publishing GitHub checks: " + details, e);
         }
     }
 
