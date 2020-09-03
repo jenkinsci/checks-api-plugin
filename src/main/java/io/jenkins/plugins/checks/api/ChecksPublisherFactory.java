@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import edu.hm.hafner.util.VisibleForTesting;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -58,18 +57,6 @@ public abstract class ChecksPublisherFactory implements ExtensionPoint {
      */
     protected Optional<ChecksPublisher> createPublisher(final Job<?, ?> job, final TaskListener listener) {
         return Optional.empty();
-    }
-
-    /**
-     * Returns a suitable publisher for the run.
-     *
-     * @param run
-     *         a Jenkins run
-     * @return a publisher suitable for the job
-     */
-    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "restore to 0.1.0 version api")
-    public static ChecksPublisher fromRun(final Run<?, ?> run) {
-        return fromRun(run, null, new JenkinsFacade());
     }
 
     /**
