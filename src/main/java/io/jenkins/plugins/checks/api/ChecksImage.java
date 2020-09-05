@@ -47,7 +47,7 @@ public class ChecksImage {
 
     /**
      * Returns the image URL.
-     * TODO: Exists for backward-compatibility, will be removed in 1.0.0.
+     * Note: This method will be deprecated after 1.0.0, use {@link ChecksImage#getImageURL()} instead.
      *
      * @return the image URL
      */
