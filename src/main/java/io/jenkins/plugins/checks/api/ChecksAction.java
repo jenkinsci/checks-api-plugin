@@ -5,13 +5,9 @@ import java.util.Optional;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
-
 /**
  * An action of a check. It can be used to create actions like re-run or automatic formatting.
  */
-@Restricted(Beta.class)
 public class ChecksAction {
     private final String label;
     private final String description;

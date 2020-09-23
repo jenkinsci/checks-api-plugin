@@ -6,15 +6,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
-
 import static java.util.Objects.requireNonNull;
 
 /**
  * Details of a check. This class is a top class which contains all parameters needed for a check.
  */
-@Restricted(Beta.class)
 @SuppressWarnings("PMD.DataClass")
 public class ChecksDetails {
     private final String name;
