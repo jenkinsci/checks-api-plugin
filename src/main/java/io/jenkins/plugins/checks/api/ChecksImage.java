@@ -5,13 +5,9 @@ import java.util.Optional;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
-
 /**
  * An image of a check. Users may use a image to show the code coverage, issues trend, etc.
  */
-@Restricted(Beta.class)
 @SuppressWarnings("PMD.DataClass")
 public class ChecksImage {
     private final String alt;

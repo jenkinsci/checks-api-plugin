@@ -3,13 +3,10 @@ package io.jenkins.plugins.checks.api;
 import hudson.model.Job;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.util.PluginLogger;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
 
 /**
  * A general publisher for publishing checks to different platforms.
  */
-@Restricted(Beta.class)
 public abstract class ChecksPublisher {
     /**
      * Publishes checks to platforms.
