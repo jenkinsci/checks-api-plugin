@@ -101,14 +101,13 @@
         <groupId>org.revapi</groupId>
         <artifactId>revapi-maven-plugin</artifactId>
         <configuration>
-          <versionFormat>[0-9.]*</versionFormat> 
-          <checkDependencies>false</checkDependencies>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
               <item>
                 <regex>true</regex>
-                <code>java.missing.*</code>
-                <justification>Dependencies are not being checked, so they are reported as missing</justification>
+                <code>java.annotation.removed</code>
+                <annotationType>org.kohsuke.accmod.Restricted</annotationType>
+                <justification>Beta restriction should be safe to remove.</justification>
               </item>
             </revapi.ignore>
           </analysisConfiguration>
