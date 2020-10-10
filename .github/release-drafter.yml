@@ -1,2 +1,3 @@
 _extends: .github
-tag-template: checks-api-$NEXT_MINOR_VERSION
+version-template: $MAJOR.$MINOR.$PATCH
+tag-template: v$NEXT_PATCH_VERSION
