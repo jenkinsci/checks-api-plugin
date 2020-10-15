@@ -29,18 +29,24 @@ import io.jenkins.plugins.util.JenkinsFacade;
  * or {@link Run}.
  */
 final public class BuildStatusChecksPublisher {
-    private static final JenkinsFacade jenkins = new JenkinsFacade();
-    private static final StatusChecksProperties defaultProperties = new DefaultStatusCheckProperties();
+    private static final JenkinsFacade JENKINS = new JenkinsFacade();
+    private static final StatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
-                                final ChecksConclusion conclusion, final StatusChecksProperties properties) {
-        if (properties.isActive()) {
+                                final ChecksConclusion conclusion, final String name) {
             publisher.publish(new ChecksDetailsBuilder()
-                    .withName(properties.getName())
+                    .withName(name)
                     .withStatus(status)
                     .withConclusion(conclusion)
                     .build());
-        }
+    }
+
+    private static StatusChecksProperties findProperties(Job<?, ?> job) {
+        return JENKINS.getExtensionsFor(StatusChecksProperties.class)
+                .stream()
+                .filter(p -> p.isApplicable(job))
+                .findFirst()
+                .orElse(DEFAULT_PROPERTIES);
     }
 
     /**
@@ -65,13 +71,12 @@ final public class BuildStatusChecksPublisher {
                 return;
             }
 
-            publish(ChecksPublisherFactory.fromJob((Job)wi.task, TaskListener.NULL),
-                    ChecksStatus.QUEUED, ChecksConclusion.NONE,
-                    jenkins.getExtensionsFor(StatusChecksProperties.class)
-                            .stream()
-                            .filter(properties -> properties.isApplicable((Job)wi.task))
-                            .findFirst()
-                            .orElse(defaultProperties));
+            final Job job = (Job)wi.task;
+            final StatusChecksProperties properties = findProperties(job);
+            if (!properties.isSkipped()) {
+                publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
+                        ChecksConclusion.NONE, properties.getName());
+            }
         }
     }
 
@@ -94,12 +99,12 @@ final public class BuildStatusChecksPublisher {
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
-            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
-                    jenkins.getExtensionsFor(StatusChecksProperties.class)
-                            .stream()
-                            .filter(properties -> properties.isApplicable(run))
-                            .findFirst()
-                            .orElse(defaultProperties));
+            final StatusChecksProperties properties = findProperties(run.getParent());
+
+            if (!properties.isSkipped()) {
+                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
+                        properties.getName());
+            }
         }
     }
 
@@ -121,12 +126,12 @@ final public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
-                    jenkins.getExtensionsFor(StatusChecksProperties.class)
-                            .stream()
-                            .filter(properties -> properties.isApplicable(run))
-                            .findFirst()
-                            .orElse(defaultProperties));
+            final StatusChecksProperties properties = findProperties(run.getParent());
+
+            if (!properties.isSkipped()) {
+                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
+                        properties.getName());
+            }
         }
 
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
@@ -156,22 +161,17 @@ final public class BuildStatusChecksPublisher {
 
 class DefaultStatusCheckProperties implements StatusChecksProperties {
     @Override
-    public String getName() {
-        return "Jenkins";
-    }
-
-    @Override
-    public boolean isActive() {
-        return true;
-    }
-
-    @Override
     public boolean isApplicable(final Job<?, ?> job) {
         return false;
     }
 
     @Override
-    public boolean isApplicable(final Run<?, ?> run) {
+    public String getName() {
+        return "Jenkins";
+    }
+
+    @Override
+    public boolean isSkipped() {
         return false;
     }
 }
