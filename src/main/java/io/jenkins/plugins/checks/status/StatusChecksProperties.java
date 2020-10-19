@@ -21,14 +21,35 @@ public interface StatusChecksProperties extends ExtensionPoint {
     /**
      * Returns the name of the status check.
      *
+     * @param job
+     *         A jenkins job.
      * @return the name of the status check
      */
-    String getName();
+    String getName(final Job<?, ?> job);
 
     /**
      * Returns if skip publishing status checks.
      *
+     * @param job
+     *         A jenkins job.
      * @return true if skip
      */
-    boolean isSkipped();
+    boolean isSkipped(final Job<?, ?> job);
+}
+
+class DefaultStatusCheckProperties implements StatusChecksProperties {
+    @Override
+    public boolean isApplicable(final Job<?, ?> job) {
+        return false;
+    }
+
+    @Override
+    public String getName(final Job<?, ?> job) {
+        return "Jenkins";
+    }
+
+    @Override
+    public boolean isSkipped(final Job<?, ?> job) {
+        return false;
+    }
 }

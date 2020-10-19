@@ -73,9 +73,9 @@ final public class BuildStatusChecksPublisher {
 
             final Job job = (Job)wi.task;
             final StatusChecksProperties properties = findProperties(job);
-            if (!properties.isSkipped()) {
+            if (!properties.isSkipped(job)) {
                 publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
-                        ChecksConclusion.NONE, properties.getName());
+                        ChecksConclusion.NONE, properties.getName(job));
             }
         }
     }
@@ -101,9 +101,9 @@ final public class BuildStatusChecksPublisher {
                                @CheckForNull final SCMRevisionState pollingBaseline) {
             final StatusChecksProperties properties = findProperties(run.getParent());
 
-            if (!properties.isSkipped()) {
+            if (!properties.isSkipped(run.getParent())) {
                 publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
-                        properties.getName());
+                        properties.getName(run.getParent()));
             }
         }
     }
@@ -128,9 +128,9 @@ final public class BuildStatusChecksPublisher {
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
             final StatusChecksProperties properties = findProperties(run.getParent());
 
-            if (!properties.isSkipped()) {
+            if (!properties.isSkipped(run.getParent())) {
                 publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
-                        properties.getName());
+                        properties.getName(run.getParent()));
             }
         }
 
@@ -156,22 +156,5 @@ final public class BuildStatusChecksPublisher {
                 throw new IllegalStateException("Unsupported run result: " + result);
             }
         }
-    }
-}
-
-class DefaultStatusCheckProperties implements StatusChecksProperties {
-    @Override
-    public boolean isApplicable(final Job<?, ?> job) {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return "Jenkins";
-    }
-
-    @Override
-    public boolean isSkipped() {
-        return false;
     }
 }
