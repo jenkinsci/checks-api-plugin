@@ -8,8 +8,6 @@ import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.util.PluginLogger;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
 import hudson.ExtensionPoint;
 
 import io.jenkins.plugins.checks.api.ChecksPublisher.NullChecksPublisher;
@@ -18,7 +16,6 @@ import io.jenkins.plugins.util.JenkinsFacade;
 /**
  * A publisher API for consumers to publish checks.
  */
-@Restricted(Beta.class)
 public abstract class ChecksPublisherFactory implements ExtensionPoint {
     /**
      * Creates a {@link ChecksPublisher} according to the {@link hudson.scm.SCM} used by the {@link Run}.
