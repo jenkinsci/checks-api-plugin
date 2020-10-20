@@ -19,7 +19,7 @@
 
   <properties>
     <java.level>8</java.level>
-    <revision>2.0.0</revision>
+    <revision>1.1.0</revision>
     <changelist>-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
@@ -108,6 +108,11 @@
                 <code>java.annotation.removed</code>
                 <annotationType>org.kohsuke.accmod.Restricted</annotationType>
                 <justification>Beta restriction should be safe to remove.</justification>
+              </item>
+              <item>
+                <code>java.class.removed</code>
+                <old>class io.jenkins.plugins.checks.BuildStatusChecksPublisher</old>
+                <justification>BuildStatusChecksPublisher has no consumers, should be safe to move.</justification>
               </item>
             </revapi.ignore>
           </analysisConfiguration>
