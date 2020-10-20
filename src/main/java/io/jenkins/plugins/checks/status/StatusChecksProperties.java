@@ -34,7 +34,7 @@ public interface StatusChecksProperties extends ExtensionPoint {
      *         A jenkins job.
      * @return true if skip
      */
-    boolean isSkipped(final Job<?, ?> job);
+    boolean isSkip(final Job<?, ?> job);
 }
 
 class DefaultStatusCheckProperties implements StatusChecksProperties {
@@ -49,7 +49,7 @@ class DefaultStatusCheckProperties implements StatusChecksProperties {
     }
 
     @Override
-    public boolean isSkipped(final Job<?, ?> job) {
+    public boolean isSkip(final Job<?, ?> job) {
         return false;
     }
 }

@@ -73,7 +73,7 @@ final public class BuildStatusChecksPublisher {
 
             final Job job = (Job)wi.task;
             final StatusChecksProperties properties = findProperties(job);
-            if (!properties.isSkipped(job)) {
+            if (!properties.isSkip(job)) {
                 publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
                         ChecksConclusion.NONE, properties.getName(job));
             }
@@ -101,7 +101,7 @@ final public class BuildStatusChecksPublisher {
                                @CheckForNull final SCMRevisionState pollingBaseline) {
             final StatusChecksProperties properties = findProperties(run.getParent());
 
-            if (!properties.isSkipped(run.getParent())) {
+            if (!properties.isSkip(run.getParent())) {
                 publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
                         properties.getName(run.getParent()));
             }
@@ -128,7 +128,7 @@ final public class BuildStatusChecksPublisher {
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
             final StatusChecksProperties properties = findProperties(run.getParent());
 
-            if (!properties.isSkipped(run.getParent())) {
+            if (!properties.isSkip(run.getParent())) {
                 publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
                         properties.getName(run.getParent()));
             }
