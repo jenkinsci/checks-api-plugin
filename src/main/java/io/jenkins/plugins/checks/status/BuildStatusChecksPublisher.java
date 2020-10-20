@@ -28,20 +28,20 @@ import io.jenkins.plugins.util.JenkinsFacade;
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
-final public class BuildStatusChecksPublisher {
+public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final StatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name) {
-            publisher.publish(new ChecksDetailsBuilder()
-                    .withName(name)
-                    .withStatus(status)
-                    .withConclusion(conclusion)
-                    .build());
+        publisher.publish(new ChecksDetailsBuilder()
+                .withName(name)
+                .withStatus(status)
+                .withConclusion(conclusion)
+                .build());
     }
 
-    private static StatusChecksProperties findProperties(Job<?, ?> job) {
+    private static StatusChecksProperties findProperties(final Job<?, ?> job) {
         return JENKINS.getExtensionsFor(StatusChecksProperties.class)
                 .stream()
                 .filter(p -> p.isApplicable(job))
