@@ -13,6 +13,7 @@ Implementations of this API decide on how to make use of these parameters and wh
 Known consumers:
 * [Warnings Next Generation Plugin](https://plugins.jenkins.io/warnings-ng)
 * [Code Coverage API Plugin](https://plugins.jenkins.io/code-coverage-api)
+* [JUnit Plugin](https://plugins.jenkins.io/junit/) - since 1.39
 
 Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
