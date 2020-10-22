@@ -50,6 +50,6 @@ class DefaultStatusCheckProperties implements StatusChecksProperties {
 
     @Override
     public boolean isSkip(final Job<?, ?> job) {
-        return false;
+        return true;
     }
 }
