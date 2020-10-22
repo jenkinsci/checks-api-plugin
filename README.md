@@ -25,7 +25,11 @@ This plugin, along with it's [GitHub implementation](https://plugins.jenkins.io/
 
 ![GitHub Status](docs/images/github-status.png)
 
-By listening to the Jenkins builds, this plugin will automatically publish statuses (pending, in progress, and completed) to different SCM platforms based on the remote repository the build is using.
+This plugin defines extension points to publish statuses to different SCM platforms.
+
+It depends on the implementation to decide whether to skip them and what name to use.
+
+If enabled, the statuses will be published in different stages of a Jenkins build (enters the queue, checkouts, and completes).
 
 ### Pipeline Usage
 
