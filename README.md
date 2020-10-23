@@ -14,6 +14,7 @@ Known consumers:
 * [Warnings Next Generation Plugin](https://plugins.jenkins.io/warnings-ng)
 * [Code Coverage API Plugin](https://plugins.jenkins.io/code-coverage-api)
 * [JUnit Plugin](https://plugins.jenkins.io/junit/) - since 1.39
+* [Autograding Plugin](https://plugins.jenkins.io/autograding)
 
 Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
