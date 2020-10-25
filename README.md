@@ -29,7 +29,7 @@ This plugin defines extension points to publish statuses to different SCM platfo
 
 It depends on the implementation to decide whether to skip them and what name to use.
 
-If enabled, the statuses will be published in different stages of a Jenkins build (enters the queue, checkouts, and completes).
+If enabled, the statuses will be published in different stages of a Jenkins build (enters the queue, checkout, and completes).
 
 ### Pipeline Usage
 
