@@ -117,7 +117,7 @@ There are three methods in this interface:
 
 - `boolean isApplicable(Job<?, ?> job)`
 
-    Implement this method to return `true` if your implementation does not applicable to the `job`.
+    Implement this method to return `true` if your implementation is not applicable to the `job`.
     
 - `String getName(Job<?, ?> job)`
 
