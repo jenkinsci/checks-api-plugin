@@ -101,3 +101,28 @@ public class GitHubChecksPublisher extends ChecksPublisher {
 The checks parameters are provided by consumers through the models in the [`api` package](https://github.com/jenkinsci/checks-api-plugin/tree/master/src/main/java/io/jenkins/plugins/checks/api).
 You can check the [consumers guide](consumers-guide.md#checks-parameters) for more details.
 
+## Check Status
+
+The status checks will be published for three different stages of a build:
+- Queued
+- Checkout
+- Completed
+
+When publishing the checks, this plugin will use the above API as a consumer.
+
+To control the properties of status checks,
+you need to implement the interface `StatusChecksProperties`.
+
+There are three methods in this interface:
+
+- `boolean isApplicable(Job<?, ?> job)`
+
+    Implement this method to return `true` if your implementation is applicable to the `job`.
+    
+- `String getName(Job<?, ?> job)`
+
+    Implement this method to return the name of the status checks for the `job`.
+    
+- `boolean isSkip(Job<?, ?> job)`
+
+   Implement this method to return `true` if you want to skip publishing status checks for the `job`.

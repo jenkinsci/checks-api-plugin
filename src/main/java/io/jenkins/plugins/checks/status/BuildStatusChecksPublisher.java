@@ -1,4 +1,4 @@
-package io.jenkins.plugins.checks;
+package io.jenkins.plugins.checks.status;
 
 import java.io.File;
 
@@ -22,21 +22,31 @@ import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
+import io.jenkins.plugins.util.JenkinsFacade;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
-public class BuildStatusChecksPublisher {
-    private static final String CHECKS_NAME = "Jenkins";
+public final class BuildStatusChecksPublisher {
+    private static final JenkinsFacade JENKINS = new JenkinsFacade();
+    private static final StatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
-                                final ChecksConclusion conclusion) {
+                                final ChecksConclusion conclusion, final String name) {
         publisher.publish(new ChecksDetailsBuilder()
-                .withName(CHECKS_NAME)
+                .withName(name)
                 .withStatus(status)
                 .withConclusion(conclusion)
                 .build());
+    }
+
+    private static StatusChecksProperties findProperties(final Job<?, ?> job) {
+        return JENKINS.getExtensionsFor(StatusChecksProperties.class)
+                .stream()
+                .filter(p -> p.isApplicable(job))
+                .findFirst()
+                .orElse(DEFAULT_PROPERTIES);
     }
 
     /**
@@ -61,8 +71,12 @@ public class BuildStatusChecksPublisher {
                 return;
             }
 
-            publish(ChecksPublisherFactory.fromJob((Job)wi.task, TaskListener.NULL),
-                    ChecksStatus.QUEUED, ChecksConclusion.NONE);
+            final Job job = (Job)wi.task;
+            final StatusChecksProperties properties = findProperties(job);
+            if (!properties.isSkip(job)) {
+                publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
+                        ChecksConclusion.NONE, properties.getName(job));
+            }
         }
     }
 
@@ -85,7 +99,12 @@ public class BuildStatusChecksPublisher {
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
-            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE);
+            final StatusChecksProperties properties = findProperties(run.getParent());
+
+            if (!properties.isSkip(run.getParent())) {
+                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
+                        properties.getName(run.getParent()));
+            }
         }
     }
 
@@ -107,7 +126,12 @@ public class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run));
+            final StatusChecksProperties properties = findProperties(run.getParent());
+
+            if (!properties.isSkip(run.getParent())) {
+                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
+                        properties.getName(run.getParent()));
+            }
         }
 
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
