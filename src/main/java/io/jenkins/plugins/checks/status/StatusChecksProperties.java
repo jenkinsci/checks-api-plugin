@@ -35,6 +35,14 @@ public interface StatusChecksProperties extends ExtensionPoint {
      * @return true if skip
      */
     boolean isSkip(Job<?, ?> job);
+
+    /**
+     * Returns true if unsable builds result in NEUTRAL conclusion, else it will result in FAILURE. Default is false.
+     * @param job
+     *         A jenkins job.
+     * @return true if UNSTABLE should be treated as a NEUTRAL.
+     */
+    boolean isUnstableNeutral(Job<?, ?> job);
 }
 
 class DefaultStatusCheckProperties implements StatusChecksProperties {
@@ -51,5 +59,10 @@ class DefaultStatusCheckProperties implements StatusChecksProperties {
     @Override
     public boolean isSkip(final Job<?, ?> job) {
         return true;
+    }
+
+    @Override
+    public boolean isUnstableNeutral(Job<?, ?> job) {
+        return false;
     }
 }

@@ -129,12 +129,16 @@ public final class BuildStatusChecksPublisher {
             final StatusChecksProperties properties = findProperties(run.getParent());
 
             if (!properties.isSkip(run.getParent())) {
-                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
-                        properties.getName(run.getParent()));
+                publish(
+                    ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.COMPLETED,
+                    extractConclusion(run, properties.isUnstableNeutral()),
+                    properties.getName(run.getParent())
+                );
             }
         }
 
-        private ChecksConclusion extractConclusion(final Run<?, ?> run) {
+        private ChecksConclusion extractConclusion(final Run<?, ?> run, boolean isUnstableNeutral) {
             Result result = run.getResult();
             if (result == null) {
                 throw new IllegalStateException("No result when the run completes, run: " + run.toString());
@@ -143,7 +147,10 @@ public final class BuildStatusChecksPublisher {
             if (result.isBetterOrEqualTo(Result.SUCCESS)) {
                 return ChecksConclusion.SUCCESS;
             }
-            else if (result.isBetterOrEqualTo(Result.UNSTABLE) || result.isBetterOrEqualTo(Result.FAILURE)) {
+            else if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
+                return isUnstableNeutral ? ChecksConclusion.NEUTRAL : ChecksConclusion.FAILURE;
+            }
+            else if (result.isBetterOrEqualTo(Result.FAILURE)) {
                 return ChecksConclusion.FAILURE;
             }
             else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {

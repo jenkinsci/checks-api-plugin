@@ -126,3 +126,7 @@ There are three methods in this interface:
 - `boolean isSkip(Job<?, ?> job)`
 
    Implement this method to return `true` if you want to skip publishing status checks for the `job`.
+
+- `boolean isUnstableNeutral(Job<?, ?> job)`
+
+   Implement this method to return `true` if you want `UNSTABLE` builds to result in `NEUTRAL` conclusions, or false to result in `FAILURE`.
