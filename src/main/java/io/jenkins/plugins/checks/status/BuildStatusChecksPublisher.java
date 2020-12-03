@@ -132,7 +132,7 @@ public final class BuildStatusChecksPublisher {
                 publish(
                     ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.COMPLETED,
-                    extractConclusion(run, properties.isUnstableNeutral()),
+                    extractConclusion(run, properties.isUnstableNeutral(run.getParent())),
                     properties.getName(run.getParent())
                 );
             }

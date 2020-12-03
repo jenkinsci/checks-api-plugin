@@ -62,7 +62,7 @@ class DefaultStatusCheckProperties implements StatusChecksProperties {
     }
 
     @Override
-    public boolean isUnstableNeutral(Job<?, ?> job) {
+    public boolean isUnstableNeutral(final Job<?, ?> job) {
         return false;
     }
 }
