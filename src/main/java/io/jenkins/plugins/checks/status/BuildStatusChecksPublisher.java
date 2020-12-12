@@ -30,7 +30,7 @@ import io.jenkins.plugins.util.JenkinsFacade;
  */
 public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
-    private static final StatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
+    private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name) {
@@ -46,7 +46,13 @@ public final class BuildStatusChecksPublisher {
                 .stream()
                 .filter(p -> p.isApplicable(job))
                 .findFirst()
-                .orElse(DEFAULT_PROPERTIES);
+                .orElse(
+                        JENKINS.getExtensionsFor(AbstractStatusChecksProperties.class)
+                        .stream()
+                        .filter(p -> p.isApplicable(job))
+                        .findFirst()
+                        .orElse(DEFAULT_PROPERTIES)
+                );
     }
 
     /**
