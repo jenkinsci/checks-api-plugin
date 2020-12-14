@@ -114,6 +114,16 @@
                 <old>class io.jenkins.plugins.checks.BuildStatusChecksPublisher</old>
                 <justification>BuildStatusChecksPublisher has no consumers, should be safe to move.</justification>
               </item>
+              <item>
+                <code>java.class.added</code>
+                <new>class io.jenkins.plugins.checks.steps.ChecksInfo</new>
+                <justification>Adding a new step wil not break back compatibility</justification>
+              </item>
+              <item>
+                <code>java.class.added</code>
+                <new>class io.jenkins.plugins.checks.steps.WithChecksStep</new>
+                <justification>Adding a new step wil not break back compatibility</justification>
+              </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>

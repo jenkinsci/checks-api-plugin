@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.steps;
 
+import edu.hm.hafner.util.VisibleForTesting;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -9,13 +10,19 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.Serializable;
 import java.util.*;
 
+/**
+ * Pipeline step that injects a {@link ChecksInfo} into the closure.
+ */
 public class WithChecksStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String name;
+    private final String name;
 
     /**
-     * Constructor used for pipeline by Stapler.
+     * Creates the step with a name to inject.
+     *
+     * @param name
+     *         name to inject
      */
     @DataBoundConstructor
     public WithChecksStep(final String name) {
@@ -26,9 +33,12 @@ public class WithChecksStep extends Step implements Serializable {
 
     @Override
     public StepExecution start(final StepContext stepContext) {
-        return new WithChecksStep.WithChecksStepExecution(stepContext, this);
+        return new WithChecksStepExecution(stepContext, this);
     }
 
+    /**
+     * This step's descriptor which defines the function name ("withChecks") and required context.
+     */
     @Extension
     public static class WithChecksStepDescriptor extends StepDescriptor {
         @Override
@@ -47,8 +57,13 @@ public class WithChecksStep extends Step implements Serializable {
         }
     }
 
+    /**
+     * The step's execution to actually inject the {@link ChecksInfo} into the closure.
+     */
     static class WithChecksStepExecution extends AbstractStepExecutionImpl {
-        private WithChecksStep step;
+        private static final long serialVersionUID = 1L;
+
+        private final WithChecksStep step;
 
         WithChecksStepExecution(final StepContext context, final WithChecksStep step) {
             super(context);
@@ -59,14 +74,19 @@ public class WithChecksStep extends Step implements Serializable {
         public boolean start() {
             StepContext context = getContext();
             context.newBodyInvoker()
-                    .withContext(new ChecksInfo(step.name))
+                    .withContext(extractChecksInfo())
                     .withCallback(BodyExecutionCallback.wrap(context))
                     .start();
             return false;
         }
 
+        @VisibleForTesting
+        ChecksInfo extractChecksInfo() {
+            return new ChecksInfo(step.name);
+        }
+
         @Override
-        public void stop(Throwable cause) {
+        public void stop(final Throwable cause) {
             getContext().onFailure(cause);
         }
     }
