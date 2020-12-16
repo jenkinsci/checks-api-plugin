@@ -18,7 +18,7 @@ import java.util.*;
 public class WithChecksStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String name;
+    private final String name;
 
     /**
      * Creates the step with a name to inject.
@@ -30,11 +30,6 @@ public class WithChecksStep extends Step implements Serializable {
     public WithChecksStep(final String name) {
         super();
 
-        this.name = name;
-    }
-
-    @DataBoundSetter
-    public void setName(final String name) {
         this.name = name;
     }
 
