@@ -1,11 +1,13 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.Serializable;
 import java.util.*;
@@ -16,7 +18,7 @@ import java.util.*;
 public class WithChecksStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private final String name;
+    private String name;
 
     /**
      * Creates the step with a name to inject.
@@ -29,6 +31,15 @@ public class WithChecksStep extends Step implements Serializable {
         super();
 
         this.name = name;
+    }
+
+    @DataBoundSetter
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -54,6 +65,12 @@ public class WithChecksStep extends Step implements Serializable {
         @Override
         public boolean takesImplicitBlockArgument() {
             return true;
+        }
+
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return "Inject checks properties into its closure";
         }
     }
 
