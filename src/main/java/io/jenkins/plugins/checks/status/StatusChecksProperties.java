@@ -3,6 +3,8 @@ package io.jenkins.plugins.checks.status;
 import hudson.ExtensionPoint;
 import hudson.model.Job;
 
+import java.sql.Statement;
+
 /**
  * Properties that controls status checks.
  *

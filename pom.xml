@@ -20,7 +20,6 @@
   <properties>
     <java.level>8</java.level>
     <revision>1.2.0</revision>
-    <changelist>-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>1.5.0</plugin-util-api.version>

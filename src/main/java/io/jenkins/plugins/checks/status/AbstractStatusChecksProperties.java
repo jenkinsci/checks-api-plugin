@@ -8,15 +8,33 @@ import hudson.model.Job;
  *
  * When no implementations is provided for a job, a {@link DefaultStatusCheckProperties} will be used.
  */
-public abstract class AbstractStatusChecksProperties implements StatusChecksProperties, ExtensionPoint {
-    @Override
+public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
+    /**
+     * Returns if the implementation is applicable for the {@code job}.
+     *
+     * @param job
+     *         A jenkins job.
+     * @return true if applicable
+     */
     public abstract boolean isApplicable(Job<?, ?> job);
 
-    @Override
+    /**
+     * Returns the name of the status check.
+     *
+     * @param job
+     *         A jenkins job.
+     * @return the name of the status check
+     */
     public abstract String getName(Job<?, ?> job);
 
-    @Override
-    public abstract boolean isSkip(Job<?, ?> job);
+    /**
+     * Returns if skip publishing status checks.
+     *
+     * @param job
+     *         A jenkins job.
+     * @return true if skip
+     */
+    public abstract boolean isSkipped(Job<?, ?> job);
 }
 
 class DefaultStatusCheckProperties extends AbstractStatusChecksProperties {
@@ -31,7 +49,7 @@ class DefaultStatusCheckProperties extends AbstractStatusChecksProperties {
     }
 
     @Override
-    public boolean isSkip(final Job<?, ?> job) {
+    public boolean isSkipped(final Job<?, ?> job) {
         return true;
     }
 }
