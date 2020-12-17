@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.steps;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * A collection of checks properties that will be injected into {@link WithChecksStep} closure.
@@ -17,6 +18,7 @@ public class ChecksInfo implements Serializable {
      *         the name of the check
      */
     public ChecksInfo(final String name) {
+        Objects.requireNonNull(name);
         this.name = name;
     }
 
