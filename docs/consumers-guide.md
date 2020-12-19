@@ -45,10 +45,20 @@ The factory will iterate all available implementations of the `ChecksPublisher` 
 
 ## Pipeline Step: withChecks
 
-The withChecks step injects a `ChecksInfo` object into its closure so that other plugin developers can resolve them in their [Step](https://javadoc.jenkins.io/plugin/workflow-step-api/org/jenkinsci/plugins/workflow/steps/Step.html) implementation:
+The `withChecks` step injects a `ChecksInfo` object into its closure by users:
+
+```groovy
+withChecks('MyCheck') {
+  junit '*.xml'
+}
+```
+
+The injected object can be resolved by other plugin developers in their [Step](https://javadoc.jenkins.io/plugin/workflow-step-api/org/jenkinsci/plugins/workflow/steps/Step.html) implementation:
 
 ```
 getContext().get(ChecksInfo.class)
 ```
 
-Currently, the `ChecksInfo` object only includes a `name` specified by users.
+Currently, the `ChecksInfo` object only includes a `name` specified by users,
+it is recommended that you look for this name and set it over your default checks name
+
