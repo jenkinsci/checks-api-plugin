@@ -20,6 +20,7 @@
   <properties>
     <java.level>8</java.level>
     <revision>1.2.0</revision>
+    <changelist>-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>1.6.0</plugin-util-api.version>
@@ -107,6 +108,7 @@
         <groupId>org.revapi</groupId>
         <artifactId>revapi-maven-plugin</artifactId>
         <configuration>
+          <versionFormat>\d+\.\d+\.\d+</versionFormat>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
               <item>
