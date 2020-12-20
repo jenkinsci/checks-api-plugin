@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.steps;
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
@@ -180,9 +181,16 @@ public class PublishChecksStep extends Step implements Serializable {
         }
 
         @VisibleForTesting
-        ChecksDetails extractChecksDetails() {
+        ChecksDetails extractChecksDetails() throws IOException, InterruptedException {
+            // If a checks name has been provided as part of the step, use that.
+            // If not, check to see if there is an active ChecksInfo context (e.g. from withChecks).
+            String checksName = Optional.ofNullable(Util.fixEmpty(step.getName())).orElse(
+                    Optional.ofNullable(getContext().get(ChecksInfo.class))
+                            .map(ChecksInfo::getName)
+                            .orElse(StringUtils.EMPTY)
+            );
             return new ChecksDetails.ChecksDetailsBuilder()
-                    .withName(step.getName())
+                    .withName(checksName)
                     .withStatus(step.getStatus())
                     .withConclusion(step.getConclusion())
                     .withDetailsURL(step.getDetailsURL())

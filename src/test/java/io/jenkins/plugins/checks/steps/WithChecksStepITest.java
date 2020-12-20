@@ -1,9 +1,14 @@
 package io.jenkins.plugins.checks.steps;
 
 import hudson.model.Run;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
+import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksStatus;
+import io.jenkins.plugins.checks.api.test.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.steps.*;
+import org.junit.After;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -20,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests the "withChecks" step.
  */
 public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
+
     /**
      * Tests that the step can inject the {@link ChecksInfo} into the closure.
      */
@@ -29,6 +35,68 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         job.setDefinition(asStage("withChecks('test injection') { assertChecksInfoInjection('test injection') }"));
 
         buildSuccessfully(job);
+    }
+
+    /**
+     * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
+     */
+    @TestExtension
+    public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
+
+    /**
+     * Clear captured checks on the {@link WithChecksStepITest#PUBLISHER_FACTORY} after each test.
+     */
+    @After
+    public void clearPublisher() {
+        PUBLISHER_FACTORY.getPublishedChecks().clear();
+    }
+
+    /**
+     * Test that the publishChecks step picks up names from the withChecks context.
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    public void publishChecksShouldTakeNameFromWithChecks() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks('test injection') { publishChecks() }"));
+
+        buildSuccessfully(job);
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+        ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+
+        assertThat(autoChecks.getName().get()).isEqualTo("test injection");
+        assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
+        assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+
+        assertThat(manualChecks.getName().get()).isEqualTo("test injection");
+        assertThat(manualChecks.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
+    }
+
+    /**
+     * Tests that withChecks step ignores names from the withChecks context if one has been explicitly set.
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Test
+    public void publishChecksShouldTakeNameFromWithChecksUnlessOverridden() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks('test injection') { publishChecks name: 'test override' }"));
+
+        buildSuccessfully(job);
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+        ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+
+        assertThat(autoChecks.getName().get()).isEqualTo("test injection");
+        assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
+        assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+
+        assertThat(manualChecks.getName().get()).isEqualTo("test override");
+        assertThat(manualChecks.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
 
     /**
