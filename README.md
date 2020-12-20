@@ -35,10 +35,18 @@ If enabled, the statuses will be published in different stages of a Jenkins buil
 
 ### Pipeline Usage
 
-Instead of depending on consumers plugins, the users can publish their checks directly in the pipeline script:
+- publishChecks: you can publish checks directly in the pipeline script instead of depending on consumer plugins:
 
 ```
 publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through pipeline', text: 'you can publish checks in pipeline script', detailsURL: 'https://github.com/jenkinsci/checks-api-plugin#pipeline-usage'
+```
+
+- withChecks: you can inject the check's name into the closure for other steps to use:
+
+```
+withChecks(name: 'injected name') {
+    // some other steps that will extract the name
+}
 ```
 
 ## Guides

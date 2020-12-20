@@ -42,3 +42,23 @@ Consumers can set these parameters through the checks models:
 
 The publishers are created through the static factory method (`fromRun` or `fromJob`) of `ChecksPublisherFactory`.
 The factory will iterate all available implementations of the `ChecksPublisher` in order to find the suitable publisher for the Jenkins `Run` or `Job`.
+
+## Pipeline Step: withChecks
+
+The `withChecks` step injects a `ChecksInfo` object into its closure by users:
+
+```groovy
+withChecks('MyCheck') {
+  junit '*.xml'
+}
+```
+
+The injected object can be resolved by other plugin developers in their [Step](https://javadoc.jenkins.io/plugin/workflow-step-api/org/jenkinsci/plugins/workflow/steps/Step.html) implementation:
+
+```
+getContext().get(ChecksInfo.class)
+```
+
+Currently, the `ChecksInfo` object only includes a `name` specified by users,
+it is recommended that you look for this name and set it over your default checks name
+

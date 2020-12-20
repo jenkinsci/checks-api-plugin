@@ -19,8 +19,7 @@
 
   <properties>
     <java.level>8</java.level>
-    <revision>1.1.2</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>1.2.0</revision>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>1.6.0</plugin-util-api.version>
@@ -54,6 +53,11 @@
       <version>${plugin-util-api.version}</version>
       <scope>test</scope>
       <type>test-jar</type>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>display-url-api</artifactId>
     </dependency>
 
     <dependency>
