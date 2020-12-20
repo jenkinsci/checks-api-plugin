@@ -10,7 +10,7 @@ import hudson.model.Job;
  */
 public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     /**
-     * Returns if the implementation is applicable for the {@code job}.
+     * Returns whether the implementation is applicable for the {@code job}.
      *
      * @param job
      *         A jenkins job.
@@ -28,7 +28,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     public abstract String getName(Job<?, ?> job);
 
     /**
-     * Returns if skip publishing status checks.
+     * Returns whether to skip publishing status checks.
      *
      * @param job
      *         A jenkins job.
