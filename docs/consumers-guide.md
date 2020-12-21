@@ -69,3 +69,5 @@ in the `test` classifier, as `io.jenkins.plugins.checks.api.test.CapturingChecks
 
 Adding the factory for this publisher as a `TestExtension` will allow inspection of published checks after running a job
 on a `JenkinsRule`.
+
+An example of this can be found in [PublishChecksStepITest](../src/test/java/io/jenkins/plugins/checks/steps/PublishChecksStepITest.java).
