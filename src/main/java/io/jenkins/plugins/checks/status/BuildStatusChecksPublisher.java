@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.status;
 
 import java.io.File;
+import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 
@@ -30,7 +31,7 @@ import io.jenkins.plugins.util.JenkinsFacade;
  */
 public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
-    private static final StatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
+    private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name) {
@@ -41,8 +42,16 @@ public final class BuildStatusChecksPublisher {
                 .build());
     }
 
-    private static StatusChecksProperties findProperties(final Job<?, ?> job) {
+    @Deprecated
+    private static Optional<StatusChecksProperties> findDeprecatedProperties(final Job<?, ?> job) {
         return JENKINS.getExtensionsFor(StatusChecksProperties.class)
+                .stream()
+                .filter(p -> p.isApplicable(job))
+                .findFirst();
+    }
+
+    private static AbstractStatusChecksProperties findProperties(final Job<?, ?> job) {
+        return JENKINS.getExtensionsFor(AbstractStatusChecksProperties.class)
                 .stream()
                 .filter(p -> p.isApplicable(job))
                 .findFirst()
@@ -72,10 +81,19 @@ public final class BuildStatusChecksPublisher {
             }
 
             final Job job = (Job)wi.task;
-            final StatusChecksProperties properties = findProperties(job);
-            if (!properties.isSkip(job)) {
-                publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
-                        ChecksConclusion.NONE, properties.getName(job));
+            Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
+            if (deprecatedProperties.isPresent()) {
+                if (!deprecatedProperties.get().isSkip(job)) {
+                    publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
+                            ChecksConclusion.NONE, deprecatedProperties.get().getName(job));
+                }
+            }
+            else {
+                final AbstractStatusChecksProperties properties = findProperties(job);
+                if (!properties.isSkipped(job)) {
+                    publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
+                            ChecksConclusion.NONE, properties.getName(job));
+                }
             }
         }
     }
@@ -99,11 +117,20 @@ public final class BuildStatusChecksPublisher {
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
-            final StatusChecksProperties properties = findProperties(run.getParent());
-
-            if (!properties.isSkip(run.getParent())) {
-                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
-                        properties.getName(run.getParent()));
+            final Job job = run.getParent();
+            final Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
+            if (deprecatedProperties.isPresent()) {
+                if (!deprecatedProperties.get().isSkip(job)) {
+                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS,
+                            ChecksConclusion.NONE, deprecatedProperties.get().getName(job));
+                }
+            }
+            else {
+                final AbstractStatusChecksProperties properties = findProperties(job);
+                if (!properties.isSkipped(job)) {
+                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS,
+                            ChecksConclusion.NONE, properties.getName(job));
+                }
             }
         }
     }
@@ -126,11 +153,20 @@ public final class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            final StatusChecksProperties properties = findProperties(run.getParent());
-
-            if (!properties.isSkip(run.getParent())) {
-                publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED, extractConclusion(run),
-                        properties.getName(run.getParent()));
+            final Job job = run.getParent();
+            final Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
+            if (deprecatedProperties.isPresent()) {
+                if (!deprecatedProperties.get().isSkip(job)) {
+                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED,
+                            extractConclusion(run), deprecatedProperties.get().getName(job));
+                }
+            }
+            else {
+                final AbstractStatusChecksProperties properties = findProperties(job);
+                if (!properties.isSkipped(job)) {
+                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED,
+                            extractConclusion(run), properties.getName(job));
+                }
             }
         }
 
