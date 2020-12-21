@@ -54,7 +54,6 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
     /**
      * Test that the publishChecks step picks up names from the withChecks context.
      */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void publishChecksShouldTakeNameFromWithChecks() {
         WorkflowJob job = createPipeline();
@@ -66,11 +65,11 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
         ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
 
-        assertThat(autoChecks.getName().get()).isEqualTo("test injection");
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test injection");
         assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
 
-        assertThat(manualChecks.getName().get()).isEqualTo("test injection");
+        assertThat(manualChecks.getName()).isPresent().get().isEqualTo("test injection");
         assertThat(manualChecks.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
@@ -78,7 +77,6 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
     /**
      * Tests that withChecks step ignores names from the withChecks context if one has been explicitly set.
      */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     public void publishChecksShouldTakeNameFromWithChecksUnlessOverridden() {
         WorkflowJob job = createPipeline();
@@ -90,11 +88,11 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
         ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
 
-        assertThat(autoChecks.getName().get()).isEqualTo("test injection");
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test injection");
         assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
 
-        assertThat(manualChecks.getName().get()).isEqualTo("test override");
+        assertThat(manualChecks.getName()).isPresent().get().isEqualTo("test override");
         assertThat(manualChecks.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
