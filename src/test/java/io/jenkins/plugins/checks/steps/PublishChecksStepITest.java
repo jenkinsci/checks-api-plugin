@@ -13,7 +13,6 @@ import org.jvnet.hudson.test.TestExtension;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * Tests the pipeline step to publish checks.

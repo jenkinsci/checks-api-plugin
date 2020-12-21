@@ -7,7 +7,6 @@ skinparam component {
 }
 
 [API] <<..checks.api>>
-[Test] <<..checks.api.test>>
 [Steps] <<..checks.steps>>
 [Status] <<..checks.status>>
 [Checks] <<..checks>>
@@ -15,6 +14,5 @@ skinparam component {
 [Steps] --> [API]
 [Status] --> [API]
 [Checks] --> [API]
-[Test] --> [API]
 
 @enduml

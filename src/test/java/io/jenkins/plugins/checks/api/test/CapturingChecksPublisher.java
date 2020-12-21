@@ -18,7 +18,8 @@ import java.util.Optional;
  * For example:
  *
  * <pre>
- * public class ChecksPublishingTest {
+ * public class ChecksPublishingTest extends IntegrationTestWithJenkinsPerTest {
+ *
  *     &#64;TestExtension
  *     public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
  *
@@ -26,8 +27,20 @@ import java.util.Optional;
  *     public void clearPublishedChecks() {
  *         PUBLISHER_FACTORY.getPublishedChecks().clear();
  *     }
+ *
+ *     &#64;Test
+ *     public void testChecksPublishing() {
+ *
+ *         // ...Run a test job...
+ *
+ *         List&lt;ChecksDetails&gt; publishedDetails = PUBLISHER_FACTORY.getPublishedChecks();
+ *
+ *         // ...Inspect published checks...
+ *     }
  * }
  * </pre>
+ *
+ * An example of this can be found in {@link io.jenkins.plugins.checks.steps.PublishChecksStepITest}
  */
 public class CapturingChecksPublisher extends ChecksPublisher {
 
