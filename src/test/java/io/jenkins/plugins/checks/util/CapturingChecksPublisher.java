@@ -1,4 +1,4 @@
-package io.jenkins.plugins.checks.api.test;
+package io.jenkins.plugins.checks.util;
 
 import hudson.ExtensionList;
 import hudson.model.Job;
