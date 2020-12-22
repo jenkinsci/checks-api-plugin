@@ -13,6 +13,10 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Tests that the {@link BuildStatusChecksPublisher} listens to the status of a {@link Run} and publishes status
+ * accordingly.
+ */
 public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
     private static final String STATUS_TEMPLATE = "Published Checks (name: %s, status: %s, conclusion %s)%n";
 
@@ -22,9 +26,18 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     @TestExtension
     public static final LoggingChecksPublisher.Factory PUBLISHER_FACTORY = new LoggingChecksPublisher.Factory();
 
+    /**
+     * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
+     */
     @TestExtension
     public static final ChecksProperties PROPERTIES = new ChecksProperties();
 
+    /**
+     * Tests when the implementation of {@link AbstractStatusChecksProperties} is not applicable,
+     * a status checks should not be published.
+     *
+     * @throws IOException if failed getting log from {@link Run}
+     */
     @Test
     public void shouldNotPublishStatusWhenNotApplicable() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
@@ -37,6 +50,11 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                 .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "COMPLETED", "SUCCESS"));
     }
 
+    /**
+     * Tests when status checks is skipped, a status checks should not be published.
+     *
+     * @throws IOException if failed getting log from {@link Run}
+     */
     @Test
     public void shouldNotPublishStatusWhenSkipped() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
@@ -49,9 +67,14 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(JenkinsRule.getLog(buildSuccessfully(createFreeStyleProject())))
                 .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "IN_PROGRESS", "NONE"))
                 .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "COMPLETED", "SUCCESS"));
-
     }
 
+    /**
+     * Tests when an implementation of {@link AbstractStatusChecksProperties} is applicable and not skipped,
+     * a status checks using the specified name should be published.
+     *
+     * @throws IOException if failed getting log from {@link Run}
+     */
     @Test
     public void shouldPublishStatusWithProperties() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
