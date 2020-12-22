@@ -23,7 +23,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      * Provide a {@link io.jenkins.plugins.checks.util.LoggingChecksPublisher} to log details.
      */
     @TestExtension
-    public static final LoggingChecksPublisher.Factory PUBLISHER_FACTORY = new LoggingChecksPublisher.Factory();
+    public static final LoggingChecksPublisher.Factory PUBLISHER_FACTORY =
+            new LoggingChecksPublisher.Factory(details -> String.format(STATUS_TEMPLATE,
+                    details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
+                    details.getStatus(), details.getConclusion()));
 
     /**
      * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
@@ -39,10 +42,6 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldNotPublishStatusWhenNotApplicable() throws IOException {
-        PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
-                details.getStatus(), details.getConclusion()));
-
         PROPERTIES.setApplicable(false);
 
         assertThat(JenkinsRule.getLog(buildSuccessfully(createFreeStyleProject())))
@@ -57,10 +56,6 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldNotPublishStatusWhenSkipped() throws IOException {
-        PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
-                details.getStatus(), details.getConclusion()));
-
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(true);
         PROPERTIES.setName("Test Status");
@@ -78,10 +73,6 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldPublishStatusWithProperties() throws IOException {
-        PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
-                details.getStatus(), details.getConclusion()));
-
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
         PROPERTIES.setName("Test Status");

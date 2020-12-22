@@ -61,6 +61,22 @@ public class LoggingChecksPublisher extends ChecksPublisher {
     public static class Factory extends ChecksPublisherFactory {
         private final LoggingChecksPublisher publisher = new LoggingChecksPublisher();
 
+        /**
+         * Constructs without adding formatter.
+         */
+        public Factory() {
+        }
+
+        /**
+         * Constructs with the formatter which will be used to format {@link ChecksDetails} when publishing.
+         *
+         * @param formatter
+         *         formatter for {@link ChecksDetails}
+         */
+        public Factory(final Formatter formatter) {
+            publisher.formatter = formatter;
+        }
+
         public void setFormatter(final Formatter formatter) {
             publisher.formatter = formatter;
         }
