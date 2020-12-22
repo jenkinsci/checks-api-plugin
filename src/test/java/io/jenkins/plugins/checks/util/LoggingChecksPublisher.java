@@ -22,6 +22,11 @@ import java.util.Optional;
  *
  *     &#64;Test
  *     public void shouldLogChecks() {
+ *         // ...Set up the formatter...
+ *         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
+ *             details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
+ *             details.getStatus(), details.getConclusion()));
+ *
  *         // ...Run a test job...
  *         Run<?, ?> run = buildSuccessfully(createFreeStyleProject());
  *

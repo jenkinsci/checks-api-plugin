@@ -4,7 +4,6 @@ import hudson.model.Job;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.util.LoggingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
@@ -41,7 +40,8 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     @Test
     public void shouldNotPublishStatusWhenNotApplicable() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElse(StringUtils.EMPTY), details.getStatus(), details.getConclusion()));
+                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
+                details.getStatus(), details.getConclusion()));
 
         PROPERTIES.setApplicable(false);
 
@@ -58,7 +58,8 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     @Test
     public void shouldNotPublishStatusWhenSkipped() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElse(StringUtils.EMPTY), details.getStatus(), details.getConclusion()));
+                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
+                details.getStatus(), details.getConclusion()));
 
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(true);
@@ -78,7 +79,8 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     @Test
     public void shouldPublishStatusWithProperties() throws IOException {
         PUBLISHER_FACTORY.setFormatter(details -> String.format(STATUS_TEMPLATE,
-                details.getName().orElse(StringUtils.EMPTY), details.getStatus(), details.getConclusion()));
+                details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
+                details.getStatus(), details.getConclusion()));
 
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
