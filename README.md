@@ -66,3 +66,5 @@ This plugin was started as a [Google Summer of Code 2020 project](https://summer
 ## LICENSE
 
 Licensed under MIT, see [LICENSE](LICENSE)
+
+Help!
