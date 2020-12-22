@@ -62,3 +62,12 @@ getContext().get(ChecksInfo.class)
 Currently, the `ChecksInfo` object only includes a `name` specified by users,
 it is recommended that you look for this name and set it over your default checks name
 
+## Integration Testing
+
+An implementation of `ChecksPublisher` that captures all published `ChecksDetails` is provided
+in the `test` classifier, as `io.jenkins.plugins.checks.api.test.CapturingChecksPublisher`.
+
+Adding the factory for this publisher as a `TestExtension` will allow inspection of published checks after running a job
+on a `JenkinsRule`.
+
+An example of this can be found in [PublishChecksStepITest](../src/test/java/io/jenkins/plugins/checks/steps/PublishChecksStepITest.java).

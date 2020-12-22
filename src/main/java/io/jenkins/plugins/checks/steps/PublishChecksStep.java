@@ -180,9 +180,16 @@ public class PublishChecksStep extends Step implements Serializable {
         }
 
         @VisibleForTesting
-        ChecksDetails extractChecksDetails() {
+        ChecksDetails extractChecksDetails() throws IOException, InterruptedException {
+            // If a checks name has been provided as part of the step, use that.
+            // If not, check to see if there is an active ChecksInfo context (e.g. from withChecks).
+            String checksName = StringUtils.defaultIfEmpty(step.getName(),
+                    Optional.ofNullable(getContext().get(ChecksInfo.class))
+                            .map(ChecksInfo::getName)
+                            .orElse(StringUtils.EMPTY)
+            );
             return new ChecksDetails.ChecksDetailsBuilder()
-                    .withName(step.getName())
+                    .withName(checksName)
                     .withStatus(step.getStatus())
                     .withConclusion(step.getConclusion())
                     .withDetailsURL(step.getDetailsURL())
