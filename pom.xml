@@ -136,7 +136,7 @@
             </goals>
             <configuration>
               <includes combine.children="append">
-                <include>**/api/test/**</include>
+                <include>**/util/**</include>
               </includes>
             </configuration>
           </execution>
