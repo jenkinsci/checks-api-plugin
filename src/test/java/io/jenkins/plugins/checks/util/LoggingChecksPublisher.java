@@ -65,6 +65,7 @@ public class LoggingChecksPublisher extends ChecksPublisher {
          * Constructs without adding formatter.
          */
         public Factory() {
+            super();
         }
 
         /**
@@ -74,6 +75,8 @@ public class LoggingChecksPublisher extends ChecksPublisher {
          *         formatter for {@link ChecksDetails}
          */
         public Factory(final Formatter formatter) {
+            super();
+
             publisher.formatter = formatter;
         }
 
