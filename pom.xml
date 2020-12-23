@@ -89,6 +89,12 @@
       <version>${pipeline-stage-step.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- steps -->
+    <dependency>
+      <groupId>org.jenkins-ci.plugins.workflow</groupId>
+      <artifactId>workflow-basic-steps</artifactId>
+      <scope>test></scope>
+    </dependency>
   </dependencies>
 
   <build>

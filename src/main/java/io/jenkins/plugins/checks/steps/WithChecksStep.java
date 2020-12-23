@@ -7,6 +7,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.*;
 import io.jenkins.plugins.util.PluginLogger;
+import jenkins.model.CauseOfInterruption;
 import org.jenkinsci.plugins.displayurlapi.DisplayURLProvider;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -16,6 +17,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static hudson.Util.fixNull;
 
@@ -174,13 +176,29 @@ public class WithChecksStep extends Step implements Serializable {
 
             @Override
             public void onFailure(final StepContext context, final Throwable t) {
-                publish(context, new ChecksDetails.ChecksDetailsBuilder()
+                ChecksDetails.ChecksDetailsBuilder builder = new ChecksDetails.ChecksDetailsBuilder()
                         .withName(info.getName())
-                        .withStatus(ChecksStatus.COMPLETED)
-                        .withConclusion(ChecksConclusion.FAILURE)
-                        .withOutput(new ChecksOutput.ChecksOutputBuilder()
-                                .withSummary("occurred while executing withChecks step.")
-                                .withText(t.toString()).build()));
+                        .withStatus(ChecksStatus.COMPLETED);
+                ChecksOutput.ChecksOutputBuilder outputBuilder = new ChecksOutput.ChecksOutputBuilder()
+                        .withSummary("occurred while executing withChecks step.");
+                if (t instanceof FlowInterruptedException) {
+                    FlowInterruptedException fi = (FlowInterruptedException) t;
+                    String summary = fi.getCauses()
+                            .stream()
+                            .map(CauseOfInterruption::getShortDescription)
+                            .collect(Collectors.joining("\n\n"));
+                    builder.withConclusion(ChecksConclusion.CANCELED)
+                            .withOutput(outputBuilder
+                                    .withText(summary)
+                                    .build());
+
+                }
+                else {
+                    builder.withConclusion(ChecksConclusion.FAILURE)
+                            .withOutput(outputBuilder
+                                    .withText(t.toString()).build());
+                }
+                publish(context, builder);
                 context.onFailure(t);
             }
         }
