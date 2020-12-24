@@ -1,13 +1,16 @@
 package io.jenkins.plugins.checks.steps;
 
+import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.steps.*;
+import org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution;
 import org.junit.After;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
@@ -95,6 +98,50 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         assertThat(manualChecks.getName()).isPresent().get().isEqualTo("test override");
         assertThat(manualChecks.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
+    }
+
+    /**
+     * Test that withChecks correctly reports failures.
+     */
+    @Test
+    public void withChecksShouldDetectFailure() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks('test injection') { error 'oh no!' }"));
+
+        buildWithResult(job, Result.FAILURE);
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails failure = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+
+        assertThat(failure.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(failure.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
+        assertThat(failure.getOutput()).isPresent();
+
+        assertThat(failure.getOutput().get().getText()).isPresent();
+        assertThat(failure.getOutput().get().getText().get()).contains("oh no!");
+    }
+
+    /**
+     * Test that withChecks correctly reports aborts.
+     */
+    @Test
+    public void withChecksShouldDetectAbort() {
+        WorkflowJob job = createPipeline();
+        // Simulate a job cancellation.
+        job.setDefinition(new CpsFlowDefinition("withChecks('test injection') { throw new org.jenkinsci.plugins.workflow.steps.FlowInterruptedException("
+                + "hudson.model.Result.ABORTED, new org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution.RemovedNodeCause()) }", false));
+
+        buildWithResult(job, Result.ABORTED);
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails abort = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+
+        assertThat(abort.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(abort.getConclusion()).isEqualTo(ChecksConclusion.CANCELED);
+        assertThat(abort.getOutput()).isPresent();
+
+        assertThat(abort.getOutput().get().getText()).isPresent();
+        assertThat(abort.getOutput().get().getText().get()).isEqualTo(new ExecutorStepExecution.RemovedNodeCause().getShortDescription());
     }
 
     /**
