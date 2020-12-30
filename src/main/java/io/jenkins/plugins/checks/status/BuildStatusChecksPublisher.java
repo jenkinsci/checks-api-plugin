@@ -9,9 +9,6 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import hudson.model.queue.QueueListener;
-import io.jenkins.blueocean.rest.hal.Link;
-import io.jenkins.blueocean.rest.hal.LinkResolver;
-import io.jenkins.blueocean.rest.impl.pipeline.PipelineNodeUtil;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksOutput;
@@ -20,8 +17,8 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.util.JenkinsFacade;
 import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.plugins.displayurlapi.DisplayURLProvider;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.actions.ThreadNameAction;
 import org.jenkinsci.plugins.workflow.actions.WarningAction;
 import org.jenkinsci.plugins.workflow.flow.GraphListener;
@@ -163,6 +160,17 @@ public final class BuildStatusChecksPublisher {
         }
     }
 
+    private static boolean isStage(FlowNode node) {
+        return node !=null && node.getAction(LabelAction.class) != null &&
+                node.getAction(ThreadNameAction.class) == null;
+    }
+
+    private static boolean isParallelBranch(FlowNode node) {
+        return node != null && node.getAction(LabelAction.class) != null &&
+                node.getAction(ThreadNameAction.class) != null;
+
+    }
+
     protected static String getOutputSummary(Run<?, ?> run) {
         FlowGraphTableAction flowGraphTableAction = run.getAction(FlowGraphTableAction.class);
 
@@ -176,12 +184,10 @@ public final class BuildStatusChecksPublisher {
 
         StringBuilder builder = new StringBuilder();
 
-        String urlRoot = DisplayURLProvider.getDefault().getRoot();
-
         table.getRows()
                 .forEach(row -> {
-                    boolean isStage = PipelineNodeUtil.isStage(row.getNode());
-                    boolean isParallel = PipelineNodeUtil.isParallelBranch(row.getNode());
+                    boolean isStage = isStage(row.getNode());
+                    boolean isParallel = isParallelBranch(row.getNode());
                     ErrorAction errorAction = row.getNode().getError();
                     WarningAction warningAction = row.getNode().getPersistentAction(WarningAction.class);
 
@@ -208,12 +214,7 @@ public final class BuildStatusChecksPublisher {
                         } else {
                             displayName = row.getNode().getDisplayName();
                         }
-                        Optional<Link> link = Optional.ofNullable(LinkResolver.resolveLink(row.getNode()));
-                        if (link.isPresent()) {
-                            builder.append(String.format("[%s](%s%s)", displayName, urlRoot, link.get()));
-                        } else {
-                            builder.append(displayName);
-                        }
+                        builder.append(displayName);
 
                         if (row.getNode().isActive()) {
                             builder.append(" *(running)*");
@@ -238,10 +239,10 @@ public final class BuildStatusChecksPublisher {
      * {@inheritDoc}
      */
     @Extension
-    public static class ChecksGraphListener implements GraphListener.Synchronous {
+    public static class ChecksGraphListener implements GraphListener {
         @Override
         public void onNewHead(FlowNode node) {
-            if (!PipelineNodeUtil.isStage(node) && !PipelineNodeUtil.isParallelBranch(node)) {
+            if (!isStage(node) && !isParallelBranch(node)) {
                 return;
             }
 
