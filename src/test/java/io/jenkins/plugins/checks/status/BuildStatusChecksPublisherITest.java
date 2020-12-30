@@ -3,18 +3,18 @@ package io.jenkins.plugins.checks.status;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
-import io.jenkins.plugins.checks.util.LoggingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.junit.After;
 import org.junit.Test;
-import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,19 +24,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * accordingly.
  */
 public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
-    private static final String STATUS_TEMPLATE = "Published Checks (name: %s, status: %s, conclusion %s)%n";
 
     /**
-     * Provide a {@link io.jenkins.plugins.checks.util.LoggingChecksPublisher} to log details.
+     * Provide a {@link io.jenkins.plugins.checks.util.CapturingChecksPublisher} to capture details.
      */
-//    @TestExtension
-//    public static final LoggingChecksPublisher.Factory PUBLISHER_FACTORY =
-//            new LoggingChecksPublisher.Factory(details -> String.format(STATUS_TEMPLATE,
-//                    details.getName().orElseThrow(() -> new IllegalStateException("Empty check name")),
-//                    details.getStatus(), details.getConclusion()));
-
     @TestExtension
     public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
+
+    /**
+     * Clean captured checks between tests.
+     */
+    @After
+    public void clearChecks() {
+        PUBLISHER_FACTORY.getPublishedChecks().clear();
+    }
 
     /**
      * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
@@ -47,54 +48,59 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     /**
      * Tests when the implementation of {@link AbstractStatusChecksProperties} is not applicable,
      * a status checks should not be published.
-     *
-     * @throws IOException if failed getting log from {@link Run}
      */
     @Test
-    public void shouldNotPublishStatusWhenNotApplicable() throws IOException {
+    public void shouldNotPublishStatusWhenNotApplicable() {
         PROPERTIES.setApplicable(false);
 
-        assertThat(JenkinsRule.getLog(buildSuccessfully(createFreeStyleProject())))
-                .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "IN_PROGRESS", "NONE"))
-                .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "COMPLETED", "SUCCESS"));
+        buildSuccessfully(createFreeStyleProject());
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(0);
     }
 
     /**
      * Tests when status checks is skipped, a status checks should not be published.
-     *
-     * @throws IOException if failed getting log from {@link Run}
      */
     @Test
-    public void shouldNotPublishStatusWhenSkipped() throws IOException {
+    public void shouldNotPublishStatusWhenSkipped() {
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(true);
         PROPERTIES.setName("Test Status");
 
-        assertThat(JenkinsRule.getLog(buildSuccessfully(createFreeStyleProject())))
-                .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "IN_PROGRESS", "NONE"))
-                .doesNotContain(String.format(STATUS_TEMPLATE, "Test Status", "COMPLETED", "SUCCESS"));
+        buildSuccessfully(createFreeStyleProject());
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(0);
     }
 
     /**
      * Tests when an implementation of {@link AbstractStatusChecksProperties} is applicable and not skipped,
      * a status checks using the specified name should be published.
-     *
-     * @throws IOException if failed getting log from {@link Run}
      */
     @Test
-    public void shouldPublishStatusWithProperties() throws IOException {
+    public void shouldPublishStatusWithProperties() {
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
         PROPERTIES.setName("Test Status");
 
-        Run<?, ?> run = buildSuccessfully(createFreeStyleProject());
-        assertThat(JenkinsRule.getLog(run))
-                .contains(String.format(STATUS_TEMPLATE, "Test Status", "IN_PROGRESS", "NONE"))
-                .contains(String.format(STATUS_TEMPLATE, "Test Status", "COMPLETED", "SUCCESS"));
+        buildSuccessfully(createFreeStyleProject());
+
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(2);
+
+        ChecksDetails details1 = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+
+        assertThat(details1.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details1.getStatus()).isEqualTo(ChecksStatus.QUEUED);
+        assertThat(details1.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+
+        ChecksDetails details2 = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+
+        assertThat(details2.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details2.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details2.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
 
     @Test
-    public void shouldPublishStageDetails() throws Exception {
+    public void shouldPublishStageDetails() {
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
         PROPERTIES.setName("Test Status");
