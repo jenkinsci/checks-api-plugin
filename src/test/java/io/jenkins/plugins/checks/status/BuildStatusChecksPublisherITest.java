@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests that the {@link BuildStatusChecksPublisher} listens to the status of a {@link Run} and publishes status
  * accordingly.
  */
+@SuppressWarnings("PMD.AddEmptyString")
 public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
 
     /**
@@ -99,6 +100,9 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details2.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
 
+    /**
+     * Test checks output includes pipeline details.
+     */
     @Test
     public void shouldPublishStageDetails() {
         PROPERTIES.setApplicable(true);
@@ -106,23 +110,23 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         PROPERTIES.setName("Test Status");
         WorkflowJob job = createPipeline();
 
-        job.setDefinition(new CpsFlowDefinition("" +
-                "node {\n" +
-                "  stage('Simple Stage') {\n" +
-                "  }\n" +
-                "  stage('In parallel') {\n" +
-                "    parallel 'p1': {\n" +
-                "      stage('p1s1') {\n" +
-                "        unstable('something went wrong')\n" +
-                "      }\n" +
-                "      stage('p1s2') {\n" +
-                "      }\n" +
-                "    }, 'p2': {}\n" +
-                "  }\n" +
-                "  stage('Fails') {\n" +
-                "    error('something went very wrong')\n" +
-                "  }\n" +
-                "}", true));
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  stage('Simple Stage') {\n"
+                + "  }\n"
+                + "  stage('In parallel') {\n"
+                + "    parallel 'p1': {\n"
+                + "      stage('p1s1') {\n"
+                + "        unstable('something went wrong')\n"
+                + "      }\n"
+                + "      stage('p1s2') {\n"
+                + "      }\n"
+                + "    }, 'p2': {}\n"
+                + "  }\n"
+                + "  stage('Fails') {\n"
+                + "    error('something went very wrong')\n"
+                + "  }\n"
+                + "}", true));
 
         buildWithResult(job, Result.FAILURE);
         PUBLISHER_FACTORY.getPublishedChecks().stream()
