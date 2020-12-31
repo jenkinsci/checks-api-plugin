@@ -94,7 +94,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-basic-steps</artifactId>
-      <scope>test></scope>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

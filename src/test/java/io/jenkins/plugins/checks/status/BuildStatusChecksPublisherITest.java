@@ -124,7 +124,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                 + "    }, 'p2': {}\n"
                 + "  }\n"
                 + "  stage('Fails') {\n"
-                + "    error('something went very wrong')\n"
+                + "    archiveArtifacts artifacts: 'oh dear', fingerprint: true\n"
                 + "  }\n"
                 + "}", true));
 
@@ -133,10 +133,11 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                 .map(ChecksDetails::getOutput)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(ChecksOutput::getSummary)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(System.out::println);
+                .forEach(s -> {
+                    System.out.println("-------------------");
+                    System.out.println(s);
+                    System.out.println("-------------------");
+                });
     }
 
     static class ChecksProperties extends AbstractStatusChecksProperties {
