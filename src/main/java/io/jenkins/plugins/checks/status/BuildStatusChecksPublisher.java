@@ -33,7 +33,7 @@ public final class BuildStatusChecksPublisher {
 
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
-    private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65535;
+    private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65_535;
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
@@ -131,15 +131,15 @@ public final class BuildStatusChecksPublisher {
             ErrorAction errorAction = flowNode.getError();
             WarningAction warningAction = flowNode.getPersistentAction(WarningAction.class);
 
-            StringBuilder nodeSummaryBuilder = new StringBuilder();
-            StringBuilder nodeTextBuilder = new StringBuilder();
-
             if (!isStage
                     && !isParallel
                     && errorAction == null
                     && warningAction == null) {
                 return;
             }
+
+            StringBuilder nodeSummaryBuilder = new StringBuilder();
+            StringBuilder nodeTextBuilder = new StringBuilder();
 
             if (isStage || isParallel) {
                 while (!indentationStack.isEmpty() && row.getTreeDepth() < indentationStack.peek()) {
