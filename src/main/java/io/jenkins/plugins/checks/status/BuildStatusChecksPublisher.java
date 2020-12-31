@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
+import hudson.model.Queue;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
 import hudson.model.queue.QueueListener;
@@ -17,10 +18,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -154,8 +152,10 @@ public final class BuildStatusChecksPublisher {
                 nodeTextBuilder.append("* ");
 
                 final String displayName;
-                if (isParallel) {
-                    displayName = flowNode.getAction(ThreadNameAction.class).getThreadName();
+                // Duplicate parallel detection logic to keep spotbugs happy :(
+                ThreadNameAction threadNameAction = flowNode.getAction(ThreadNameAction.class);
+                if (threadNameAction != null) {
+                    displayName = threadNameAction.getThreadName();
                 }
                 else {
                     displayName = flowNode.getDisplayName();
