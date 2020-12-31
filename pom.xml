@@ -144,6 +144,11 @@
                 <old>method void io.jenkins.plugins.checks.status.BuildStatusChecksPublisher::&lt;init&gt;()</old>
                 <justification>BuildStatusChecksPublisher is a utility class</justification>
               </item>
+              <item>
+                <code>java.class.externalClassExposedInAPI</code>
+                <newArchive>org.jenkins-ci.plugins.workflow:workflow-api:jar:2.40</newArchive>
+                <justification>Used only as extension in BuildStatusChecksPublisher, has no consumers.</justification>
+              </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>
