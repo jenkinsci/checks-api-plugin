@@ -8,13 +8,15 @@ import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.After;
 import org.junit.Test;
 import org.jvnet.hudson.test.TestExtension;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -128,15 +130,91 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                 + "}", true));
 
         buildWithResult(job, Result.FAILURE);
-        PUBLISHER_FACTORY.getPublishedChecks().stream()
-                .map(ChecksDetails::getOutput)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .forEach(s -> {
-                    System.out.println("-------------------");
-                    System.out.println(s);
-                    System.out.println("-------------------");
-                });
+
+        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+
+        // Details 0, queued
+        ChecksDetails details = checksDetails.get(0);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.QUEUED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+        assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details.getOutput()).isNotPresent();
+
+        // Details 1, first stage
+        details = checksDetails.get(1);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
+            assertThat(output.getText()).isPresent().get().asString().contains("* Simple Stage *(running)*");
+        });
+
+        // Details 2, first stage finished, parallel started
+        details = checksDetails.get(2);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
+            assertThat(output.getText()).isPresent().get().satisfies(text -> {
+                assertThat(text).matches(Pattern.compile(".*\\* Simple Stage \\*\\([^)]+\\)\\*.*", Pattern.DOTALL));
+                assertThat(text).contains("  * In parallel *(running)*");
+            });
+        });
+
+        // Details 6, p1s1 has finished and emitted unstable
+        details = checksDetails.get(6);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
+                    + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
+                    + "Warning in `unstable` step, with arguments `something went wrong`.\n"
+                    + "```\n"
+                    + "something went wrong\n"
+                    + "```\n"
+                    + "\n");
+            assertThat(output.getText()).isPresent().get().asString().matches(Pattern.compile(".*"
+                        + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
+                        + "  \\* In parallel \\*\\(running\\)\\*\n"
+                        + "    \\* p1 \\*\\(running\\)\\*\n"
+                        + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
+                        + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
+                        + "      \\* p1s2 \\*\\(running\\)\\*\n"
+                        + "    \\* p2 \\*\\([^)]+\\)\\*\n.*", Pattern.DOTALL));
+        });
+
+        // Details 8, final checks
+        details = checksDetails.get(8);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
+                    + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
+                    + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
+                    + "```\\s+"
+                    + "something went wrong\\s+"
+                    + "```\\s+"
+                    + "### `Fails / Archive the artifacts`\\s+"
+                    + "Error in `archiveArtifacts` step\\.\\s+"
+                    + "```\\s+"
+                    + "No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
+                    + "```\\s+"
+                    + "<details>\\s+"
+                    + "<summary>Stack trace</summary>\\s+"
+                    + "```\\s+"
+                    + "hudson.AbortException: No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
+                    + "(?:\\tat [^\\s]+\\s*)+"
+                    + "```\\s+"
+                    + "</details>"
+                    + ".*", Pattern.DOTALL));
+            assertThat(output.getText()).isPresent().asString().matches(Pattern.compile(".*"
+                    + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
+                    + "  \\* In parallel \\*\\([^)]+\\)\\*\n"
+                    + "    \\* p1 \\*\\([^)]+\\)\\*\n"
+                    + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
+                    + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
+                    + "      \\* p1s2 \\*\\([^)]+\\)\\*\n"
+                    + "    \\* p2 \\*\\([^)]+\\)\\*\n"
+                    + "  \\* Fails \\*\\([^)]+\\)\\*\n"
+                    + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\n.*",
+                    Pattern.DOTALL));
+        });
     }
 
     static class ChecksProperties extends AbstractStatusChecksProperties {
