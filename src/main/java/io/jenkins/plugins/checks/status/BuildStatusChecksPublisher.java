@@ -35,6 +35,7 @@ public final class BuildStatusChecksPublisher {
 
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
+    private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65535;
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
@@ -113,7 +114,6 @@ public final class BuildStatusChecksPublisher {
         return null;
     }
 
-    @CheckForNull
     @SuppressWarnings({"PMD.ConfusingTernary", "PMD.NPathComplexity", "JavaNCSS"})
     static ChecksOutput getOutput(final FlowExecution execution) {
 
@@ -133,6 +133,9 @@ public final class BuildStatusChecksPublisher {
             ErrorAction errorAction = flowNode.getError();
             WarningAction warningAction = flowNode.getPersistentAction(WarningAction.class);
 
+            StringBuilder nodeSummaryBuilder = new StringBuilder();
+            StringBuilder nodeTextBuilder = new StringBuilder();
+
             if (!isStage
                     && !isParallel
                     && errorAction == null
@@ -147,8 +150,8 @@ public final class BuildStatusChecksPublisher {
                 if (indentationStack.isEmpty() || row.getTreeDepth() > indentationStack.peek()) {
                     indentationStack.push(row.getTreeDepth());
                 }
-                textBuilder.append(String.join("", Collections.nCopies(indentationStack.size(), "  ")));
-                textBuilder.append("* ");
+                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size(), "  ")));
+                nodeTextBuilder.append("* ");
 
                 final String displayName;
                 if (isParallel) {
@@ -157,13 +160,13 @@ public final class BuildStatusChecksPublisher {
                 else {
                     displayName = flowNode.getDisplayName();
                 }
-                textBuilder.append(displayName);
+                nodeTextBuilder.append(displayName);
 
                 if (flowNode.isActive()) {
-                    textBuilder.append(" *(running)*");
+                    nodeTextBuilder.append(" *(running)*");
                 }
                 else if (row.getDurationMillis() > 0) {
-                    textBuilder.append(String.format(" *(%s)*", row.getDurationString()));
+                    nodeTextBuilder.append(String.format(" *(%s)*", row.getDurationString()));
                 }
             }
             else {
@@ -177,31 +180,38 @@ public final class BuildStatusChecksPublisher {
 
                 location.add(flowNode.getDisplayName());
 
-                summaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
+                nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
 
-                summaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
+                nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
                 String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
                 if (arguments != null) {
-                    summaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
+                    nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
                 }
                 else {
-                    summaryBuilder.append(".\n");
+                    nodeSummaryBuilder.append(".\n");
                 }
 
-                textBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
+                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
                 if (errorAction != null) {
-                    textBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-                    summaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s%n```%n</details>%n",
+                    nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
+                    nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s%n```%n</details>%n",
                             errorAction.getDisplayName(),
                             ExceptionUtils.getStackTrace(errorAction.getError())));
                 }
                 else {
-                    textBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
-                    summaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
+                    nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
+                    nodeSummaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
                 }
             }
 
-            textBuilder.append("\n");
+            nodeTextBuilder.append("\n");
+
+            if (summaryBuilder.length() + nodeSummaryBuilder.length() <= MAX_MSG_SIZE_TO_CHECKS_API) {
+                summaryBuilder.append(nodeSummaryBuilder);
+            }
+            if (textBuilder.length() + nodeTextBuilder.length() <= MAX_MSG_SIZE_TO_CHECKS_API) {
+                textBuilder.append(nodeTextBuilder);
+            }
         });
 
         return new ChecksOutput.ChecksOutputBuilder()
