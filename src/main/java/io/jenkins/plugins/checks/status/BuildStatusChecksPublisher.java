@@ -118,14 +118,37 @@ public final class BuildStatusChecksPublisher {
         if (run instanceof WorkflowRun) {
             FlowExecution execution = ((WorkflowRun) run).getExecution();
             if (execution != null) {
-                return getOutput(execution);
+                return getOutput(run, execution);
             }
         }
         return null;
     }
 
+    private static String extractOutputTitle(final Run run) {
+        Result result = run.getResult();
+        if (result == null) {
+            return "In progress";
+        }
+        if (result.isBetterOrEqualTo(Result.SUCCESS)) {
+            return "Success";
+        }
+        if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
+            return "Unstable";
+        }
+        if (result.isBetterOrEqualTo(Result.FAILURE)) {
+            return "Failure";
+        }
+        if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
+            return "Skipped";
+        }
+        if (result.isBetterOrEqualTo(Result.ABORTED)) {
+            return "Aborted";
+        }
+        throw new IllegalStateException("Unsupported run result: " + result);
+    }
+
     @SuppressWarnings({"PMD.ConfusingTernary", "PMD.NPathComplexity", "JavaNCSS"})
-    static ChecksOutput getOutput(final FlowExecution execution) {
+    static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
 
         FlowGraphTable table = new FlowGraphTable(execution);
         table.build();
@@ -231,7 +254,7 @@ public final class BuildStatusChecksPublisher {
         });
 
         return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle("Run Summary")
+                .withTitle(extractOutputTitle(run))
                 .withSummary(summaryBuilder.toString())
                 .withText(textBuilder.toString())
                 .build();
@@ -378,7 +401,7 @@ public final class BuildStatusChecksPublisher {
             }
 
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
-                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(node.getExecution())));
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
 
         }
     }

@@ -151,6 +151,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("In progress");
             assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
             assertThat(output.getText()).isPresent().get().asString().contains("* Simple Stage *(running)*");
         });
@@ -160,6 +161,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
             assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
             assertThat(output.getText()).isPresent().get().satisfies(text -> {
+                assertThat(output.getTitle()).isPresent().get().isEqualTo("In progress");
                 assertThat(text).matches(Pattern.compile(".*\\* Simple Stage \\*\\([^)]+\\)\\*.*", Pattern.DOTALL));
                 assertThat(text).contains("  * In parallel *(running)*");
             });
@@ -168,6 +170,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         // Details 6, p1s1 has finished and emitted unstable
         details = checksDetails.get(6);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Unstable");
             assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
                     + "Warning in `unstable` step, with arguments `something went wrong`.\n"
@@ -190,6 +193,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Failure");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
                     + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
