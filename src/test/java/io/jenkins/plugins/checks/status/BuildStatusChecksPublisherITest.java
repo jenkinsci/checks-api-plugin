@@ -139,6 +139,8 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
 
+        assertThat(checksDetails).hasSize(9);
+
         // Details 0, queued
         ChecksDetails details = checksDetails.get(0);
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.QUEUED);

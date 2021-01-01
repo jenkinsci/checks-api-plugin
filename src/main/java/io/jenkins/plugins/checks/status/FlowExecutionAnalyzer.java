@@ -131,11 +131,6 @@ class FlowExecutionAnalyzer {
                                 errorAction.getDisplayName(),
                                 log));
                     }
-                    else {
-                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s```%n</details>%n",
-                                errorAction.getDisplayName(),
-                                ExceptionUtils.getStackTrace(errorAction.getError())));
-                    }
                 }
                 else {
                     nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
