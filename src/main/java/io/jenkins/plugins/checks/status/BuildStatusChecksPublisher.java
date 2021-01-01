@@ -34,6 +34,7 @@ public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
     private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65_535;
+    private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
@@ -120,8 +121,8 @@ public final class BuildStatusChecksPublisher {
 
         Stack<Integer> indentationStack = new Stack<>();
 
-        StringBuilder summaryBuilder = new StringBuilder();
-        StringBuilder textBuilder = new StringBuilder();
+        TruncatedStringBuilder summaryBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
+        TruncatedStringBuilder textBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
 
         table.getRows().forEach(row -> {
             final FlowNode flowNode = row.getNode();
@@ -206,12 +207,8 @@ public final class BuildStatusChecksPublisher {
 
             nodeTextBuilder.append("\n");
 
-            if (summaryBuilder.length() + nodeSummaryBuilder.length() <= MAX_MSG_SIZE_TO_CHECKS_API) {
-                summaryBuilder.append(nodeSummaryBuilder);
-            }
-            if (textBuilder.length() + nodeTextBuilder.length() <= MAX_MSG_SIZE_TO_CHECKS_API) {
-                textBuilder.append(nodeTextBuilder);
-            }
+            summaryBuilder.append(nodeSummaryBuilder);
+            textBuilder.append(nodeTextBuilder);
         });
 
         return new ChecksOutput.ChecksOutputBuilder()
