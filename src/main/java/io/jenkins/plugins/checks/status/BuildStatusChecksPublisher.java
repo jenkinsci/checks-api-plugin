@@ -2,13 +2,13 @@ package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
-import hudson.model.Queue;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
 import hudson.model.queue.QueueListener;
 import io.jenkins.plugins.checks.api.*;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.util.JenkinsFacade;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -17,8 +17,13 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +31,7 @@ import java.util.stream.Stream;
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
+@SuppressWarnings({"PMD.ExcessiveImports", "ClassFanOutComplexity"})
 public final class BuildStatusChecksPublisher {
 
     private BuildStatusChecksPublisher() {
@@ -195,9 +201,17 @@ public final class BuildStatusChecksPublisher {
                 nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
                 if (errorAction != null) {
                     nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-                    nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s%n```%n</details>%n",
-                            errorAction.getDisplayName(),
-                            ExceptionUtils.getStackTrace(errorAction.getError())));
+                    String log = getLog(flowNode);
+                    if (StringUtils.isNotBlank(log)) {
+                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n```%n%s```%n</details>%n",
+                                errorAction.getDisplayName(),
+                                log));
+                    }
+                    else {
+                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s```%n</details>%n",
+                                errorAction.getDisplayName(),
+                                ExceptionUtils.getStackTrace(errorAction.getError())));
+                    }
                 }
                 else {
                     nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
@@ -216,6 +230,24 @@ public final class BuildStatusChecksPublisher {
                 .withSummary(summaryBuilder.toString())
                 .withText(textBuilder.toString())
                 .build();
+    }
+
+    @CheckForNull
+    private static String getLog(final FlowNode flowNode) {
+        LogAction logAction = flowNode.getAction(LogAction.class);
+        if (logAction == null) {
+            return null;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            if (logAction.getLogText().writeLogTo(0, out) == 0) {
+                return null;
+            }
+            return out.toString(StandardCharsets.UTF_8.toString());
+        }
+        catch (IOException e) {
+            return null;
+        }
     }
 
     /**

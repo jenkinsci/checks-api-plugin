@@ -196,10 +196,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                     + "No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
                     + "```\\s+"
                     + "<details>\\s+"
-                    + "<summary>Stack trace</summary>\\s+"
+                    + "<summary>Build log</summary>\\s+"
                     + "```\\s+"
-                    + "hudson.AbortException: No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
-                    + "(?:\\tat [^\\s]+\\s*)+"
+                    + "Archiving artifacts\\s+"
+                    + "‘oh dear’ doesn’t match anything\\s+"
                     + "```\\s+"
                     + "</details>"
                     + ".*", Pattern.DOTALL));
