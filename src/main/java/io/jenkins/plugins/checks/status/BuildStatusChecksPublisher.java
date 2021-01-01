@@ -12,31 +12,21 @@ import hudson.scm.SCMRevisionState;
 import io.jenkins.plugins.checks.api.*;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.util.JenkinsFacade;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jenkinsci.plugins.workflow.actions.*;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.GraphListener;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
-@SuppressWarnings({"PMD.ExcessiveImports", "ClassFanOutComplexity"})
 public final class BuildStatusChecksPublisher {
 
     private BuildStatusChecksPublisher() {
@@ -44,8 +34,6 @@ public final class BuildStatusChecksPublisher {
 
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
-    private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65_535;
-    private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
@@ -95,24 +83,6 @@ public final class BuildStatusChecksPublisher {
                 .findFirst();
     }
 
-    private static boolean isStage(final FlowNode node) {
-        return node != null && node.getAction(LabelAction.class) != null
-                && node.getAction(ThreadNameAction.class) == null;
-    }
-
-    private static boolean isParallelBranch(final FlowNode node) {
-        return node != null && node.getAction(LabelAction.class) != null
-                && node.getAction(ThreadNameAction.class) != null;
-
-    }
-
-    private static Optional<String> getStageOrBranchName(final FlowNode node) {
-        return Stream.of(
-                Optional.ofNullable(node.getAction(ThreadNameAction.class)).map(ThreadNameAction::getThreadName),
-                Optional.ofNullable(node.getAction(LabelAction.class)).map(LabelAction::getDisplayName)
-        ).filter(Optional::isPresent).map(Optional::get).findFirst();
-    }
-
     @CheckForNull
     static ChecksOutput getOutput(final Run run) {
         if (run instanceof WorkflowRun) {
@@ -124,158 +94,8 @@ public final class BuildStatusChecksPublisher {
         return null;
     }
 
-    private static String extractOutputTitle(final Run run) {
-        Result result = run.getResult();
-        if (result == null) {
-            return "In progress";
-        }
-        if (result.isBetterOrEqualTo(Result.SUCCESS)) {
-            return "Success";
-        }
-        if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
-            return "Unstable";
-        }
-        if (result.isBetterOrEqualTo(Result.FAILURE)) {
-            return "Failure";
-        }
-        if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
-            return "Skipped";
-        }
-        if (result.isBetterOrEqualTo(Result.ABORTED)) {
-            return "Aborted";
-        }
-        throw new IllegalStateException("Unsupported run result: " + result);
-    }
-
-    @SuppressWarnings({"PMD.ConfusingTernary", "PMD.NPathComplexity", "JavaNCSS"})
     static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
-
-        FlowGraphTable table = new FlowGraphTable(execution);
-        table.build();
-
-        Stack<Integer> indentationStack = new Stack<>();
-
-        TruncatedStringBuilder summaryBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
-        TruncatedStringBuilder textBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
-
-        table.getRows().forEach(row -> {
-            final FlowNode flowNode = row.getNode();
-
-            boolean isStage = isStage(flowNode);
-            boolean isParallel = isParallelBranch(flowNode);
-            ErrorAction errorAction = flowNode.getError();
-            WarningAction warningAction = flowNode.getPersistentAction(WarningAction.class);
-
-            if (!isStage
-                    && !isParallel
-                    && errorAction == null
-                    && warningAction == null) {
-                return;
-            }
-
-            StringBuilder nodeSummaryBuilder = new StringBuilder();
-            StringBuilder nodeTextBuilder = new StringBuilder();
-
-            if (isStage || isParallel) {
-                while (!indentationStack.isEmpty() && row.getTreeDepth() < indentationStack.peek()) {
-                    indentationStack.pop();
-                }
-                if (indentationStack.isEmpty() || row.getTreeDepth() > indentationStack.peek()) {
-                    indentationStack.push(row.getTreeDepth());
-                }
-                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size(), "  ")));
-                nodeTextBuilder.append("* ");
-
-                final String displayName;
-                // Duplicate parallel detection logic to keep spotbugs happy :(
-                ThreadNameAction threadNameAction = flowNode.getAction(ThreadNameAction.class);
-                if (threadNameAction != null) {
-                    displayName = threadNameAction.getThreadName();
-                }
-                else {
-                    displayName = flowNode.getDisplayName();
-                }
-                nodeTextBuilder.append(displayName);
-
-                if (flowNode.isActive()) {
-                    nodeTextBuilder.append(" *(running)*");
-                }
-                else if (row.getDurationMillis() > 0) {
-                    nodeTextBuilder.append(String.format(" *(%s)*", row.getDurationString()));
-                }
-            }
-            else {
-                List<String> location = flowNode.getEnclosingBlocks().stream()
-                        .map(BuildStatusChecksPublisher::getStageOrBranchName)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
-
-                Collections.reverse(location);
-
-                location.add(flowNode.getDisplayName());
-
-                nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
-
-                nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
-                String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
-                if (arguments != null) {
-                    nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
-                }
-                else {
-                    nodeSummaryBuilder.append(".\n");
-                }
-
-                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
-                if (errorAction != null) {
-                    nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-                    String log = getLog(flowNode);
-                    if (StringUtils.isNotBlank(log)) {
-                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n```%n%s```%n</details>%n",
-                                errorAction.getDisplayName(),
-                                log));
-                    }
-                    else {
-                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Stack trace</summary>%n%n```%n%s```%n</details>%n",
-                                errorAction.getDisplayName(),
-                                ExceptionUtils.getStackTrace(errorAction.getError())));
-                    }
-                }
-                else {
-                    nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
-                    nodeSummaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
-                }
-            }
-
-            nodeTextBuilder.append("\n");
-
-            summaryBuilder.append(nodeSummaryBuilder);
-            textBuilder.append(nodeTextBuilder);
-        });
-
-        return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle(extractOutputTitle(run))
-                .withSummary(summaryBuilder.toString())
-                .withText(textBuilder.toString())
-                .build();
-    }
-
-    @CheckForNull
-    private static String getLog(final FlowNode flowNode) {
-        LogAction logAction = flowNode.getAction(LogAction.class);
-        if (logAction == null) {
-            return null;
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            if (logAction.getLogText().writeLogTo(0, out) == 0) {
-                return null;
-            }
-            return out.toString(StandardCharsets.UTF_8.toString());
-        }
-        catch (IOException e) {
-            return null;
-        }
+        return new FlowExecutionAnalyzer(run, execution).extractOutput();
     }
 
     /**
@@ -388,7 +208,8 @@ public final class BuildStatusChecksPublisher {
     public static class ChecksGraphListener implements GraphListener {
         @Override
         public void onNewHead(final FlowNode node) {
-            if (!isStage(node) && !isParallelBranch(node)) {
+            if (node.getAction(LabelAction.class) == null) {
+                // It's not a branch or stage node, so let's not worry about updating.
                 return;
             }
 
