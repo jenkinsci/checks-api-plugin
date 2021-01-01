@@ -1,12 +1,12 @@
 package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedStringBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
@@ -19,9 +19,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 class FlowExecutionAnalyzer {
+
+    private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
 
     private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65_535;
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
@@ -152,6 +156,7 @@ class FlowExecutionAnalyzer {
     }
 
     @CheckForNull
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     private static String getLog(final FlowNode flowNode) {
         LogAction logAction = flowNode.getAction(LogAction.class);
         if (logAction == null) {
@@ -164,6 +169,7 @@ class FlowExecutionAnalyzer {
             return out.toString(StandardCharsets.UTF_8.toString());
         }
         catch (IOException e) {
+            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()), e);
             return null;
         }
     }
