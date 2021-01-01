@@ -58,7 +58,7 @@ class FlowExecutionAnalyzer {
                 .map(ThreadNameAction::getThreadName);
     }
 
-    @SuppressWarnings({"PMD.ConfusingTernary", "JavaNCSS"})
+    @SuppressWarnings("JavaNCSS")
     ChecksOutput extractOutput() {
 
         FlowGraphTable table = new FlowGraphTable(execution);
@@ -127,7 +127,7 @@ class FlowExecutionAnalyzer {
                 }
 
                 nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
-                if (errorAction != null) {
+                if (warningAction == null) {
                     nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
                     String log = getLog(flowNode);
                     if (StringUtils.isNotBlank(log)) {
