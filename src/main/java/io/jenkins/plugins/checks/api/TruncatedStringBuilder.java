@@ -8,9 +8,9 @@ package io.jenkins.plugins.checks.api;
  * chunks of complete markdown until an overflow is detected, at which point a message will be added and all future
  * additions will be silently discarded.
  */
-@SuppressWarnings("PMD.AvoidStringBufferField")
 public class TruncatedStringBuilder {
 
+    @SuppressWarnings("PMD.AvoidStringBufferField")
     private final StringBuilder builder = new StringBuilder();
     private final int maxSize;
     private final String truncatedMessage;
@@ -20,7 +20,8 @@ public class TruncatedStringBuilder {
      * Create a {@link TruncatedStringBuilder} with the provided limit and truncation message.
      *
      * @param maxSize the size which the wrapped {@link StringBuilder} should not exceed.
-     * @param truncatedMessage the message to be appended should maxSize be exceeded.
+     * @param truncatedMessage the message to be appended should maxSize be exceeded, e.g.
+     *                         "Some output is not shown here, see more on [Jenkins](url)."
      */
     public TruncatedStringBuilder(final int maxSize, final String truncatedMessage) {
         this.maxSize = maxSize;
