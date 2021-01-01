@@ -2,9 +2,13 @@ package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.model.*;
 import hudson.model.listeners.RunListener;
+import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
+import hudson.scm.SCM;
+import hudson.scm.SCMRevisionState;
 import io.jenkins.plugins.checks.api.*;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.util.JenkinsFacade;
@@ -18,6 +22,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -277,6 +282,31 @@ public final class BuildStatusChecksPublisher {
                     ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null));
         }
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * Listens to the SCM checkout and publishes checks.
+     * </p>
+     */
+    @Extension
+    public static class JobCheckoutListener extends SCMListener {
+        /**
+         * {@inheritDoc}
+         * <p>
+         * When checkout finished, update the check to "in progress".
+         * </p>
+         */
+        @Override
+        public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
+                               final TaskListener listener, @CheckForNull final File changelogFile,
+                               @CheckForNull final SCMRevisionState pollingBaseline) {
+            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run)));
+        }
+    }
+
 
     /**
      * {@inheritDoc}

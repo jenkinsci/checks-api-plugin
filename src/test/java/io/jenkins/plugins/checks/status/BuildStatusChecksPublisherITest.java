@@ -86,19 +86,25 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         buildSuccessfully(createFreeStyleProject());
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(2);
+        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(3);
 
-        ChecksDetails details1 = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+        ChecksDetails details = PUBLISHER_FACTORY.getPublishedChecks().get(0);
 
-        assertThat(details1.getName()).isPresent().get().isEqualTo("Test Status");
-        assertThat(details1.getStatus()).isEqualTo(ChecksStatus.QUEUED);
-        assertThat(details1.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+        assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.QUEUED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
 
-        ChecksDetails details2 = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        details = PUBLISHER_FACTORY.getPublishedChecks().get(1);
 
-        assertThat(details2.getName()).isPresent().get().isEqualTo("Test Status");
-        assertThat(details2.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
-        assertThat(details2.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
+        assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+
+        details = PUBLISHER_FACTORY.getPublishedChecks().get(2);
+
+        assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
 
     /**
