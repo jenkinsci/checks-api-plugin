@@ -3,35 +3,30 @@ package io.jenkins.plugins.checks.api;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
  * Utility wrapper that silently truncates output with a message at a certain size.
- *
+ * <p>
  * The GitHub Checks API has a size limit on text fields. Because it also accepts markdown, it is not trivial to
  * truncate to the required length as this could lead to unterminated syntax. The use of this class allows for adding
  * chunks of complete markdown until an overflow is detected, at which point a message will be added and all future
  * additions will be silently discarded.
  */
-public class TruncatedString {
+public abstract class TruncatedString {
 
-    @NonNull
-    private final List<CharSequence> chunks;
     @NonNull
     private final String truncationText;
+    private final boolean truncateStart;
 
-    /**
-     * Create a {@link TruncatedString} with the provided chunks and truncation message.
-     *
-     * @param truncationText the message to be appended should maxSize be exceeded, e.g.
-     *                       "Some output is not shown here, see more on [Jenkins](url)."
-     * @param chunks a list of {@link CharSequence}s that are to be concatenated.
-     */
-    private TruncatedString(@NonNull final String truncationText, @NonNull final List<CharSequence> chunks) {
+    protected TruncatedString(@NonNull final String truncationText, final boolean reverse) {
         this.truncationText = Objects.requireNonNull(truncationText);
-        this.chunks = Objects.requireNonNull(chunks);
+        this.truncateStart = reverse;
     }
 
     /**
@@ -41,12 +36,7 @@ public class TruncatedString {
      * @return a {@link TruncatedString} wrapping the provided input
      */
     static TruncatedString fromString(final String string) {
-        return new TruncatedString.Builder().addText(string).build();
-    }
-
-    @Override
-    public String toString() {
-        return String.join("", chunks);
+        return new NewlineTruncatedString.Builder().withString(string).build();
     }
 
     /**
@@ -54,10 +44,10 @@ public class TruncatedString {
      *
      * @return A string comprising the joined chunks.
      */
-    @CheckForNull
-    public String build() {
-        return chunks.isEmpty() ? null : String.join("", chunks);
-    }
+    @Override
+    public abstract String toString();
+
+    protected abstract List<String> getChunks();
 
     /**
      * Builds the string such that it does not exceed maxSize, including the truncation string.
@@ -68,41 +58,39 @@ public class TruncatedString {
      */
     @CheckForNull
     public String build(final int maxSize) {
-        if (chunks.isEmpty()) {
-            return null;
+        List<String> chunks = getChunks();
+        if (truncateStart) {
+            Collections.reverse(chunks);
         }
-        String quickJoin = String.join("", chunks);
-        if (quickJoin.length() <= maxSize) {
-            return quickJoin;
-        }
-        StringBuilder builder = new StringBuilder();
-        for (CharSequence chunk: chunks) {
-            if (builder.length() + chunk.length() + truncationText.length() < maxSize) {
-                builder.append(chunk);
-            }
-            else {
-                builder.append(truncationText);
-                break;
-            }
-        }
-        return builder.toString();
+        return chunks.stream().collect(new Joiner(maxSize));
     }
 
+
     /**
-     * Builder for {@link TruncatedString}.
+     * Base builder for {@link TruncatedString}.
+     *
+     * @param <B> the type of {@link TruncatedString} to build
      */
-    public static class Builder {
+    public abstract static class Builder<B> {
         private String truncationText = "Output truncated.";
-        private final List<CharSequence> chunks = new ArrayList<>();
+        private boolean truncateStart = false;
+
+        protected String getTruncationText() {
+            return truncationText;
+        }
+
+        protected boolean isTruncateStart() {
+            return truncateStart;
+        }
+
+        protected abstract B self();
 
         /**
          * Builds the {@link TruncatedString}.
          *
          * @return the build {@link TruncatedString}.
          */
-        public TruncatedString build() {
-            return new TruncatedString(truncationText, chunks);
-        }
+        public abstract TruncatedString build();
 
         /**
          * Sets the truncation text.
@@ -111,22 +99,94 @@ public class TruncatedString {
          * @return this builder
          */
         @SuppressWarnings("HiddenField")
-        public Builder withTruncationText(@NonNull final String truncationText) {
+        public B withTruncationText(@NonNull final String truncationText) {
             this.truncationText = Objects.requireNonNull(truncationText);
-            return this;
+            return self();
         }
 
         /**
-         * Adds a chunk of text to the buidler.
+         * Sets truncator to remove excess text from the start, rather than the end.
          *
-         * @param chunk the chunk of text to append to this builder
-         * @return this buidler
+         * @return this builder
          */
-        public Builder addText(@NonNull final CharSequence chunk) {
-            this.chunks.add(Objects.requireNonNull(chunk));
-            return this;
+        public B setTruncateStart() {
+            this.truncateStart = true;
+            return self();
         }
 
+    }
+
+    private class Joiner implements Collector<String, Joiner.Accumulator, String> {
+
+        private final int maxLength;
+
+        Joiner(final int maxLength) {
+            if (maxLength < truncationText.length()) {
+                throw new IllegalArgumentException("Maximum length is less than truncation text.");
+            }
+            this.maxLength = maxLength;
+        }
+
+        @Override
+        public Supplier<Joiner.Accumulator> supplier() {
+            return Accumulator::new;
+        }
+
+        @Override
+        public BiConsumer<Joiner.Accumulator, String> accumulator() {
+            return Accumulator::add;
+        }
+
+        @Override
+        public BinaryOperator<Accumulator> combiner() {
+            return Accumulator::combine;
+        }
+
+        @Override
+        public Function<Accumulator, String> finisher() {
+            return Accumulator::join;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
+
+        private class Accumulator {
+            private final List<String> chunks = new ArrayList<>();
+            private int length = 0;
+            private boolean truncated = false;
+
+            Accumulator combine(final Accumulator other) {
+                other.chunks.forEach(this::add);
+                return this;
+            }
+
+            void add(final String chunk) {
+                if (truncated) {
+                    return;
+                }
+                if (length + chunk.length() > maxLength) {
+                    truncated = true;
+                    return;
+                }
+                chunks.add(chunk);
+                length += chunk.length();
+            }
+
+            String join() {
+                if (truncateStart) {
+                    Collections.reverse(chunks);
+                }
+                if (truncated) {
+                    if (length + truncationText.length() > maxLength) {
+                        chunks.remove(truncateStart ? 0 : chunks.size() - 1);
+                    }
+                    chunks.add(truncationText);
+                }
+                return String.join("", chunks);
+            }
+        }
     }
 
 }

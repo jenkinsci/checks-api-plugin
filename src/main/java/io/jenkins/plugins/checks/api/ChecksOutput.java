@@ -1,7 +1,5 @@
 package io.jenkins.plugins.checks.api;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +45,7 @@ public class ChecksOutput {
     }
 
     public Optional<String> getSummary() {
-        return Optional.ofNullable(summary).map(TruncatedString::build);
+        return Optional.ofNullable(summary).map(TruncatedString::toString);
     }
 
     /**
@@ -61,7 +59,7 @@ public class ChecksOutput {
     }
 
     public Optional<String> getText() {
-        return Optional.ofNullable(text).map(TruncatedString::build);
+        return Optional.ofNullable(text).map(TruncatedString::toString);
     }
 
     /**
@@ -138,7 +136,7 @@ public class ChecksOutput {
          */
         @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withSummary(final String summary) {
-            return withSummary(new TruncatedString.Builder().addText(summary).build());
+            return withSummary(TruncatedString.fromString(summary));
         }
 
         /**
@@ -171,7 +169,7 @@ public class ChecksOutput {
          */
         @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withText(final String text) {
-            return withText(new TruncatedString.Builder().addText(text).build());
+            return withText(TruncatedString.fromString(text));
         }
 
         /**
