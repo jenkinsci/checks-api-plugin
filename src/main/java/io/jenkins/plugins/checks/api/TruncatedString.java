@@ -18,15 +18,21 @@ import java.util.stream.Collector;
  * chunks of complete markdown until an overflow is detected, at which point a message will be added and all future
  * additions will be silently discarded.
  */
-public abstract class TruncatedString {
+public class TruncatedString {
 
+    @NonNull
+    private final List<String> chunks;
     @NonNull
     private final String truncationText;
     private final boolean truncateStart;
+    private final boolean chunkOnNewlines;
 
-    protected TruncatedString(@NonNull final String truncationText, final boolean reverse) {
+
+    private TruncatedString(@NonNull final List<String> chunks, @NonNull final String truncationText, final boolean truncateStart, final boolean chunkOnNewlines) {
+        this.chunks = Collections.unmodifiableList(Objects.requireNonNull(chunks));
         this.truncationText = Objects.requireNonNull(truncationText);
-        this.truncateStart = reverse;
+        this.truncateStart = truncateStart;
+        this.chunkOnNewlines = chunkOnNewlines;
     }
 
     /**
@@ -36,7 +42,7 @@ public abstract class TruncatedString {
      * @return a {@link TruncatedString} wrapping the provided input
      */
     static TruncatedString fromString(final String string) {
-        return new NewlineTruncatedString.Builder().withString(string).build();
+        return new Builder().setChunkOnNewlines().addText(string).build();
     }
 
     /**
@@ -45,9 +51,16 @@ public abstract class TruncatedString {
      * @return A string comprising the joined chunks.
      */
     @Override
-    public abstract String toString();
+    public String toString() {
+        return String.join("", chunks);
+    }
 
-    protected abstract List<String> getChunks();
+    private List<String> getChunks() {
+        if (chunkOnNewlines) {
+            return Arrays.asList(String.join("", chunks).split("(?<=\r?\n)"));
+        }
+        return new ArrayList<>(chunks);
+    }
 
     /**
      * Builds the string such that it does not exceed maxSize, including the truncation string.
@@ -58,39 +71,42 @@ public abstract class TruncatedString {
      */
     @CheckForNull
     public String build(final int maxSize) {
-        List<String> chunks = getChunks();
+        List<String> parts = getChunks();
         if (truncateStart) {
-            Collections.reverse(chunks);
+            Collections.reverse(parts);
         }
-        return chunks.stream().collect(new Joiner(maxSize));
+        return parts.stream().collect(new Joiner(maxSize));
     }
 
 
     /**
-     * Base builder for {@link TruncatedString}.
-     *
-     * @param <B> the type of {@link TruncatedString} to build
+     * Builder for {@link TruncatedString}.
      */
-    public abstract static class Builder<B> {
+    public static class Builder {
         private String truncationText = "Output truncated.";
         private boolean truncateStart = false;
-
-        protected String getTruncationText() {
-            return truncationText;
-        }
-
-        protected boolean isTruncateStart() {
-            return truncateStart;
-        }
-
-        protected abstract B self();
+        private boolean chunkOnNewlines = false;
+        private final List<String> chunks = new ArrayList<>();
 
         /**
          * Builds the {@link TruncatedString}.
          *
          * @return the build {@link TruncatedString}.
          */
-        public abstract TruncatedString build();
+        public TruncatedString build() {
+            return new TruncatedString(chunks, truncationText, truncateStart, chunkOnNewlines);
+        }
+
+        /**
+         * Adds a chunk of text to the buidler.
+         *
+         * @param text the chunk of text to append to this builder
+         * @return this builder
+         */
+        public Builder addText(@NonNull final String text) {
+            this.chunks.add(Objects.requireNonNull(text));
+            return this;
+        }
 
         /**
          * Sets the truncation text.
@@ -99,9 +115,9 @@ public abstract class TruncatedString {
          * @return this builder
          */
         @SuppressWarnings("HiddenField")
-        public B withTruncationText(@NonNull final String truncationText) {
+        public Builder withTruncationText(@NonNull final String truncationText) {
             this.truncationText = Objects.requireNonNull(truncationText);
-            return self();
+            return this;
         }
 
         /**
@@ -109,9 +125,19 @@ public abstract class TruncatedString {
          *
          * @return this builder
          */
-        public B setTruncateStart() {
+        public Builder setTruncateStart() {
             this.truncateStart = true;
-            return self();
+            return this;
+        }
+
+        /**
+         * Sets truncator to chunk on newlines rather than the chunks.
+         *
+         * @return this builder
+         */
+        public Builder setChunkOnNewlines() {
+            this.chunkOnNewlines = true;
+            return this;
         }
 
     }
