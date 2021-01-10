@@ -189,6 +189,7 @@ public class WithChecksStep extends Step implements Serializable {
                             .collect(Collectors.joining("\n\n"));
                     builder.withConclusion(ChecksConclusion.CANCELED)
                             .withOutput(outputBuilder
+                                    .withTitle("Cancelled")
                                     .withText(summary)
                                     .build());
 
@@ -196,6 +197,7 @@ public class WithChecksStep extends Step implements Serializable {
                 else {
                     builder.withConclusion(ChecksConclusion.FAILURE)
                             .withOutput(outputBuilder
+                                    .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
                 publish(context, builder);
