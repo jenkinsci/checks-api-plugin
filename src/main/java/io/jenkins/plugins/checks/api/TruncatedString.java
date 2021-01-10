@@ -73,7 +73,11 @@ public class TruncatedString {
         if (truncateStart) {
             Collections.reverse(parts);
         }
-        return parts.stream().collect(new Joiner(maxSize));
+        List<String> truncatedParts = parts.stream().collect(new Joiner(truncationText, maxSize));
+        if (truncateStart) {
+            Collections.reverse(truncatedParts);
+        }
+        return String.join("", truncatedParts);
     }
 
 
@@ -140,14 +144,16 @@ public class TruncatedString {
 
     }
 
-    private class Joiner implements Collector<String, Joiner.Accumulator, String> {
+    private static class Joiner implements Collector<String, Joiner.Accumulator, List<String>> {
 
         private final int maxLength;
+        private final String truncationText;
 
-        Joiner(final int maxLength) {
+        Joiner(final String truncationText, final int maxLength) {
             if (maxLength < truncationText.length()) {
                 throw new IllegalArgumentException("Maximum length is less than truncation text.");
             }
+            this.truncationText = truncationText;
             this.maxLength = maxLength;
         }
 
@@ -167,8 +173,8 @@ public class TruncatedString {
         }
 
         @Override
-        public Function<Accumulator, String> finisher() {
-            return Accumulator::join;
+        public Function<Accumulator, List<String>> finisher() {
+            return Accumulator::truncate;
         }
 
         @Override
@@ -198,17 +204,14 @@ public class TruncatedString {
                 length += chunk.length();
             }
 
-            String join() {
-                if (truncateStart) {
-                    Collections.reverse(chunks);
-                }
+            List<String> truncate() {
                 if (truncated) {
                     if (length + truncationText.length() > maxLength) {
-                        chunks.remove(truncateStart ? 0 : chunks.size() - 1);
+                        chunks.remove(chunks.size() - 1);
                     }
                     chunks.add(truncationText);
                 }
-                return String.join("", chunks);
+                return chunks;
             }
         }
     }

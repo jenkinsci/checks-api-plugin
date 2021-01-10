@@ -89,8 +89,8 @@ public class TruncatedStringTest {
         assertThat(builder.build().build(20)).isEqualTo("zzzz\nxxxx\n");
         builder.addText("cccc\n"); // 5, doesn't cause overflow
         assertThat(builder.build().build(20)).isEqualTo("zzzz\nxxxx\ncccc\n");
-        builder.addText("aaaaaa\n"); // 7, doesn't cause overflow
-        assertThat(builder.build().build(20)).isEqualTo("cccc\naaaaaa\nTruncated");
+        builder.addText("aaaaaa\n"); // 7, does cause overflow
+        assertThat(builder.build().build(20)).isEqualTo("Truncatedcccc\naaaaaa\n");
     }
 
     @Test
