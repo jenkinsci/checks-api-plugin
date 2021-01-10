@@ -1,6 +1,5 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.*;
@@ -69,7 +68,6 @@ public class TruncatedString {
      * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
      * string if truncation was necessary.
      */
-    @CheckForNull
     public String build(final int maxSize) {
         List<String> parts = getChunks();
         if (truncateStart) {
@@ -98,7 +96,7 @@ public class TruncatedString {
         }
 
         /**
-         * Adds a chunk of text to the buidler.
+         * Adds a chunk of text to the builder.
          *
          * @param text the chunk of text to append to this builder
          * @return this builder

@@ -55,7 +55,7 @@ public class ChecksOutput {
      * @return Summary, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getSummary(final int maxSize) {
-        return Optional.ofNullable(summary).flatMap(s -> Optional.ofNullable(s.build(maxSize)));
+        return Optional.ofNullable(summary).map(s -> s.build(maxSize));
     }
 
     public Optional<String> getText() {
@@ -69,7 +69,7 @@ public class ChecksOutput {
      * @return Text, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getText(final int maxSize) {
-        return Optional.ofNullable(text).flatMap(s -> Optional.ofNullable(s.build(maxSize)));
+        return Optional.ofNullable(text).map(s -> s.build(maxSize));
     }
 
     public List<ChecksAnnotation> getChecksAnnotations() {
