@@ -5,7 +5,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
-import io.jenkins.plugins.checks.api.TruncatedStringBuilder;
+import io.jenkins.plugins.checks.api.TruncatedString;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -27,7 +27,6 @@ class FlowExecutionAnalyzer {
 
     private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
 
-    private static final int MAX_MSG_SIZE_TO_CHECKS_API = 65_535;
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
 
     private final Run<?, ?> run;
@@ -66,8 +65,10 @@ class FlowExecutionAnalyzer {
 
         Stack<Integer> indentationStack = new Stack<>();
 
-        TruncatedStringBuilder summaryBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
-        TruncatedStringBuilder textBuilder = new TruncatedStringBuilder(MAX_MSG_SIZE_TO_CHECKS_API, TRUNCATED_MESSAGE);
+        TruncatedString.Builder summaryBuilder = new TruncatedString.Builder()
+                .withTruncationText(TRUNCATED_MESSAGE);
+        TruncatedString.Builder textBuilder = new TruncatedString.Builder()
+                .withTruncationText(TRUNCATED_MESSAGE);
 
         table.getRows().forEach(row -> {
             final FlowNode flowNode = row.getNode();
@@ -144,14 +145,14 @@ class FlowExecutionAnalyzer {
 
             nodeTextBuilder.append("\n");
 
-            summaryBuilder.append(nodeSummaryBuilder);
-            textBuilder.append(nodeTextBuilder);
+            summaryBuilder.addText(nodeSummaryBuilder.toString());
+            textBuilder.addText(nodeTextBuilder.toString());
         });
 
         return new ChecksOutput.ChecksOutputBuilder()
                 .withTitle(extractOutputTitle())
-                .withSummary(summaryBuilder.toString())
-                .withText(textBuilder.toString())
+                .withSummary(summaryBuilder.build())
+                .withText(textBuilder.build())
                 .build();
     }
 
