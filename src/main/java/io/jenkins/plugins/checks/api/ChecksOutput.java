@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An output of a check. The output usually contains the most useful information like summary, description,
@@ -13,12 +13,12 @@ import static java.util.Objects.*;
  */
 public class ChecksOutput {
     private final String title;
-    private final String summary;
-    private final String text;
+    private final TruncatedString summary;
+    private final TruncatedString text;
     private final List<ChecksAnnotation> annotations;
     private final List<ChecksImage> images;
 
-    private ChecksOutput(final String title, final String summary, final String text,
+    private ChecksOutput(final String title, final TruncatedString summary, final TruncatedString text,
             final List<ChecksAnnotation> annotations, final List<ChecksImage> images) {
         this.title = title;
         this.summary = summary;
@@ -34,7 +34,9 @@ public class ChecksOutput {
      *         the source to copy from
      */
     public ChecksOutput(final ChecksOutput that) {
-        this(that.getTitle().orElse(null), that.getSummary().orElse(null), that.getText().orElse(null),
+        this(that.getTitle().orElse(null),
+                that.getSummary().map(TruncatedString::fromString).orElse(null),
+                that.getText().map(TruncatedString::fromString).orElse(null),
                 that.getChecksAnnotations(), that.getChecksImages());
     }
 
@@ -43,11 +45,31 @@ public class ChecksOutput {
     }
 
     public Optional<String> getSummary() {
-        return Optional.ofNullable(summary);
+        return Optional.ofNullable(summary).map(TruncatedString::toString);
+    }
+
+    /**
+     * Get the output summary, truncated by {@link TruncatedString} to maxSize.
+     *
+     * @param maxSize maximum size to truncate summary to.
+     * @return Summary, truncated to maxSize with truncation message if appropriate.
+     */
+    public Optional<String> getSummary(final int maxSize) {
+        return Optional.ofNullable(summary).map(s -> s.build(maxSize));
     }
 
     public Optional<String> getText() {
-        return Optional.ofNullable(text);
+        return Optional.ofNullable(text).map(TruncatedString::toString);
+    }
+
+    /**
+     * Get the output text, truncated by {@link TruncatedString} to maxSize.
+     *
+     * @param maxSize maximum size to truncate text to.
+     * @return Text, truncated to maxSize with truncation message if appropriate.
+     */
+    public Optional<String> getText(final int maxSize) {
+        return Optional.ofNullable(text).map(s -> s.build(maxSize));
     }
 
     public List<ChecksAnnotation> getChecksAnnotations() {
@@ -74,8 +96,8 @@ public class ChecksOutput {
      */
     public static class ChecksOutputBuilder {
         private String title;
-        private String summary;
-        private String text;
+        private TruncatedString summary;
+        private TruncatedString text;
         private List<ChecksAnnotation> annotations;
         private List<ChecksImage> images;
 
@@ -114,6 +136,22 @@ public class ChecksOutput {
          */
         @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withSummary(final String summary) {
+            return withSummary(TruncatedString.fromString(summary));
+        }
+
+        /**
+         * Sets the summary of the check run, using a {@link TruncatedString}.
+         *
+         * <p>
+         *     Note that for the GitHub check runs, the {@code summary} supports Markdown.
+         * <p>
+         *
+         * @param summary
+         *         the summary of the check run as a {@link TruncatedString}
+         * @return this builder
+         */
+        @SuppressWarnings("HiddenField")
+        public ChecksOutputBuilder withSummary(final TruncatedString summary) {
             this.summary = requireNonNull(summary);
             return this;
         }
@@ -131,6 +169,22 @@ public class ChecksOutput {
          */
         @SuppressWarnings("HiddenField") // builder pattern
         public ChecksOutputBuilder withText(final String text) {
+            return withText(TruncatedString.fromString(text));
+        }
+
+        /**
+         * Adds the details description for a check run, using a {@link TruncatedString}. This parameter supports Markdown.
+         *
+         * <p>
+         *     Note that for a GitHub check run, the {@code text} supports Markdown.
+         * <p>
+         *
+         * @param text
+         *         the details description in Markdown as a {@link TruncatedString}
+         * @return this builder
+         */
+        @SuppressWarnings("HiddenField")
+        public ChecksOutputBuilder withText(final TruncatedString text) {
             this.text = requireNonNull(text);
             return this;
         }

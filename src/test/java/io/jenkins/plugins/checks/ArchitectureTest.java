@@ -3,8 +3,10 @@ package io.jenkins.plugins.checks;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.syntax.elements.ClassesShouldConjunction;
 import edu.hm.hafner.util.ArchitectureRules;
 import io.jenkins.plugins.util.PluginArchitectureRules;
+import org.junit.runner.RunWith;
 
 /**
  * Defines several architecture rules for the static analysis model and parsers.
@@ -18,7 +20,8 @@ class ArchitectureTest {
     static final ArchRule NO_JENKINS_INSTANCE_CALL = PluginArchitectureRules.NO_JENKINS_INSTANCE_CALL;
 
     @ArchTest
-    static final ArchRule NO_PUBLIC_TEST_CLASSES = PluginArchitectureRules.NO_PUBLIC_TEST_CLASSES;
+    static final ArchRule NO_PUBLIC_TEST_CLASSES = ((ClassesShouldConjunction) PluginArchitectureRules.NO_PUBLIC_TEST_CLASSES)
+            .andShould().notBeAnnotatedWith(RunWith.class); // Allow for JUnit4 tests.
 
     @ArchTest
     static final ArchRule NO_TEST_API_CALLED = ArchitectureRules.NO_TEST_API_CALLED;
