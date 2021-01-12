@@ -157,7 +157,6 @@ class FlowExecutionAnalyzer {
     }
 
     @CheckForNull
-    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     private static String getLog(final FlowNode flowNode) {
         LogAction logAction = flowNode.getAction(LogAction.class);
         if (logAction == null) {
@@ -170,7 +169,7 @@ class FlowExecutionAnalyzer {
             return out.toString(StandardCharsets.UTF_8.toString());
         }
         catch (IOException e) {
-            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()), e);
+            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
             return null;
         }
     }
