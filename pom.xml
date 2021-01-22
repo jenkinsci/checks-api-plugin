@@ -164,4 +164,12 @@
     </pluginRepository>
   </pluginRepositories>
 
+  <developers>
+    <developer>
+      <id>xiongkezhi</id>
+      <name>Kezhi Xiong</name>
+      <email>august.xkz@gmail.com</email>
+    </developer>
+  </developers>
+
 </project>
