@@ -108,13 +108,15 @@ public class WithChecksStep extends Step implements Serializable {
 
         @Override
         public void stop(final Throwable cause) {
-            publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
+            if (publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
                     .withName(step.getName())
                     .withStatus(ChecksStatus.COMPLETED)
-                    .withConclusion(ChecksConclusion.CANCELED));
+                    .withConclusion(ChecksConclusion.CANCELED))) {
+                getContext().onFailure(cause);
+            }
         }
 
-        private void publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) {
+        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) {
             TaskListener listener = TaskListener.NULL;
             try {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
@@ -134,7 +136,7 @@ public class WithChecksStep extends Step implements Serializable {
                 pluginLogger.log(msg);
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
                 context.onFailure(new IllegalStateException(msg));
-                return;
+                return false;
             }
 
             if (run == null) {
@@ -142,12 +144,13 @@ public class WithChecksStep extends Step implements Serializable {
                 pluginLogger.log(msg);
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
                 context.onFailure(new IllegalStateException(msg));
-                return;
+                return false;
             }
 
             ChecksPublisherFactory.fromRun(run, listener)
                     .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
                             .build());
+            return true;
         }
 
         class WithChecksCallBack extends BodyExecutionCallback {
