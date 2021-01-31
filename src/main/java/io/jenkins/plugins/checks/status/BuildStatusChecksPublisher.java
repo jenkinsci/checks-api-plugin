@@ -222,7 +222,7 @@ public final class BuildStatusChecksPublisher {
                 run = (Run) node.getExecution().getOwner().getExecutable();
             }
             catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Unable to find Run from flow node.");
+                LOGGER.log(Level.WARNING, "Unable to find Run from flow node.", e);
                 return;
             }
 
