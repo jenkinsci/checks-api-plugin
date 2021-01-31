@@ -1,12 +1,12 @@
 package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
@@ -31,6 +31,7 @@ class FlowExecutionAnalyzer {
 
     private final Run<?, ?> run;
     private final FlowExecution execution;
+    private final Stack<Integer> indentationStack = new Stack<>();
 
     FlowExecutionAnalyzer(final Run<?, ?> run, final FlowExecution execution) {
         this.run = run;
@@ -57,18 +58,84 @@ class FlowExecutionAnalyzer {
                 .map(ThreadNameAction::getThreadName);
     }
 
-    @SuppressWarnings("JavaNCSS")
+    private Pair<String, String> processStageOrBranchRow(final FlowGraphTable.Row row, final String stageOrBranchName) {
+        final StringBuilder nodeTextBuilder = new StringBuilder();
+        while (!indentationStack.isEmpty() && row.getTreeDepth() < indentationStack.peek()) {
+            indentationStack.pop();
+        }
+        if (indentationStack.isEmpty() || row.getTreeDepth() > indentationStack.peek()) {
+            indentationStack.push(row.getTreeDepth());
+        }
+        nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size(), "  ")));
+        nodeTextBuilder.append("* ");
+
+        nodeTextBuilder.append(stageOrBranchName);
+
+        if (row.getNode().isActive()) {
+            nodeTextBuilder.append(" *(running)*");
+        }
+        else if (row.getDurationMillis() > 0) {
+            nodeTextBuilder.append(String.format(" *(%s)*", row.getDurationString()));
+        }
+        nodeTextBuilder.append("\n");
+        return Pair.of(nodeTextBuilder.toString(), "");
+    }
+
+    private Pair<String, String> processErrorOrWarningRow(final FlowGraphTable.Row row, final ErrorAction errorAction, final WarningAction warningAction) {
+        FlowNode flowNode = row.getNode();
+
+        StringBuilder nodeSummaryBuilder = new StringBuilder();
+        StringBuilder nodeTextBuilder = new StringBuilder();
+
+        List<String> location = flowNode.getEnclosingBlocks().stream()
+                .map(FlowExecutionAnalyzer::getStageOrBranchName)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+
+        Collections.reverse(location);
+
+        location.add(flowNode.getDisplayName());
+
+        nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
+
+        nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
+        String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
+        if (arguments == null) {
+            nodeSummaryBuilder.append(".\n");
+        }
+        else {
+            nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
+        }
+
+        nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
+        if (warningAction == null) {
+            nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
+            String log = getLog(flowNode);
+            if (StringUtils.isNotBlank(log)) {
+                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n```%n%s```%n</details>%n",
+                        errorAction.getDisplayName(),
+                        log));
+            }
+        }
+        else {
+            nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
+            nodeSummaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
+        }
+        nodeTextBuilder.append("\n");
+        return Pair.of(nodeTextBuilder.toString(), nodeSummaryBuilder.toString());
+    }
+
     ChecksOutput extractOutput() {
 
         FlowGraphTable table = new FlowGraphTable(execution);
         table.build();
 
-        Stack<Integer> indentationStack = new Stack<>();
-
         TruncatedString.Builder summaryBuilder = new TruncatedString.Builder()
                 .withTruncationText(TRUNCATED_MESSAGE);
         TruncatedString.Builder textBuilder = new TruncatedString.Builder()
                 .withTruncationText(TRUNCATED_MESSAGE);
+        indentationStack.clear();
 
         table.getRows().forEach(row -> {
             final FlowNode flowNode = row.getNode();
@@ -83,70 +150,11 @@ class FlowExecutionAnalyzer {
                 return;
             }
 
-            StringBuilder nodeSummaryBuilder = new StringBuilder();
-            StringBuilder nodeTextBuilder = new StringBuilder();
+            final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
+                    .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
 
-            if (stageOrBranchName.isPresent()) {
-                while (!indentationStack.isEmpty() && row.getTreeDepth() < indentationStack.peek()) {
-                    indentationStack.pop();
-                }
-                if (indentationStack.isEmpty() || row.getTreeDepth() > indentationStack.peek()) {
-                    indentationStack.push(row.getTreeDepth());
-                }
-                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size(), "  ")));
-                nodeTextBuilder.append("* ");
-
-                nodeTextBuilder.append(stageOrBranchName.get());
-
-                if (flowNode.isActive()) {
-                    nodeTextBuilder.append(" *(running)*");
-                }
-                else if (row.getDurationMillis() > 0) {
-                    nodeTextBuilder.append(String.format(" *(%s)*", row.getDurationString()));
-                }
-            }
-            else {
-                List<String> location = flowNode.getEnclosingBlocks().stream()
-                        .map(FlowExecutionAnalyzer::getStageOrBranchName)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
-
-                Collections.reverse(location);
-
-                location.add(flowNode.getDisplayName());
-
-                nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
-
-                nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
-                String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
-                if (arguments == null) {
-                    nodeSummaryBuilder.append(".\n");
-                }
-                else {
-                    nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
-                }
-
-                nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
-                if (warningAction == null) {
-                    nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-                    String log = getLog(flowNode);
-                    if (StringUtils.isNotBlank(log)) {
-                        nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n```%n%s```%n</details>%n",
-                                errorAction.getDisplayName(),
-                                log));
-                    }
-                }
-                else {
-                    nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
-                    nodeSummaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
-                }
-            }
-
-            nodeTextBuilder.append("\n");
-
-            summaryBuilder.addText(nodeSummaryBuilder.toString());
-            textBuilder.addText(nodeTextBuilder.toString());
+            textBuilder.addText(nodeInfo.getLeft());
+            summaryBuilder.addText(nodeInfo.getRight());
         });
 
         return new ChecksOutput.ChecksOutputBuilder()
