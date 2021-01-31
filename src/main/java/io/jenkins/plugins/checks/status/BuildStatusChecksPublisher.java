@@ -21,6 +21,8 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -28,6 +30,8 @@ import java.util.stream.Stream;
  * or {@link Run}.
  */
 public final class BuildStatusChecksPublisher {
+
+    private static final Logger LOGGER = Logger.getLogger(BuildStatusChecksPublisher.class.getName());
 
     private BuildStatusChecksPublisher() {
     }
@@ -218,6 +222,7 @@ public final class BuildStatusChecksPublisher {
                 run = (Run) node.getExecution().getOwner().getExecutable();
             }
             catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Unable to find Run from flow node.");
                 return;
             }
 
