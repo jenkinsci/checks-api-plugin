@@ -113,7 +113,7 @@ class FlowExecutionAnalyzer {
             nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
             String log = getLog(flowNode);
             if (StringUtils.isNotBlank(log)) {
-                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n```%n%s%n```%n</details>%n",
+                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>%n",
                         errorAction.getDisplayName(),
                         log));
             }
