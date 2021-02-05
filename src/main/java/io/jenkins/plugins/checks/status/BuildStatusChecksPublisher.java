@@ -1,45 +1,56 @@
 package io.jenkins.plugins.checks.status;
 
-import java.io.File;
-import java.util.Optional;
-
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.model.Job;
-import hudson.model.Queue;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.model.listeners.RunListener;
 import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
-
-import io.jenkins.plugins.checks.api.ChecksConclusion;
+import io.jenkins.plugins.checks.api.*;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
-import io.jenkins.plugins.checks.api.ChecksPublisher;
-import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
-import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.util.JenkinsFacade;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.GraphListener;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
 public final class BuildStatusChecksPublisher {
+
+    private static final Logger LOGGER = Logger.getLogger(BuildStatusChecksPublisher.class.getName());
+
+    private BuildStatusChecksPublisher() {
+    }
+
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
     private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
-                                final ChecksConclusion conclusion, final String name) {
-        publisher.publish(new ChecksDetailsBuilder()
+                                final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
+        ChecksDetailsBuilder builder = new ChecksDetailsBuilder()
                 .withName(name)
                 .withStatus(status)
-                .withConclusion(conclusion)
-                .build());
+                .withConclusion(conclusion);
+
+        if (output != null) {
+            builder.withOutput(output);
+        }
+
+        publisher.publish(builder.build());
     }
 
     @Deprecated
@@ -56,6 +67,39 @@ public final class BuildStatusChecksPublisher {
                 .filter(p -> p.isApplicable(job))
                 .findFirst()
                 .orElse(DEFAULT_PROPERTIES);
+    }
+
+    static Optional<String> getChecksName(final Run<?, ?> run) {
+        return getChecksName(run.getParent());
+    }
+
+    static Optional<String> getChecksName(final Job<?, ?> job) {
+        return Stream.of(
+                findDeprecatedProperties(job)
+                        .filter(p -> !p.isSkip(job))
+                        .map(p -> p.getName(job)),
+                Optional.of(findProperties(job))
+                        .filter(p -> !p.isSkipped(job))
+                        .map(p -> p.getName(job))
+        )
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+    }
+
+    @CheckForNull
+    static ChecksOutput getOutput(final Run run) {
+        if (run instanceof WorkflowRun) {
+            FlowExecution execution = ((WorkflowRun) run).getExecution();
+            if (execution != null) {
+                return getOutput(run, execution);
+            }
+        }
+        return null;
+    }
+
+    static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
+        return new FlowExecutionAnalyzer(run, execution).extractOutput();
     }
 
     /**
@@ -80,21 +124,9 @@ public final class BuildStatusChecksPublisher {
                 return;
             }
 
-            final Job job = (Job)wi.task;
-            Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
-            if (deprecatedProperties.isPresent()) {
-                if (!deprecatedProperties.get().isSkip(job)) {
-                    publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
-                            ChecksConclusion.NONE, deprecatedProperties.get().getName(job));
-                }
-            }
-            else {
-                final AbstractStatusChecksProperties properties = findProperties(job);
-                if (!properties.isSkipped(job)) {
-                    publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL), ChecksStatus.QUEUED,
-                            ChecksConclusion.NONE, properties.getName(job));
-                }
-            }
+            final Job job = (Job) wi.task;
+            getChecksName(job).ifPresent(checksName -> publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL),
+                    ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null));
         }
     }
 
@@ -117,23 +149,11 @@ public final class BuildStatusChecksPublisher {
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
-            final Job job = run.getParent();
-            final Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
-            if (deprecatedProperties.isPresent()) {
-                if (!deprecatedProperties.get().isSkip(job)) {
-                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS,
-                            ChecksConclusion.NONE, deprecatedProperties.get().getName(job));
-                }
-            }
-            else {
-                final AbstractStatusChecksProperties properties = findProperties(job);
-                if (!properties.isSkipped(job)) {
-                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.IN_PROGRESS,
-                            ChecksConclusion.NONE, properties.getName(job));
-                }
-            }
+            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run)));
         }
     }
+
 
     /**
      * {@inheritDoc}
@@ -153,21 +173,8 @@ public final class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            final Job job = run.getParent();
-            final Optional<StatusChecksProperties> deprecatedProperties = findDeprecatedProperties(job);
-            if (deprecatedProperties.isPresent()) {
-                if (!deprecatedProperties.get().isSkip(job)) {
-                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED,
-                            extractConclusion(run), deprecatedProperties.get().getName(job));
-                }
-            }
-            else {
-                final AbstractStatusChecksProperties properties = findProperties(job);
-                if (!properties.isSkipped(job)) {
-                    publish(ChecksPublisherFactory.fromRun(run, listener), ChecksStatus.COMPLETED,
-                            extractConclusion(run), properties.getName(job));
-                }
-            }
+            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.COMPLETED, extractConclusion(run), checksName, getOutput(run)));
         }
 
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
@@ -191,6 +198,37 @@ public final class BuildStatusChecksPublisher {
             else {
                 throw new IllegalStateException("Unsupported run result: " + result);
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     * As a job progresses, record a representation of the flow graph.
+     * </p>
+     */
+    @Extension
+    public static class ChecksGraphListener implements GraphListener {
+        @Override
+        public void onNewHead(final FlowNode node) {
+            if (node.getAction(LabelAction.class) == null) {
+                // It's not a branch or stage node, so let's not worry about updating.
+                return;
+            }
+
+            Run<?, ?> run;
+            try {
+                run = (Run) node.getExecution().getOwner().getExecutable();
+            }
+            catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Unable to find Run from flow node.", e);
+                return;
+            }
+
+            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
+
         }
     }
 }

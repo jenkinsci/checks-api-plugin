@@ -63,13 +63,14 @@
 
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
-      <artifactId>workflow-step-api</artifactId>
+      <artifactId>workflow-job</artifactId>
     </dependency>
+
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
-      <artifactId>workflow-job</artifactId>
-      <scope>test</scope>
+      <artifactId>workflow-step-api</artifactId>
     </dependency>
+
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
       <artifactId>workflow-cps</artifactId>
@@ -127,6 +128,21 @@
                 <code>java.class.removed</code>
                 <old>class io.jenkins.plugins.checks.BuildStatusChecksPublisher</old>
                 <justification>BuildStatusChecksPublisher has no consumers, should be safe to move.</justification>
+              </item>
+              <item>
+                <code>java.class.added</code>
+                <new>class io.jenkins.plugins.checks.status.BuildStatusChecksPublisher.ChecksGraphListener</new>
+                <justification>ChecksGraphListener is an extension, should be safe to add.</justification>
+              </item>
+              <item>
+                <code>java.method.visibilityReduced</code>
+                <old>method void io.jenkins.plugins.checks.status.BuildStatusChecksPublisher::&lt;init&gt;()</old>
+                <justification>BuildStatusChecksPublisher is a utility class</justification>
+              </item>
+              <item>
+                <code>java.class.externalClassExposedInAPI</code>
+                <newArchive>org.jenkins-ci.plugins.workflow:workflow-api:jar:2.40</newArchive>
+                <justification>Used only as extension in BuildStatusChecksPublisher, has no consumers.</justification>
               </item>
             </revapi.ignore>
           </analysisConfiguration>
