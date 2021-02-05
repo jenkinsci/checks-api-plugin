@@ -172,7 +172,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         // Details 6, p1s1 has finished and emitted unstable
         details = checksDetails.get(6);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("p1s1: warning in 'unstable' step");
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("In parallel/p1/p1s1: warning in 'unstable' step");
             assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
                     + "Warning in `unstable` step, with arguments `something went wrong`.\n"

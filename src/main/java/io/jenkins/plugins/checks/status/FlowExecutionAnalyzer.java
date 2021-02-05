@@ -1,15 +1,19 @@
 package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
+import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graph.StepNode;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 import java.io.ByteArrayOutputStream;
@@ -182,12 +186,59 @@ class FlowExecutionAnalyzer {
 
     private String getPotentialTitle(FlowNode flowNode, ErrorAction errorAction) {
         final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error", flowNode.getDisplayFunctionName());
-        return flowNode.getParents().stream()
-                .map(FlowExecutionAnalyzer::getStageOrBranchName)
-                .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
-                .map(blockName -> blockName + ": " + whereBuildFailed)
-                .findFirst()
-                .orElse(whereBuildFailed);
+
+        List<FlowNode> enclosingStagesAndParallels = getEnclosingStagesAndParallels(flowNode);
+        List<String> enclosingBlockNames = getEnclosingBlockNames(enclosingStagesAndParallels);
+
+        return StringUtils.join(new ReverseListIterator(enclosingBlockNames), "/") + ": " + whereBuildFailed;
+    }
+
+    private static boolean isStageNode(@NonNull FlowNode node) {
+        if (node instanceof StepNode) {
+            StepDescriptor d = ((StepNode) node).getDescriptor();
+            return d != null && d.getFunctionName().equals("stage");
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Get the stage and parallel branch start node IDs (not the body nodes) for this node, innermost first.
+     * @param node A flownode.
+     * @return A nonnull, possibly empty list of stage/parallel branch start nodes, innermost first.
+     */
+    @NonNull
+    private static List<FlowNode> getEnclosingStagesAndParallels(FlowNode node) {
+        List<FlowNode> enclosingBlocks = new ArrayList<>();
+        for (FlowNode enclosing : node.getEnclosingBlocks()) {
+            if (enclosing != null && enclosing.getAction(LabelAction.class) != null) {
+                if (isStageNode(enclosing) ||
+                        (enclosing.getAction(ThreadNameAction.class) != null)) {
+                    enclosingBlocks.add(enclosing);
+                }
+            }
+        }
+
+        return enclosingBlocks;
+    }
+
+    @NonNull
+    private static List<String> getEnclosingBlockNames(@NonNull List<FlowNode> nodes) {
+        List<String> names = new ArrayList<>();
+        for (FlowNode n : nodes) {
+            ThreadNameAction threadNameAction = n.getPersistentAction(ThreadNameAction.class);
+            LabelAction labelAction = n.getPersistentAction(LabelAction.class);
+            if (threadNameAction != null) {
+                // If we're on a parallel branch with the same name as the previous (inner) node, that generally
+                // means we're in a Declarative parallel stages situation, so don't add the redundant branch name.
+                if (names.isEmpty() || !threadNameAction.getThreadName().equals(names.get(names.size()-1))) {
+                    names.add(threadNameAction.getThreadName());
+                }
+            } else if (labelAction != null) {
+                names.add(labelAction.getDisplayName());
+            }
+        }
+        return names;
     }
 
     @CheckForNull
