@@ -15,6 +15,8 @@ import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class FlowExecutionAnalyzer {
 
@@ -137,6 +140,8 @@ class FlowExecutionAnalyzer {
                 .withTruncationText(TRUNCATED_MESSAGE);
         indentationStack.clear();
 
+        List<String> potentialTitles = new ArrayList<>();
+
         table.getRows().forEach(row -> {
             final FlowNode flowNode = row.getNode();
 
@@ -153,15 +158,36 @@ class FlowExecutionAnalyzer {
             final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
                     .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
 
+            // the last title will be used in the ChecksOutput (if any are found)
+            if (!stageOrBranchName.isPresent()) {
+                potentialTitles.add(getPotentialTitle(flowNode, errorAction));
+            }
+
             textBuilder.addText(nodeInfo.getLeft());
             summaryBuilder.addText(nodeInfo.getRight());
         });
 
+
+        String title = extractOutputTitle();
+        if (!potentialTitles.isEmpty()) {
+            title = potentialTitles.get(potentialTitles.size() - 1);
+        }
+
         return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle(extractOutputTitle())
+                .withTitle(title)
                 .withSummary(summaryBuilder.build())
                 .withText(textBuilder.build())
                 .build();
+    }
+
+    private String getPotentialTitle(FlowNode flowNode, ErrorAction errorAction) {
+        final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error", flowNode.getDisplayFunctionName());
+        return flowNode.getParents().stream()
+                .map(FlowExecutionAnalyzer::getStageOrBranchName)
+                .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
+                .map(blockName -> blockName + ": " + whereBuildFailed)
+                .findFirst()
+                .orElse(whereBuildFailed);
     }
 
     @CheckForNull
@@ -174,7 +200,10 @@ class FlowExecutionAnalyzer {
             if (logAction.getLogText().writeLogTo(0, out) == 0) {
                 return null;
             }
-            return out.toString(StandardCharsets.UTF_8.toString());
+
+            String outputString = out.toString(StandardCharsets.UTF_8.toString());
+            // strip ansi color codes
+            return outputString.replaceAll("\u001B\\[[;\\d]*m", "");
         }
         catch (IOException e) {
             LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
