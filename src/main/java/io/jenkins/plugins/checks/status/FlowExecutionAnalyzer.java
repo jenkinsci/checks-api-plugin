@@ -47,14 +47,14 @@ class FlowExecutionAnalyzer {
     private static Optional<String> getStageName(final FlowNode node) {
         return Optional.ofNullable(node)
                 .filter(n -> n.getAction(ThreadNameAction.class) == null)
-                .flatMap(n -> Optional.ofNullable(n.getAction(LabelAction.class)))
+                .map(n -> n.getAction(LabelAction.class))
                 .map(LabelAction::getDisplayName);
     }
 
     private static Optional<String> getParallelName(final FlowNode node) {
         return Optional.ofNullable(node)
                 .filter(n -> n.getAction(LabelAction.class) != null)
-                .flatMap(n -> Optional.ofNullable(n.getAction(ThreadNameAction.class)))
+                .map(n -> n.getAction(ThreadNameAction.class))
                 .map(ThreadNameAction::getThreadName);
     }
 
