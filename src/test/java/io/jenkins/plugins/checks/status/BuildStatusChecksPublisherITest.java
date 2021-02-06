@@ -229,6 +229,9 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         });
     }
 
+    /**
+     * Validates the a simple successful pipeline works.
+     */
     @Test
     public void shouldPublishSimplePipeline() {
         PROPERTIES.setApplicable(true);
