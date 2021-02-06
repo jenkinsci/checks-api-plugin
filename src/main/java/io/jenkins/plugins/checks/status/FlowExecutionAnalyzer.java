@@ -184,7 +184,8 @@ class FlowExecutionAnalyzer {
         if (node instanceof StepNode) {
             StepDescriptor d = ((StepNode) node).getDescriptor();
             return d != null && d.getFunctionName().equals("stage");
-        } else {
+        }
+        else {
             return false;
         }
     }
@@ -199,8 +200,7 @@ class FlowExecutionAnalyzer {
         List<FlowNode> enclosingBlocks = new ArrayList<>();
         for (FlowNode enclosing : node.getEnclosingBlocks()) {
             if (enclosing != null && enclosing.getAction(LabelAction.class) != null) {
-                if (isStageNode(enclosing) ||
-                        (enclosing.getAction(ThreadNameAction.class) != null)) {
+                if (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null) {
                     enclosingBlocks.add(enclosing);
                 }
             }
@@ -218,10 +218,11 @@ class FlowExecutionAnalyzer {
             if (threadNameAction != null) {
                 // If we're on a parallel branch with the same name as the previous (inner) node, that generally
                 // means we're in a Declarative parallel stages situation, so don't add the redundant branch name.
-                if (names.isEmpty() || !threadNameAction.getThreadName().equals(names.get(names.size()-1))) {
+                if (names.isEmpty() || !threadNameAction.getThreadName().equals(names.get(names.size() - 1))) {
                     names.add(threadNameAction.getThreadName());
                 }
-            } else if (labelAction != null) {
+            }
+            else if (labelAction != null) {
                 names.add(labelAction.getDisplayName());
             }
         }
