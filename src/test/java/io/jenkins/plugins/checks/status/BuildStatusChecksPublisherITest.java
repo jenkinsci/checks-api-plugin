@@ -229,6 +229,26 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         });
     }
 
+    @Test
+    public void shouldPublishSimplePipeline() {
+        PROPERTIES.setApplicable(true);
+        PROPERTIES.setSkipped(false);
+        PROPERTIES.setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  echo 'Hello, world'"
+                + "}", true));
+
+        buildWithResult(job, Result.SUCCESS);
+
+        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+
+        ChecksDetails details = checksDetails.get(1);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> assertThat(output.getTitle()).isPresent().get().isEqualTo("Success"));
+    }
+
     static class ChecksProperties extends AbstractStatusChecksProperties {
         private boolean applicable;
         private boolean skipped;
