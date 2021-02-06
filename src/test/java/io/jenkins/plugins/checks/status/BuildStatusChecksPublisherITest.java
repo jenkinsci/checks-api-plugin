@@ -172,7 +172,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         // Details 6, p1s1 has finished and emitted unstable
         details = checksDetails.get(6);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("Unstable");
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("In parallel/p1/p1s1: warning in 'unstable' step");
             assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
                     + "Warning in `unstable` step, with arguments `something went wrong`.\n"
@@ -195,7 +195,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("Failure");
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'archiveArtifacts' step");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
                     + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
@@ -227,6 +227,29 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                     + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\n.*",
                     Pattern.DOTALL));
         });
+    }
+
+    /**
+     * Validates the a simple successful pipeline works.
+     */
+    @Test
+    public void shouldPublishSimplePipeline() {
+        PROPERTIES.setApplicable(true);
+        PROPERTIES.setSkipped(false);
+        PROPERTIES.setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  echo 'Hello, world'"
+                + "}", true));
+
+        buildWithResult(job, Result.SUCCESS);
+
+        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+
+        ChecksDetails details = checksDetails.get(1);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> assertThat(output.getTitle()).isPresent().get().isEqualTo("Success"));
     }
 
     static class ChecksProperties extends AbstractStatusChecksProperties {

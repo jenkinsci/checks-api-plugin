@@ -1,20 +1,25 @@
 package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
+import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jenkinsci.plugins.workflow.actions.*;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graph.StepNode;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -137,31 +142,91 @@ class FlowExecutionAnalyzer {
                 .withTruncationText(TRUNCATED_MESSAGE);
         indentationStack.clear();
 
-        table.getRows().forEach(row -> {
+        String title = null;
+        for (FlowGraphTable.Row row : table.getRows()) {
             final FlowNode flowNode = row.getNode();
 
             Optional<String> stageOrBranchName = getStageOrBranchName(flowNode);
             ErrorAction errorAction = flowNode.getError();
             WarningAction warningAction = flowNode.getPersistentAction(WarningAction.class);
 
-            if (!stageOrBranchName.isPresent()
-                    && errorAction == null
-                    && warningAction == null) {
-                return;
+            if (stageOrBranchName.isPresent() || errorAction != null || warningAction != null) {
+                final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
+                        .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
+
+                // the last title will be used in the ChecksOutput (if any are found)
+                if (!stageOrBranchName.isPresent()) {
+                    title = getPotentialTitle(flowNode, errorAction);
+                }
+
+                textBuilder.addText(nodeInfo.getLeft());
+                summaryBuilder.addText(nodeInfo.getRight());
             }
-
-            final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
-                    .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
-
-            textBuilder.addText(nodeInfo.getLeft());
-            summaryBuilder.addText(nodeInfo.getRight());
-        });
+        }
 
         return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle(extractOutputTitle())
+                .withTitle(extractOutputTitle(title))
                 .withSummary(summaryBuilder.build())
                 .withText(textBuilder.build())
                 .build();
+    }
+
+    private String getPotentialTitle(FlowNode flowNode, ErrorAction errorAction) {
+        final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error", flowNode.getDisplayFunctionName());
+
+        List<FlowNode> enclosingStagesAndParallels = getEnclosingStagesAndParallels(flowNode);
+        List<String> enclosingBlockNames = getEnclosingBlockNames(enclosingStagesAndParallels);
+
+        return StringUtils.join(new ReverseListIterator(enclosingBlockNames), "/") + ": " + whereBuildFailed;
+    }
+
+    private static boolean isStageNode(@NonNull FlowNode node) {
+        if (node instanceof StepNode) {
+            StepDescriptor d = ((StepNode) node).getDescriptor();
+            return d != null && d.getFunctionName().equals("stage");
+        }
+        else {
+            return false;
+        }
+    }
+
+    /**
+     * Get the stage and parallel branch start node IDs (not the body nodes) for this node, innermost first.
+     * @param node A flownode.
+     * @return A nonnull, possibly empty list of stage/parallel branch start nodes, innermost first.
+     */
+    @NonNull
+    private static List<FlowNode> getEnclosingStagesAndParallels(FlowNode node) {
+        List<FlowNode> enclosingBlocks = new ArrayList<>();
+        for (FlowNode enclosing : node.getEnclosingBlocks()) {
+            if (enclosing != null && enclosing.getAction(LabelAction.class) != null) {
+                if (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null) {
+                    enclosingBlocks.add(enclosing);
+                }
+            }
+        }
+
+        return enclosingBlocks;
+    }
+
+    @NonNull
+    private static List<String> getEnclosingBlockNames(@NonNull List<FlowNode> nodes) {
+        List<String> names = new ArrayList<>();
+        for (FlowNode n : nodes) {
+            ThreadNameAction threadNameAction = n.getPersistentAction(ThreadNameAction.class);
+            LabelAction labelAction = n.getPersistentAction(LabelAction.class);
+            if (threadNameAction != null) {
+                // If we're on a parallel branch with the same name as the previous (inner) node, that generally
+                // means we're in a Declarative parallel stages situation, so don't add the redundant branch name.
+                if (names.isEmpty() || !threadNameAction.getThreadName().equals(names.get(names.size() - 1))) {
+                    names.add(threadNameAction.getThreadName());
+                }
+            }
+            else if (labelAction != null) {
+                names.add(labelAction.getDisplayName());
+            }
+        }
+        return names;
     }
 
     @CheckForNull
@@ -174,7 +239,10 @@ class FlowExecutionAnalyzer {
             if (logAction.getLogText().writeLogTo(0, out) == 0) {
                 return null;
             }
-            return out.toString(StandardCharsets.UTF_8.toString());
+
+            String outputString = out.toString(StandardCharsets.UTF_8.toString());
+            // strip ansi color codes
+            return outputString.replaceAll("\u001B\\[[;\\d]*m", "");
         }
         catch (IOException e) {
             LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
@@ -182,7 +250,7 @@ class FlowExecutionAnalyzer {
         }
     }
 
-    private String extractOutputTitle() {
+    private String extractOutputTitle(String title) {
         Result result = run.getResult();
         if (result == null) {
             return "In progress";
@@ -190,6 +258,11 @@ class FlowExecutionAnalyzer {
         if (result.isBetterOrEqualTo(Result.SUCCESS)) {
             return "Success";
         }
+
+        if (title != null) {
+            return title;
+        }
+
         if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
             return "Unstable";
         }
