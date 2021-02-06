@@ -142,41 +142,30 @@ class FlowExecutionAnalyzer {
                 .withTruncationText(TRUNCATED_MESSAGE);
         indentationStack.clear();
 
-        List<String> potentialTitles = new ArrayList<>();
-
-        table.getRows().forEach(row -> {
+        String title = null;
+        for (FlowGraphTable.Row row : table.getRows()) {
             final FlowNode flowNode = row.getNode();
 
             Optional<String> stageOrBranchName = getStageOrBranchName(flowNode);
             ErrorAction errorAction = flowNode.getError();
             WarningAction warningAction = flowNode.getPersistentAction(WarningAction.class);
 
-            if (!stageOrBranchName.isPresent()
-                    && errorAction == null
-                    && warningAction == null) {
-                return;
+            if (stageOrBranchName.isPresent() || errorAction != null || warningAction != null) {
+                final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
+                        .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
+
+                // the last title will be used in the ChecksOutput (if any are found)
+                if (!stageOrBranchName.isPresent()) {
+                    title = getPotentialTitle(flowNode, errorAction);
+                }
+
+                textBuilder.addText(nodeInfo.getLeft());
+                summaryBuilder.addText(nodeInfo.getRight());
             }
-
-            final Pair<String, String> nodeInfo = stageOrBranchName.map(s -> processStageOrBranchRow(row, s))
-                    .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
-
-            // the last title will be used in the ChecksOutput (if any are found)
-            if (!stageOrBranchName.isPresent()) {
-                potentialTitles.add(getPotentialTitle(flowNode, errorAction));
-            }
-
-            textBuilder.addText(nodeInfo.getLeft());
-            summaryBuilder.addText(nodeInfo.getRight());
-        });
-
-
-        String title = extractOutputTitle();
-        if (!potentialTitles.isEmpty()) {
-            title = potentialTitles.get(potentialTitles.size() - 1);
         }
 
         return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle(title)
+                .withTitle(extractOutputTitle(title))
                 .withSummary(summaryBuilder.build())
                 .withText(textBuilder.build())
                 .build();
@@ -260,7 +249,7 @@ class FlowExecutionAnalyzer {
         }
     }
 
-    private String extractOutputTitle() {
+    private String extractOutputTitle(String title) {
         Result result = run.getResult();
         if (result == null) {
             return "In progress";
@@ -268,6 +257,11 @@ class FlowExecutionAnalyzer {
         if (result.isBetterOrEqualTo(Result.SUCCESS)) {
             return "Success";
         }
+
+        if (title != null) {
+            return title;
+        }
+
         if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
             return "Unstable";
         }
