@@ -150,7 +150,7 @@ public final class BuildStatusChecksPublisher {
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
-                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run)));
+                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, null));
         }
     }
 
