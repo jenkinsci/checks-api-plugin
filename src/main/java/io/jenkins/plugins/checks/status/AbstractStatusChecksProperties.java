@@ -37,7 +37,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     public abstract boolean isSkipped(Job<?, ?> job);
 
     /**
-     * Returns whether to conclude a unstable build as {@link io.jenkins.plugins.checks.api.ChecksConclusion#NEUTRAL},
+     * Whether to conclude an unstable build as {@link io.jenkins.plugins.checks.api.ChecksConclusion#NEUTRAL},
      * else it would be concluded as {@link io.jenkins.plugins.checks.api.ChecksConclusion#FAILURE};
      * the default is false.
      *
