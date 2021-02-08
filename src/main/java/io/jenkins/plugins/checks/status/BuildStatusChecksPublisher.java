@@ -183,10 +183,14 @@ public final class BuildStatusChecksPublisher {
                 throw new IllegalStateException("No result when the run completes, run: " + run.toString());
             }
 
+            Job<?, ?> job = run.getParent();
             if (result.isBetterOrEqualTo(Result.SUCCESS)) {
                 return ChecksConclusion.SUCCESS;
             }
-            else if (result.isBetterOrEqualTo(Result.UNSTABLE) || result.isBetterOrEqualTo(Result.FAILURE)) {
+            else if (result.isBetterOrEqualTo(Result.UNSTABLE) && findProperties(job).isUnstableBuildNeutral(job)) {
+                return ChecksConclusion.NEUTRAL;
+            }
+            else if (result.isBetterOrEqualTo(Result.FAILURE)) {
                 return ChecksConclusion.FAILURE;
             }
             else if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
