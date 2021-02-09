@@ -118,16 +118,17 @@ class FlowExecutionAnalyzer {
             nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
             String log = getLog(flowNode);
             if (StringUtils.isNotBlank(log)) {
-                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>%n",
+                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>",
                         errorAction.getDisplayName(),
                         log));
             }
         }
         else {
             nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
-            nodeSummaryBuilder.append(String.format("```%n%s%n```%n%n", warningAction.getMessage()));
+            nodeSummaryBuilder.append(String.format("```%n%s%n```", warningAction.getMessage()));
         }
         nodeTextBuilder.append("\n");
+        nodeSummaryBuilder.append("\n\n");  // Ensure a double newline at the end of summary so the subsequence heading works
         return Pair.of(nodeTextBuilder.toString(), nodeSummaryBuilder.toString());
     }
 
