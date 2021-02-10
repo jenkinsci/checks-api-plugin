@@ -43,6 +43,68 @@ class PublishChecksStepTest {
     }
 
     @Test
+    void shouldPublishCheckWithStatusInProgress() throws IOException, InterruptedException {
+        PublishChecksStep step = new PublishChecksStep();
+        step.setName("Jenkins");
+        step.setSummary("a check made by Jenkins");
+        step.setTitle("Jenkins Build");
+        step.setText("an in progress build");
+        step.setStatus(ChecksStatus.IN_PROGRESS);
+        step.setDetailsURL("http://ci.jenkins.io");
+
+        StepContext context = mock(StepContext.class);
+        when(context.get(Run.class)).thenReturn(mock(Run.class));
+        when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
+
+        StepExecution execution = step.start(context);
+        assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
+        assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
+                .usingRecursiveComparison()
+                .isEqualTo(new ChecksDetails.ChecksDetailsBuilder()
+                        .withName("Jenkins")
+                        .withStatus(ChecksStatus.IN_PROGRESS)
+                        .withConclusion(ChecksConclusion.NONE)
+                        .withDetailsURL("http://ci.jenkins.io")
+                        .withOutput(new ChecksOutput.ChecksOutputBuilder()
+                                .withTitle("Jenkins Build")
+                                .withSummary("a check made by Jenkins")
+                                .withText("an in progress build")
+                                .build())
+                        .build());
+    }
+
+    @Test
+    void shouldPublishCheckWithStatusQueue() throws IOException, InterruptedException {
+        PublishChecksStep step = new PublishChecksStep();
+        step.setName("Jenkins");
+        step.setSummary("a check made by Jenkins");
+        step.setTitle("Jenkins Build");
+        step.setText("a queued build");
+        step.setStatus(ChecksStatus.QUEUED);
+        step.setDetailsURL("http://ci.jenkins.io");
+
+        StepContext context = mock(StepContext.class);
+        when(context.get(Run.class)).thenReturn(mock(Run.class));
+        when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
+
+        StepExecution execution = step.start(context);
+        assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
+        assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
+                .usingRecursiveComparison()
+                .isEqualTo(new ChecksDetails.ChecksDetailsBuilder()
+                        .withName("Jenkins")
+                        .withStatus(ChecksStatus.QUEUED)
+                        .withConclusion(ChecksConclusion.NONE)
+                        .withDetailsURL("http://ci.jenkins.io")
+                        .withOutput(new ChecksOutput.ChecksOutputBuilder()
+                                .withTitle("Jenkins Build")
+                                .withSummary("a check made by Jenkins")
+                                .withText("a queued build")
+                                .build())
+                        .build());
+    }
+
+    @Test
     void shouldPublishCheckWithSetValues() throws IOException, InterruptedException {
         PublishChecksStep step = new PublishChecksStep();
         step.setName("Jenkins");
