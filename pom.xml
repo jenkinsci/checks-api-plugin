@@ -118,32 +118,6 @@
           <versionFormat>\d+\.\d+\.\d+</versionFormat>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
-              <item>
-                <regex>true</regex>
-                <code>java.annotation.removed</code>
-                <annotationType>org.kohsuke.accmod.Restricted</annotationType>
-                <justification>Beta restriction should be safe to remove.</justification>
-              </item>
-              <item>
-                <code>java.class.removed</code>
-                <old>class io.jenkins.plugins.checks.BuildStatusChecksPublisher</old>
-                <justification>BuildStatusChecksPublisher has no consumers, should be safe to move.</justification>
-              </item>
-              <item>
-                <code>java.class.added</code>
-                <new>class io.jenkins.plugins.checks.status.BuildStatusChecksPublisher.ChecksGraphListener</new>
-                <justification>ChecksGraphListener is an extension, should be safe to add.</justification>
-              </item>
-              <item>
-                <code>java.method.visibilityReduced</code>
-                <old>method void io.jenkins.plugins.checks.status.BuildStatusChecksPublisher::&lt;init&gt;()</old>
-                <justification>BuildStatusChecksPublisher is a utility class</justification>
-              </item>
-              <item>
-                <code>java.class.externalClassExposedInAPI</code>
-                <newArchive>org.jenkins-ci.plugins.workflow:workflow-api:jar:2.40</newArchive>
-                <justification>Used only as extension in BuildStatusChecksPublisher, has no consumers.</justification>
-              </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>
