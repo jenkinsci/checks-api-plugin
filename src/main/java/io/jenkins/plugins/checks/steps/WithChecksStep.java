@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Run;
@@ -108,15 +109,17 @@ public class WithChecksStep extends Step implements Serializable {
 
         @Override
         public void stop(final Throwable cause) {
-            if (publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
+            Exception publishFailure = publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
                     .withName(step.getName())
                     .withStatus(ChecksStatus.COMPLETED)
-                    .withConclusion(ChecksConclusion.CANCELED))) {
-                getContext().onFailure(cause);
+                    .withConclusion(ChecksConclusion.CANCELED));
+            if (publishFailure != null) {
+                cause.addSuppressed(publishFailure);
             }
+            getContext().onFailure(cause);
         }
 
-        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) {
+        private @CheckForNull Exception publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) {
             TaskListener listener = TaskListener.NULL;
             try {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
@@ -135,27 +138,24 @@ public class WithChecksStep extends Step implements Serializable {
                 String msg = "Failed getting Run from the context on the start of withChecks step: " + e;
                 pluginLogger.log(msg);
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
-                context.onFailure(new IllegalStateException(msg));
-                return false;
+                return new IllegalStateException(msg);
             }
 
             if (run == null) {
                 String msg = "No Run found in the context.";
                 pluginLogger.log(msg);
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
-                context.onFailure(new IllegalStateException(msg));
-                return false;
+                return new IllegalStateException(msg);
             }
 
             try {
                 ChecksPublisherFactory.fromRun(run, listener)
                         .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
                                 .build());
-                return true;
+                return null;
             }
-            catch (Exception e) {
-                context.onFailure(e);
-                return false;
+            catch (RuntimeException e) {
+                return e;
             }
         }
 
@@ -172,10 +172,13 @@ public class WithChecksStep extends Step implements Serializable {
 
             @Override
             public void onStart(final StepContext context) {
-                publish(context, new ChecksDetails.ChecksDetailsBuilder()
+                Exception publishFailure = publish(context, new ChecksDetails.ChecksDetailsBuilder()
                         .withName(info.getName())
                         .withStatus(ChecksStatus.IN_PROGRESS)
                         .withConclusion(ChecksConclusion.NONE));
+                if (publishFailure != null) {
+                    context.onFailure(publishFailure);
+                }
             }
 
             @Override
@@ -209,9 +212,11 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
-                if (publish(context, builder)) {
-                    context.onFailure(t);
+                Exception publishFailure = publish(context, builder);
+                if (publishFailure != null) {
+                    t.addSuppressed(publishFailure);
                 }
+                context.onFailure(t);
             }
         }
     }
