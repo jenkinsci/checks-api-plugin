@@ -68,6 +68,9 @@ public class PublishChecksStep extends Step implements Serializable {
     @DataBoundSetter
     public void setStatus(final ChecksStatus status) {
         this.status = status;
+        if (status == ChecksStatus.QUEUED || status == ChecksStatus.IN_PROGRESS) {
+            this.conclusion = ChecksConclusion.NONE;
+        }
     }
 
     @DataBoundSetter
@@ -169,10 +172,6 @@ public class PublishChecksStep extends Step implements Serializable {
         PublishChecksStepExecution(final StepContext context, final PublishChecksStep step) {
             super(context);
             this.step = step;
-            if ((step.getConclusion() == ChecksConclusion.SUCCESS)
-                    && (step.getStatus() == ChecksStatus.QUEUED || step.getStatus() == ChecksStatus.IN_PROGRESS)) {
-                this.step.setConclusion(ChecksConclusion.NONE);
-            }
         }
 
         @Override
