@@ -31,7 +31,6 @@ class PublishChecksStepTest {
 
     @Test
     void shouldPublishCheckWithDefaultValues() throws IOException, InterruptedException {
-
         StepExecution execution = new PublishChecksStep().start(context);
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
@@ -123,8 +122,8 @@ class PublishChecksStepTest {
         assertThat(descriptor.getRequiredContext().toArray()).containsExactlyInAnyOrder(Run.class, TaskListener.class);
     }
 
-    private PublishChecksStep getModifiedPublishChecksStepObject(String stepText, ChecksStatus status,
-                                                                 ChecksConclusion conclusion) {
+    private PublishChecksStep getModifiedPublishChecksStepObject(final String stepText, final ChecksStatus status,
+                                                                 final ChecksConclusion conclusion) {
         PublishChecksStep step = new PublishChecksStep();
         step.setName("Jenkins");
         step.setSummary("a check made by Jenkins");

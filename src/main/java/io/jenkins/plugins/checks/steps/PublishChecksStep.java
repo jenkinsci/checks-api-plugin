@@ -65,6 +65,10 @@ public class PublishChecksStep extends Step implements Serializable {
         this.detailsURL = detailsURL;
     }
 
+    /**
+     * Change the status of the Publish Check Step.
+     * @param status CheckStatus
+     */
     @DataBoundSetter
     public void setStatus(final ChecksStatus status) {
         this.status = status;
