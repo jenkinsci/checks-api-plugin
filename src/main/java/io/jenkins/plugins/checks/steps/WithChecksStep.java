@@ -147,10 +147,16 @@ public class WithChecksStep extends Step implements Serializable {
                 return false;
             }
 
-            ChecksPublisherFactory.fromRun(run, listener)
-                    .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
-                            .build());
-            return true;
+            try {
+                ChecksPublisherFactory.fromRun(run, listener)
+                        .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
+                                .build());
+                return true;
+            }
+            catch (Exception e) {
+                context.onFailure(e);
+                return false;
+            }
         }
 
         class WithChecksCallBack extends BodyExecutionCallback {
