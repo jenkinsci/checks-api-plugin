@@ -209,8 +209,9 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
-                publish(context, builder);
-                context.onFailure(t);
+                if (publish(context, builder)) {
+                    context.onFailure(t);
+                }
             }
         }
     }
