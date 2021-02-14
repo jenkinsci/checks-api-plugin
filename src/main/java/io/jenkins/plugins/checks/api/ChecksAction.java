@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -8,7 +9,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * An action of a check. It can be used to create actions like re-run or automatic formatting.
  */
-public class ChecksAction {
+public class ChecksAction implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final String label;
     private final String description;
     private final String identifier;

@@ -31,6 +31,7 @@ public class PublishChecksStep extends Step implements Serializable {
     private String detailsURL = StringUtils.EMPTY;
     private ChecksStatus status = ChecksStatus.COMPLETED;
     private ChecksConclusion conclusion = ChecksConclusion.SUCCESS;
+    private List<StepChecksAction> actions = Collections.emptyList();
 
     /**
      * Constructor used for pipeline by Stapler.
@@ -86,6 +87,11 @@ public class PublishChecksStep extends Step implements Serializable {
         this.conclusion = conclusion;
     }
 
+    @DataBoundSetter
+    public void setActions(final List<StepChecksAction> actions) {
+        this.actions = actions;
+    }
+
     public String getName() {
         return name;
     }
@@ -112,6 +118,10 @@ public class PublishChecksStep extends Step implements Serializable {
 
     public ChecksConclusion getConclusion() {
         return conclusion;
+    }
+
+    public List<StepChecksAction> getActions() {
+        return actions;
     }
 
     @Override
@@ -209,7 +219,36 @@ public class PublishChecksStep extends Step implements Serializable {
                             .withSummary(step.getSummary())
                             .withText(step.getText())
                             .build())
+                    .withActions(step.getActions().stream()
+                            .map(StepChecksAction::getAction)
+                            .collect(Collectors.toList()))
                     .build();
+        }
+    }
+
+    public static class StepChecksAction implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private final ChecksAction action;
+
+        @DataBoundConstructor
+        public StepChecksAction(final String label, final String description, final String identifier) {
+            action = new ChecksAction(label, description, identifier);
+        }
+
+        public String getLabel() {
+            return action.getLabel().orElse(StringUtils.EMPTY);
+        }
+
+        public String getDescription() {
+            return action.getDescription().orElse(StringUtils.EMPTY);
+        }
+
+        public String getIdentifier() {
+            return action.getIdentifier().orElse(StringUtils.EMPTY);
+        }
+
+        public ChecksAction getAction() {
+            return action;
         }
     }
 }
