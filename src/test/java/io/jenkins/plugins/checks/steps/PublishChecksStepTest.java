@@ -2,17 +2,15 @@ package io.jenkins.plugins.checks.steps;
 
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import io.jenkins.plugins.checks.api.ChecksConclusion;
-import io.jenkins.plugins.checks.api.ChecksDetails;
-import io.jenkins.plugins.checks.api.ChecksOutput;
-import io.jenkins.plugins.checks.api.ChecksStatus;
+import io.jenkins.plugins.checks.api.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +42,7 @@ class PublishChecksStepTest {
                                 .withSummary(StringUtils.EMPTY)
                                 .withText(StringUtils.EMPTY)
                                 .build())
+                        .withActions(Collections.emptyList())
                         .build());
     }
 
@@ -93,6 +92,17 @@ class PublishChecksStepTest {
 
     @Test
     void shouldPublishCheckWithSetValues() throws IOException, InterruptedException {
+        PublishChecksStep step = new PublishChecksStep();
+        step.setName("Jenkins");
+        step.setSummary("a check made by Jenkins");
+        step.setTitle("Jenkins Build");
+        step.setText("a failed build");
+        step.setStatus(ChecksStatus.IN_PROGRESS);
+        step.setConclusion(ChecksConclusion.FAILURE);
+        step.setDetailsURL("http://ci.jenkins.io");
+        step.setActions(Arrays.asList(
+                new PublishChecksStep.StepChecksAction("label-1", "description-1", "identifier-1"),
+                new PublishChecksStep.StepChecksAction("label-2", "description-2", "identifier-2")));
         PublishChecksStep step = getModifiedPublishChecksStepObject("a failed build",
                 ChecksStatus.IN_PROGRESS, ChecksConclusion.FAILURE);
 
@@ -110,6 +120,9 @@ class PublishChecksStepTest {
                                 .withSummary("a check made by Jenkins")
                                 .withText("a failed build")
                                 .build())
+                        .withActions(Arrays.asList(
+                                new ChecksAction("label-1", "description-1", "identifier-1"),
+                                new ChecksAction("label-2", "description-2", "identifier-2")))
                         .build());
     }
 
