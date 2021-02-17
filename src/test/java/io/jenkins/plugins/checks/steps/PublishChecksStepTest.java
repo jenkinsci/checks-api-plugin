@@ -20,18 +20,17 @@ import static io.jenkins.plugins.checks.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class PublishChecksStepTest {
-    private StepContext context;
 
-    @BeforeEach
-    void setup() throws IOException, InterruptedException {
-        this.context = mock(StepContext.class);
+    StepContext getStepContext() throws IOException, InterruptedException {
+        StepContext context = mock(StepContext.class);
         when(context.get(Run.class)).thenReturn(mock(Run.class));
         when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
+        return context;
     }
 
     @Test
     void shouldPublishCheckWithDefaultValues() throws IOException, InterruptedException {
-        StepExecution execution = new PublishChecksStep().start(context);
+        StepExecution execution = new PublishChecksStep().start(getStepContext());
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
                 .usingRecursiveComparison()
@@ -51,9 +50,9 @@ class PublishChecksStepTest {
     @Test
     void shouldPublishCheckWithStatusInProgress() throws IOException, InterruptedException {
         PublishChecksStep step = getModifiedPublishChecksStepObject("an in progress build",
-                ChecksStatus.IN_PROGRESS,null);
+                ChecksStatus.IN_PROGRESS, null);
 
-        StepExecution execution = step.start(context);
+        StepExecution execution = step.start(getStepContext());
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
                 .usingRecursiveComparison()
@@ -73,9 +72,9 @@ class PublishChecksStepTest {
     @Test
     void shouldPublishCheckWithStatusQueue() throws IOException, InterruptedException {
         PublishChecksStep step = getModifiedPublishChecksStepObject("a queued build",
-                ChecksStatus.QUEUED,null);
+                ChecksStatus.QUEUED, null);
 
-        StepExecution execution = step.start(context);
+        StepExecution execution = step.start(getStepContext());
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
                 .usingRecursiveComparison()
@@ -97,7 +96,7 @@ class PublishChecksStepTest {
         PublishChecksStep step = getModifiedPublishChecksStepObject("a failed build",
                 ChecksStatus.IN_PROGRESS, ChecksConclusion.FAILURE);
 
-        StepExecution execution = step.start(context);
+        StepExecution execution = step.start(getStepContext());
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
                 .usingRecursiveComparison()
