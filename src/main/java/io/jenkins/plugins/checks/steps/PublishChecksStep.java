@@ -226,10 +226,23 @@ public class PublishChecksStep extends Step implements Serializable {
         }
     }
 
+    /**
+     * A simple wrapper for {@link ChecksAction} to allow users add checks actions by {@link PublishChecksStep}.
+     */
     public static class StepChecksAction implements Serializable {
         private static final long serialVersionUID = 1L;
         private final ChecksAction action;
 
+        /**
+         * Creates an instance that wraps a newly constructed {@link ChecksAction} with according parameters.
+         *
+         * @param label
+         *         label of the action to display in the checks report on SCMs
+         * @param description
+         *         description for the action
+         * @param identifier
+         *         identifier for the action, useful to identify which action is requested by users
+         */
         @DataBoundConstructor
         public StepChecksAction(final String label, final String description, final String identifier) {
             action = new ChecksAction(label, description, identifier);
