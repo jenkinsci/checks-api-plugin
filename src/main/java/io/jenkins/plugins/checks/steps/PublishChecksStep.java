@@ -66,8 +66,12 @@ public class PublishChecksStep extends Step implements Serializable {
     }
 
     /**
-     * Change the status of the Publish Check Step.
-     * @param status CheckStatus
+     * Change the status of the check.
+     * When the {@code status} is {@link ChecksStatus#QUEUED} or {@link ChecksStatus#IN_PROGRESS},
+     * the conclusion will be reset to {@link ChecksConclusion#NONE}
+     *
+     * @param status
+     *         the status to be set
      */
     @DataBoundSetter
     public void setStatus(final ChecksStatus status) {
