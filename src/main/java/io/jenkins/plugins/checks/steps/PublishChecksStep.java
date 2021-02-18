@@ -65,9 +65,20 @@ public class PublishChecksStep extends Step implements Serializable {
         this.detailsURL = detailsURL;
     }
 
+    /**
+     * Change the status of the check.
+     * When the {@code status} is {@link ChecksStatus#QUEUED} or {@link ChecksStatus#IN_PROGRESS},
+     * the conclusion will be reset to {@link ChecksConclusion#NONE}
+     *
+     * @param status
+     *         the status to be set
+     */
     @DataBoundSetter
     public void setStatus(final ChecksStatus status) {
         this.status = status;
+        if (status == ChecksStatus.QUEUED || status == ChecksStatus.IN_PROGRESS) {
+            this.conclusion = ChecksConclusion.NONE;
+        }
     }
 
     @DataBoundSetter
