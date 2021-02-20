@@ -231,21 +231,24 @@ public class PublishChecksStep extends Step implements Serializable {
      */
     public static class StepChecksAction implements Serializable {
         private static final long serialVersionUID = 1L;
-        private final ChecksAction action;
+        private ChecksAction action;
 
         /**
          * Creates an instance that wraps a newly constructed {@link ChecksAction} with according parameters.
          *
          * @param label
          *         label of the action to display in the checks report on SCMs
-         * @param description
-         *         description for the action
          * @param identifier
          *         identifier for the action, useful to identify which action is requested by users
          */
         @DataBoundConstructor
-        public StepChecksAction(final String label, final String description, final String identifier) {
-            action = new ChecksAction(label, description, identifier);
+        public StepChecksAction(final String label, final String identifier) {
+            action = new ChecksAction(label, StringUtils.EMPTY, identifier);
+        }
+
+        @DataBoundSetter
+        public void setDescription(final String description) {
+            action = new ChecksAction(getLabel(), description, getIdentifier());
         }
 
         public String getLabel() {

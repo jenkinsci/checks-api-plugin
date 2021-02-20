@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static io.jenkins.plugins.checks.assertions.Assertions.assertThat;
@@ -86,13 +87,16 @@ class PublishChecksStepTest {
         PublishChecksStep step = createPublishChecksStep("a failed build", ChecksStatus.IN_PROGRESS,
                 ChecksConclusion.FAILURE);
 
-        step.setActions(Arrays.asList(
-                new PublishChecksStep.StepChecksAction("label-1", "description-1", "identifier-1"),
-                new PublishChecksStep.StepChecksAction("label-2", "description-2", "identifier-2")));
+        List<PublishChecksStep.StepChecksAction> actions = Arrays.asList(
+                new PublishChecksStep.StepChecksAction("label-1", "identifier-1"),
+                new PublishChecksStep.StepChecksAction("label-2", "identifier-2"));
+        actions.get(1).setDescription("description-2");
+
+        step.setActions(actions);
         assertThat(step.getActions().stream().map(PublishChecksStep.StepChecksAction::getLabel))
                 .containsExactlyInAnyOrder("label-1", "label-2");
         assertThat(step.getActions().stream().map(PublishChecksStep.StepChecksAction::getDescription))
-                .containsExactlyInAnyOrder("description-1", "description-2");
+                .containsExactlyInAnyOrder(StringUtils.EMPTY, "description-2");
         assertThat(step.getActions().stream().map(PublishChecksStep.StepChecksAction::getIdentifier))
                 .containsExactlyInAnyOrder("identifier-1", "identifier-2");
 
@@ -111,7 +115,7 @@ class PublishChecksStepTest {
                                 .withText("a failed build")
                                 .build())
                         .withActions(Arrays.asList(
-                                new ChecksAction("label-1", "description-1", "identifier-1"),
+                                new ChecksAction("label-1", "", "identifier-1"),
                                 new ChecksAction("label-2", "description-2", "identifier-2")))
                         .build());
     }
