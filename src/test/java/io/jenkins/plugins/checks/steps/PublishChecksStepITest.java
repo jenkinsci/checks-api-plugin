@@ -27,7 +27,7 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
     @TestExtension
     public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
 
-    /*PublishChecksStepTest.java*
+    /**
      * Tests that the step "publishChecks" can be used in pipeline script.
      *
      * @throws IOException if fails get log from run
