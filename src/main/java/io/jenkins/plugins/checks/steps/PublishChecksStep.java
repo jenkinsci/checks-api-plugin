@@ -244,6 +244,8 @@ public class PublishChecksStep extends Step implements Serializable {
          */
         @DataBoundConstructor
         public StepChecksAction(final String label, final String identifier) {
+            super();
+
             this.label = label;
             this.identifier = identifier;
         }
