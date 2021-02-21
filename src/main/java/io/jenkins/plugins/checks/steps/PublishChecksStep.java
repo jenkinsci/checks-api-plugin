@@ -3,6 +3,8 @@ package io.jenkins.plugins.checks.steps;
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
@@ -31,6 +33,7 @@ public class PublishChecksStep extends Step implements Serializable {
     private String detailsURL = StringUtils.EMPTY;
     private ChecksStatus status = ChecksStatus.COMPLETED;
     private ChecksConclusion conclusion = ChecksConclusion.SUCCESS;
+    private List<StepChecksAction> actions = Collections.emptyList();
 
     /**
      * Constructor used for pipeline by Stapler.
@@ -86,6 +89,11 @@ public class PublishChecksStep extends Step implements Serializable {
         this.conclusion = conclusion;
     }
 
+    @DataBoundSetter
+    public void setActions(final List<StepChecksAction> actions) {
+        this.actions = actions;
+    }
+
     public String getName() {
         return name;
     }
@@ -112,6 +120,10 @@ public class PublishChecksStep extends Step implements Serializable {
 
     public ChecksConclusion getConclusion() {
         return conclusion;
+    }
+
+    public List<StepChecksAction> getActions() {
+        return actions;
     }
 
     @Override
@@ -209,7 +221,64 @@ public class PublishChecksStep extends Step implements Serializable {
                             .withSummary(step.getSummary())
                             .withText(step.getText())
                             .build())
+                    .withActions(step.getActions().stream()
+                            .map(StepChecksAction::getAction)
+                            .collect(Collectors.toList()))
                     .build();
+        }
+    }
+
+    /**
+     * A simple wrapper for {@link ChecksAction} to allow users add checks actions by {@link PublishChecksStep}.
+     */
+    public static class StepChecksAction extends AbstractDescribableImpl<StepChecksAction> implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private final String label;
+        private final String identifier;
+        private String description = StringUtils.EMPTY;
+
+        /**
+         * Creates an instance that wraps a newly constructed {@link ChecksAction} with according parameters.
+         *
+         * @param label
+         *         label of the action to display in the checks report on SCMs
+         * @param identifier
+         *         identifier for the action, useful to identify which action is requested by users
+         */
+        @DataBoundConstructor
+        public StepChecksAction(final String label, final String identifier) {
+            super();
+
+            this.label = label;
+            this.identifier = identifier;
+        }
+
+        @DataBoundSetter
+        public void setDescription(final String description) {
+            this.description = description;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public ChecksAction getAction() {
+            return new ChecksAction(label, description, identifier);
+        }
+
+        /**
+         * Descriptor for {@link StepChecksAction}, required for Pipeline Snippet Generator.
+         */
+        @Extension
+        public static class StepChecksActionDescriptor extends Descriptor<StepChecksAction> {
         }
     }
 }

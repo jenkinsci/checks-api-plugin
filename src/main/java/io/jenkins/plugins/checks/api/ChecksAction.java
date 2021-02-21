@@ -30,7 +30,7 @@ public class ChecksAction {
      */
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     public ChecksAction(@CheckForNull final String label, @CheckForNull final String description,
-            @CheckForNull final String identifier) {
+                        @CheckForNull final String identifier) {
         this.label = label;
         this.description = description;
         this.identifier = identifier;

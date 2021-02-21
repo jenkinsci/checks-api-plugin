@@ -19,7 +19,7 @@
 
   <properties>
     <java.level>8</java.level>
-    <revision>1.5.1</revision>
+    <revision>1.6.0</revision>
     <changelist>-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
@@ -118,6 +118,12 @@
           <versionFormat>\d+\.\d+\.\d+</versionFormat>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
+              <item>
+                <code>java.field.serialVersionUIDUnchanged</code>
+                <old>field io.jenkins.plugins.checks.steps.PublishChecksStep.serialVersionUID</old>
+                <serialVersionUID>1</serialVersionUID>
+                <justification>Adding actions list with an initial empty value should not break the compatibility.</justification>
+              </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>

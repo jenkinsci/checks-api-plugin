@@ -29,4 +29,16 @@
     <f:select default="SUCCESS"/>
   </f:entry>
 
+  <f:entry title="${%title.actions}">
+    <div id="actions">
+      <f:repeatableProperty field="actions" add="${%Add Actions}">
+        <f:entry>
+          <div align="right">
+            <f:repeatableDeleteButton/>
+          </div>
+        </f:entry>
+      </f:repeatableProperty>
+    </div>
+  </f:entry>
+
 </j:jelly>

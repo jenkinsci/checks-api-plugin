@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.steps;
 
+import io.jenkins.plugins.checks.api.ChecksAction;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksOutput;
@@ -36,7 +37,8 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         WorkflowJob job = createPipeline();
         job.setDefinition(asStage("publishChecks name: 'customized-check', "
                 + "summary: 'customized check created in pipeline', title: 'Publish Checks Step', "
-                + "text: 'Pipeline support for checks', status: 'IN_PROGRESS', conclusion: 'NONE'"));
+                + "text: 'Pipeline support for checks', status: 'IN_PROGRESS', conclusion: 'NONE', "
+                + "actions: [[label:'test-label', description:'test-desc', identifier:'test-id']]"));
 
         assertThat(JenkinsRule.getLog(buildSuccessfully(job)))
                 .contains("[Pipeline] publishChecks");
@@ -49,6 +51,8 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         assertThat(details.getOutput()).isPresent();
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+        assertThat(details.getActions()).usingFieldByFieldElementComparator().containsExactlyInAnyOrder(
+                new ChecksAction("test-label", "test-desc", "test-id"));
 
         ChecksOutput output = details.getOutput().get();
         assertThat(output.getTitle()).isPresent().get().isEqualTo("Publish Checks Step");
