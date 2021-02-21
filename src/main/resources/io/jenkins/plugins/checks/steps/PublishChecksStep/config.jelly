@@ -32,7 +32,7 @@
   <f:entry title="${%title.actions}">
     <div id="actions">
       <f:repeatableProperty field="actions" add="${%Add Actions}">
-        <f:entry title="">
+        <f:entry>
           <div align="right">
             <f:repeatableDeleteButton/>
           </div>
