@@ -1,6 +1,10 @@
 package io.jenkins.plugins.checks.steps;
 
-import io.jenkins.plugins.checks.api.*;
+import io.jenkins.plugins.checks.api.ChecksAction;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
+import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -23,7 +27,7 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
     @TestExtension
     public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
 
-    /**
+    /*PublishChecksStepTest.java*
      * Tests that the step "publishChecks" can be used in pipeline script.
      *
      * @throws IOException if fails get log from run

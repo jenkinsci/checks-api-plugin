@@ -2,7 +2,11 @@ package io.jenkins.plugins.checks.steps;
 
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import io.jenkins.plugins.checks.api.*;
+import io.jenkins.plugins.checks.api.ChecksAction;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
+import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
