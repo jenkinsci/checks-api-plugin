@@ -3,8 +3,7 @@ package io.jenkins.plugins.checks.steps;
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.util.ListBoxModel;
 import io.jenkins.plugins.checks.api.*;
 import org.apache.commons.lang3.StringUtils;
@@ -229,9 +228,11 @@ public class PublishChecksStep extends Step implements Serializable {
     /**
      * A simple wrapper for {@link ChecksAction} to allow users add checks actions by {@link PublishChecksStep}.
      */
-    public static class StepChecksAction implements Serializable {
+    public static class StepChecksAction extends AbstractDescribableImpl<StepChecksAction> implements Serializable {
         private static final long serialVersionUID = 1L;
-        private ChecksAction action;
+        private final String label;
+        private final String identifier;
+        private String description = StringUtils.EMPTY;
 
         /**
          * Creates an instance that wraps a newly constructed {@link ChecksAction} with according parameters.
@@ -243,28 +244,36 @@ public class PublishChecksStep extends Step implements Serializable {
          */
         @DataBoundConstructor
         public StepChecksAction(final String label, final String identifier) {
-            action = new ChecksAction(label, StringUtils.EMPTY, identifier);
+            this.label = label;
+            this.identifier = identifier;
         }
 
         @DataBoundSetter
         public void setDescription(final String description) {
-            action = new ChecksAction(getLabel(), description, getIdentifier());
+            this.description = description;
         }
 
         public String getLabel() {
-            return action.getLabel().orElse(StringUtils.EMPTY);
+            return label;
         }
 
         public String getDescription() {
-            return action.getDescription().orElse(StringUtils.EMPTY);
+            return description;
         }
 
         public String getIdentifier() {
-            return action.getIdentifier().orElse(StringUtils.EMPTY);
+            return identifier;
         }
 
         public ChecksAction getAction() {
-            return action;
+            return new ChecksAction(label, description, identifier);
+        }
+
+        /**
+         * Descriptor for {@link StepChecksAction}, required for Pipeline Snippet Generator.
+         */
+        @Extension
+        public static class StepChecksActionDescriptor extends Descriptor<StepChecksAction> {
         }
     }
 }

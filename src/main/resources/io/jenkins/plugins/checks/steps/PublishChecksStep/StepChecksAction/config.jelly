@@ -1,0 +1,16 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+
+  <f:entry title="Label" field="label">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Identifier" field="identifier">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Description" field="description">
+    <f:textbox />
+  </f:entry>
+
+</j:jelly>
