@@ -44,10 +44,10 @@ publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through 
     actions: [[label:'an-user-request-action', description:'actions allow users to request pre-defined behaviours', identifier:'an unique identifier']]
 ```
 
-To use customized actions, you may need to define them on your own.
+*To use customized actions, you may need to define them on your own.
 For instance, if you want to add GitHub checks actions which are basically buttons on the checks report,
 you may need to extend [GHEventSubscriber](https://github.com/jenkinsci/github-plugin/blob/master/src/main/java/org/jenkinsci/plugins/github/extension/GHEventsSubscriber.java) to handle the user requests,
-see [the handler](https://github.com/jenkinsci/github-checks-plugin/blob/ea060be67dad522ab6c31444fc4274955ac6e918/src/main/java/io/jenkins/plugins/checks/github/CheckRunGHEventSubscriber.java) for re-run requests as an example.
+see [the handler](https://github.com/jenkinsci/github-checks-plugin/blob/ea060be67dad522ab6c31444fc4274955ac6e918/src/main/java/io/jenkins/plugins/checks/github/CheckRunGHEventSubscriber.java) for re-run requests as an example.*
 
 - withChecks: you can inject the check's name into the closure for other steps to use:
 

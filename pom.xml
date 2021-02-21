@@ -118,12 +118,6 @@
           <versionFormat>\d+\.\d+\.\d+</versionFormat>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
-              <item>
-                <regex>true</regex>
-                <code>java.field.serialVersionUIDUnchanged</code>
-                <old>field io.jenkins.plugins.checks.steps.PublishChecksStep.serialVersionUID</old>
-                <justification>Newly implementing the Serializable will not break the API.</justification>
-              </item>
             </revapi.ignore>
           </analysisConfiguration>
         </configuration>
