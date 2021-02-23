@@ -203,7 +203,7 @@ class FlowExecutionAnalyzer {
         for (FlowNode enclosing : node.getEnclosingBlocks()) {
             if (enclosing != null && enclosing.getAction(LabelAction.class) != null
                     && (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null)) {
-                    enclosingBlocks.add(enclosing);
+                enclosingBlocks.add(enclosing);
             }
         }
 
