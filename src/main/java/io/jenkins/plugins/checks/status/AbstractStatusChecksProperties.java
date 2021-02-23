@@ -45,7 +45,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *         A jenkins job.
      * @return false to treat a unstable build as failure.
      */
-    public boolean isUnstableBuildNeutral(Job<?, ?> job) {
+    public boolean isUnstableBuildNeutral(final Job<?, ?> job) {
         return false;
     }
 }

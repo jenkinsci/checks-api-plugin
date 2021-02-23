@@ -29,9 +29,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 class FlowExecutionAnalyzer {
-
     private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
-
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
 
     private final Run<?, ?> run;
@@ -63,7 +61,8 @@ class FlowExecutionAnalyzer {
                 .map(ThreadNameAction::getThreadName);
     }
 
-    private Pair<String, String> processStageOrBranchRow(final FlowGraphTable.Row row, final String stageOrBranchName) {
+    private Pair<String, String> processStageOrBranchRow(final FlowGraphTable.Row row,
+                                                         final String stageOrBranchName) {
         final StringBuilder nodeTextBuilder = new StringBuilder();
         while (!indentationStack.isEmpty() && row.getTreeDepth() < indentationStack.peek()) {
             indentationStack.pop();
@@ -86,7 +85,8 @@ class FlowExecutionAnalyzer {
         return Pair.of(nodeTextBuilder.toString(), "");
     }
 
-    private Pair<String, String> processErrorOrWarningRow(final FlowGraphTable.Row row, final ErrorAction errorAction, final WarningAction warningAction) {
+    private Pair<String, String> processErrorOrWarningRow(final FlowGraphTable.Row row, final ErrorAction errorAction,
+                                                          final WarningAction warningAction) {
         FlowNode flowNode = row.getNode();
 
         StringBuilder nodeSummaryBuilder = new StringBuilder();
@@ -104,7 +104,8 @@ class FlowExecutionAnalyzer {
 
         nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
 
-        nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error", flowNode.getDisplayFunctionName()));
+        nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error",
+                flowNode.getDisplayFunctionName()));
         String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
         if (arguments == null) {
             nodeSummaryBuilder.append(".\n");
@@ -133,7 +134,6 @@ class FlowExecutionAnalyzer {
     }
 
     ChecksOutput extractOutput() {
-
         FlowGraphTable table = new FlowGraphTable(execution);
         table.build();
 
@@ -172,8 +172,9 @@ class FlowExecutionAnalyzer {
                 .build();
     }
 
-    private String getPotentialTitle(FlowNode flowNode, ErrorAction errorAction) {
-        final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error", flowNode.getDisplayFunctionName());
+    private String getPotentialTitle(final FlowNode flowNode, final ErrorAction errorAction) {
+        final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error",
+                flowNode.getDisplayFunctionName());
 
         List<FlowNode> enclosingStagesAndParallels = getEnclosingStagesAndParallels(flowNode);
         List<String> enclosingBlockNames = getEnclosingBlockNames(enclosingStagesAndParallels);
@@ -181,7 +182,7 @@ class FlowExecutionAnalyzer {
         return StringUtils.join(new ReverseListIterator(enclosingBlockNames), "/") + ": " + whereBuildFailed;
     }
 
-    private static boolean isStageNode(@NonNull FlowNode node) {
+    private static boolean isStageNode(@NonNull final FlowNode node) {
         if (node instanceof StepNode) {
             StepDescriptor d = ((StepNode) node).getDescriptor();
             return d != null && d.getFunctionName().equals("stage");
@@ -197,13 +198,12 @@ class FlowExecutionAnalyzer {
      * @return A nonnull, possibly empty list of stage/parallel branch start nodes, innermost first.
      */
     @NonNull
-    private static List<FlowNode> getEnclosingStagesAndParallels(FlowNode node) {
+    private static List<FlowNode> getEnclosingStagesAndParallels(final FlowNode node) {
         List<FlowNode> enclosingBlocks = new ArrayList<>();
         for (FlowNode enclosing : node.getEnclosingBlocks()) {
-            if (enclosing != null && enclosing.getAction(LabelAction.class) != null) {
-                if (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null) {
+            if (enclosing != null && enclosing.getAction(LabelAction.class) != null
+                    && (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null)) {
                     enclosingBlocks.add(enclosing);
-                }
             }
         }
 
@@ -211,7 +211,7 @@ class FlowExecutionAnalyzer {
     }
 
     @NonNull
-    private static List<String> getEnclosingBlockNames(@NonNull List<FlowNode> nodes) {
+    private static List<String> getEnclosingBlockNames(@NonNull final List<FlowNode> nodes) {
         List<String> names = new ArrayList<>();
         for (FlowNode n : nodes) {
             ThreadNameAction threadNameAction = n.getPersistentAction(ThreadNameAction.class);
@@ -246,12 +246,13 @@ class FlowExecutionAnalyzer {
             return outputString.replaceAll("\u001B\\[[;\\d]*m", "");
         }
         catch (IOException e) {
-            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'", flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
+            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'",
+                    flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
             return null;
         }
     }
 
-    private String extractOutputTitle(String title) {
+    private String extractOutputTitle(final String title) {
         Result result = run.getResult();
         if (result == null) {
             return "In progress";
