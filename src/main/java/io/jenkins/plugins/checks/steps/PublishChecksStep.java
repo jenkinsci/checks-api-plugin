@@ -8,7 +8,13 @@ import hudson.model.Descriptor;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
-import io.jenkins.plugins.checks.api.*;
+import io.jenkins.plugins.checks.api.ChecksAction;
+import io.jenkins.plugins.checks.api.ChecksAnnotation;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
+import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -34,6 +40,7 @@ public class PublishChecksStep extends Step implements Serializable {
     private ChecksStatus status = ChecksStatus.COMPLETED;
     private ChecksConclusion conclusion = ChecksConclusion.SUCCESS;
     private List<StepChecksAction> actions = Collections.emptyList();
+    private List<StepChecksAnnotation> annotations = Collections.emptyList();
 
     /**
      * Constructor used for pipeline by Stapler.
@@ -94,6 +101,11 @@ public class PublishChecksStep extends Step implements Serializable {
         this.actions = actions;
     }
 
+    @DataBoundSetter
+    public void setAnnotations(final List<StepChecksAnnotation> annotations) {
+        this.annotations = annotations;
+    }
+
     public String getName() {
         return name;
     }
@@ -126,6 +138,10 @@ public class PublishChecksStep extends Step implements Serializable {
         return actions;
     }
 
+    public List<StepChecksAnnotation> getAnnotations() {
+        return annotations;
+    }
+
     @Override
     public StepExecution start(final StepContext stepContext) {
         return new PublishChecksStepExecution(stepContext, this);
@@ -136,6 +152,8 @@ public class PublishChecksStep extends Step implements Serializable {
      */
     @Extension
     public static class PublishChecksStepDescriptor extends StepDescriptor {
+        private final StepUtils utils = new StepUtils();
+
         @Override
         public String getFunctionName() {
             return "publishChecks";
@@ -158,7 +176,7 @@ public class PublishChecksStep extends Step implements Serializable {
          * @return a model with all {@link ChecksStatus}es.
          */
         public ListBoxModel doFillStatusItems() {
-            return asListBoxModel(ChecksStatus.values());
+            return utils.asListBoxModel(ChecksStatus.values());
         }
 
         /**
@@ -167,18 +185,7 @@ public class PublishChecksStep extends Step implements Serializable {
          * @return a model with all {@link ChecksConclusion}s.
          */
         public ListBoxModel doFillConclusionItems() {
-            return asListBoxModel(ChecksConclusion.values());
-        }
-
-        private ListBoxModel asListBoxModel(final Enum<?>... enums) {
-            return Arrays.stream(enums)
-                    .map(Enum::name)
-                    .map(name -> new ListBoxModel.Option(asDisplayName(name), name))
-                    .collect(Collectors.toCollection(ListBoxModel::new));
-        }
-
-        private String asDisplayName(final String name) {
-            return StringUtils.capitalize(name.toLowerCase(Locale.ENGLISH).replace("_", " "));
+            return utils.asListBoxModel(ChecksConclusion.values());
         }
     }
 
@@ -220,11 +227,167 @@ public class PublishChecksStep extends Step implements Serializable {
                             .withTitle(step.getTitle())
                             .withSummary(step.getSummary())
                             .withText(step.getText())
+                            .withAnnotations(step.getAnnotations().stream()
+                                    .map(StepChecksAnnotation::getAnnotation)
+                                    .collect(Collectors.toList()))
                             .build())
                     .withActions(step.getActions().stream()
                             .map(StepChecksAction::getAction)
                             .collect(Collectors.toList()))
                     .build();
+        }
+    }
+
+    /**
+     * A simple wrapper for {@link ChecksAnnotation} to allow users add code annotations by {@link PublishChecksStep}.
+     */
+    public static class StepChecksAnnotation extends AbstractDescribableImpl<StepChecksAnnotation>
+            implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final String path;
+        private final int startLine;
+        private final int endLine;
+        private final String message;
+
+        private Integer startColumn;
+        private Integer endColumn;
+        private String title;
+        private String rawDetails;
+
+        private ChecksAnnotation.ChecksAnnotationLevel annotationLevel = ChecksAnnotation.ChecksAnnotationLevel.WARNING;
+
+        /**
+         * Creates an annotation with required parameters.
+         *
+         * @param path
+         *         path of the file to annotate
+         * @param startLine
+         *         start line of the annotation
+         * @param endLine
+         *         end line of the annotation
+         * @param message
+         *         annotation message
+         */
+        @DataBoundConstructor
+        public StepChecksAnnotation(final String path, final int startLine, final int endLine, final String message) {
+            super();
+
+            this.path = path;
+            this.startLine = startLine;
+            this.endLine = endLine;
+            this.message = message;
+        }
+
+        @DataBoundSetter
+        public void setStartColumn(final Integer startColumn) {
+            this.startColumn = startColumn;
+        }
+
+        @DataBoundSetter
+        public void setEndColumn(final Integer endColumn) {
+            this.endColumn = endColumn;
+        }
+
+        @DataBoundSetter
+        public void setTitle(final String title) {
+            this.title = title;
+        }
+
+        @DataBoundSetter
+        public void setRawDetails(final String rawDetails) {
+            this.rawDetails = rawDetails;
+        }
+
+        @DataBoundSetter
+        public void setAnnotationLevel(final ChecksAnnotation.ChecksAnnotationLevel annotationLevel) {
+            this.annotationLevel = annotationLevel;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public int getStartLine() {
+            return startLine;
+        }
+
+        public int getEndLine() {
+            return endLine;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public Integer getStartColumn() {
+            return startColumn;
+        }
+
+        public Integer getEndColumn() {
+            return endColumn;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getRawDetails() {
+            return rawDetails;
+        }
+
+        public ChecksAnnotation.ChecksAnnotationLevel getAnnotationLevel() {
+            return annotationLevel;
+        }
+
+        /**
+         * Get {@link ChecksAnnotation} built with user-provided parameters in {@link PublishChecksStep}.
+         *
+         * @return the annotation built with provided parameters
+         */
+        public ChecksAnnotation getAnnotation() {
+            ChecksAnnotation.ChecksAnnotationBuilder builder = new ChecksAnnotation.ChecksAnnotationBuilder()
+                    .withPath(path)
+                    .withStartLine(startLine)
+                    .withEndLine(endLine)
+                    .withMessage(message)
+                    .withAnnotationLevel(annotationLevel);
+
+            if (startColumn != null) {
+                builder.withStartColumn(startColumn);
+            }
+            if (endColumn != null) {
+                builder.withEndColumn(endColumn);
+            }
+            if (title != null) {
+                builder.withTitle(title);
+            }
+            if (rawDetails != null) {
+                builder.withRawDetails(rawDetails);
+            }
+
+            return builder.build();
+        }
+
+        /**
+         * Descriptor for {@link StepChecksAnnotation}, required for Pipeline Snippet Generator.
+         */
+        @Extension
+        public static class StepChecksAnnotationDescriptor extends Descriptor<StepChecksAnnotation> {
+            private final StepUtils utils = new StepUtils();
+
+            /**
+             * Fill the dropdown list model with all {@link io.jenkins.plugins.checks.api.ChecksAnnotation.ChecksAnnotationLevel}
+             * values.
+             *
+             * @return a model with all {@link io.jenkins.plugins.checks.api.ChecksAnnotation.ChecksAnnotationLevel} values.
+             */
+            public ListBoxModel doFillAnnotationLevelItems() {
+                return utils.asListBoxModel(
+                        Arrays.stream(ChecksAnnotation.ChecksAnnotationLevel.values())
+                                .filter(v -> v != ChecksAnnotation.ChecksAnnotationLevel.NONE)
+                                .toArray(Enum[]::new));
+            }
         }
     }
 

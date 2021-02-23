@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.steps;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.ChecksAction;
+import io.jenkins.plugins.checks.api.ChecksAnnotation;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksOutput;
@@ -104,6 +105,16 @@ class PublishChecksStepTest {
         assertThat(step.getActions().stream().map(PublishChecksStep.StepChecksAction::getIdentifier))
                 .containsExactlyInAnyOrder("identifier-1", "identifier-2");
 
+        List<PublishChecksStep.StepChecksAnnotation> annotations = Arrays.asList(
+                new PublishChecksStep.StepChecksAnnotation("Jenkinsfile", 1, 1, "required params"),
+                new PublishChecksStep.StepChecksAnnotation("Jenkinsfile", 2, 2, "full params"));
+        annotations.get(1).setStartColumn(0);
+        annotations.get(1).setEndColumn(10);
+        annotations.get(1).setTitle("unit test");
+        annotations.get(1).setRawDetails("raw details");
+        annotations.get(1).setAnnotationLevel(ChecksAnnotation.ChecksAnnotationLevel.FAILURE);
+        step.setAnnotations(annotations);
+
         StepExecution execution = step.start(createStepContext());
         assertThat(execution).isInstanceOf(PublishChecksStep.PublishChecksStepExecution.class);
         assertThat(((PublishChecksStep.PublishChecksStepExecution)execution).extractChecksDetails())
@@ -117,6 +128,25 @@ class PublishChecksStepTest {
                                 .withTitle("Jenkins Build")
                                 .withSummary("a check made by Jenkins")
                                 .withText("a failed build")
+                                .withAnnotations(Arrays.asList(
+                                        new ChecksAnnotation.ChecksAnnotationBuilder()
+                                                .withPath("Jenkinsfile")
+                                                .withStartLine(1)
+                                                .withEndLine(1)
+                                                .withAnnotationLevel(ChecksAnnotation.ChecksAnnotationLevel.WARNING)
+                                                .withMessage("required params")
+                                                .build(),
+                                        new ChecksAnnotation.ChecksAnnotationBuilder()
+                                                .withPath("Jenkinsfile")
+                                                .withStartLine(2)
+                                                .withEndLine(2)
+                                                .withAnnotationLevel(ChecksAnnotation.ChecksAnnotationLevel.FAILURE)
+                                                .withMessage("full params")
+                                                .withStartColumn(0)
+                                                .withEndColumn(10)
+                                                .withTitle("unit test")
+                                                .withRawDetails("raw details")
+                                                .build()))
                                 .build())
                         .withActions(Arrays.asList(
                                 new ChecksAction("label-1", "", "identifier-1"),
