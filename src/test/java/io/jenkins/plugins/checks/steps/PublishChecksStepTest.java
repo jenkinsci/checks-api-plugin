@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.steps;
 
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.util.ListBoxModel;
 import io.jenkins.plugins.checks.api.ChecksAction;
 import io.jenkins.plugins.checks.api.ChecksAnnotation;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static io.jenkins.plugins.checks.assertions.Assertions.assertThat;
@@ -160,6 +162,17 @@ class PublishChecksStepTest {
         assertThat(descriptor.getFunctionName()).isEqualTo("publishChecks");
         assertThat(descriptor.getDisplayName()).isEqualTo("Publish customized checks to SCM platforms");
         assertThat(descriptor.getRequiredContext().toArray()).containsExactlyInAnyOrder(Run.class, TaskListener.class);
+    }
+
+    @Test
+    void shouldFillStepChecksAnnotationDropdownListCorrectly() {
+        PublishChecksStep.StepChecksAnnotation.StepChecksAnnotationDescriptor descriptor =
+                new PublishChecksStep.StepChecksAnnotation.StepChecksAnnotationDescriptor();
+
+        assertThat(descriptor.doFillAnnotationLevelItems().stream()
+                .map(option -> option.name)
+                .collect(Collectors.toList()))
+                .containsExactlyInAnyOrder("Notice", "Warning", "Failure");
     }
 
     private StepContext createStepContext() throws IOException, InterruptedException {

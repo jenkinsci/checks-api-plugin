@@ -385,7 +385,7 @@ public class PublishChecksStep extends Step implements Serializable {
             public ListBoxModel doFillAnnotationLevelItems() {
                 return utils.asListBoxModel(
                         Arrays.stream(ChecksAnnotation.ChecksAnnotationLevel.values())
-                                .filter(v -> v != ChecksAnnotation.ChecksAnnotationLevel.NONE)
+                                .filter(v -> v!= ChecksAnnotation.ChecksAnnotationLevel.NONE)
                                 .toArray(Enum[]::new));
             }
         }
