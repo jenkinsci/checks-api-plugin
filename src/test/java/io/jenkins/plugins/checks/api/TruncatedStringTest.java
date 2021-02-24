@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -118,5 +120,34 @@ public class TruncatedStringTest {
         builder.addText("wwww\n"); // 5
         builder.addText("xxxx\nyyyy\nzzzzz\n"); // 16
         assertThat(builder.build().build(20)).isEqualTo(chunkOnNewlines ? "wwww\nxxxx\nTruncated" : "wwww\nTruncated");
+    }
+
+    @Test
+    public void shouldTruncateToBytesNotChars() {
+        TruncatedString.Builder builder = getBuilder();
+        builder.addText("☃☃☃\n"); // 3 + 1
+        assertThat(builder.build().toString().length()).isEqualTo(4);
+        assertThat(builder.build().toString().getBytes(StandardCharsets.UTF_8).length).isEqualTo(10);
+        assertThat(builder.build().build(20)).isEqualTo("☃☃☃\n");
+
+        builder.addText("🕴️🕴️\n"); // 2 + 1
+        assertThat(builder.build().toString().length()).isEqualTo(11);
+        assertThat(builder.build().toString().getBytes(StandardCharsets.UTF_8).length).isEqualTo(25);
+        assertThat(builder.build().build(20)).isEqualTo("☃☃☃\nTruncated");
+    }
+
+    @Test
+    public void shouldHandleLongCharsInTruncationTest() {
+        String truncationText = "E_TOO_MUCH_☃";
+        assertThat(truncationText.length()).isEqualTo(12);
+        assertThat(truncationText.getBytes(StandardCharsets.UTF_8).length).isEqualTo(14);
+
+        TruncatedString.Builder builder = getBuilder();
+        builder.withTruncationText(truncationText);
+        builder.addText("xxxx\n"); // 5
+        builder.addText("x\n"); // 2
+        assertThat(builder.build().build(20)).isEqualTo("xxxx\nx\n");
+        builder.addText("xxxxxxxxxxxxxxx"); // 15
+        assertThat(builder.build().build(20)).isEqualTo("xxxx\nE_TOO_MUCH_☃");
     }
 }
