@@ -41,4 +41,16 @@
     </div>
   </f:entry>
 
+  <f:entry title="${%title.annotations}">
+    <div id="annotations">
+      <f:repeatableProperty field="annotations" add="${%Add Annotations}">
+        <f:entry>
+          <div align="right">
+            <f:repeatableDeleteButton/>
+          </div>
+        </f:entry>
+      </f:repeatableProperty>
+    </div>
+  </f:entry>
+
 </j:jelly>

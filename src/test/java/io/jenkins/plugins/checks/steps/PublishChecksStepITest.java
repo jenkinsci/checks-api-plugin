@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.steps;
 
 import io.jenkins.plugins.checks.api.ChecksAction;
+import io.jenkins.plugins.checks.api.ChecksAnnotation;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksOutput;
@@ -38,7 +39,12 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         job.setDefinition(asStage("publishChecks name: 'customized-check', "
                 + "summary: 'customized check created in pipeline', title: 'Publish Checks Step', "
                 + "text: 'Pipeline support for checks', status: 'IN_PROGRESS', conclusion: 'NONE', "
-                + "actions: [[label:'test-label', description:'test-desc', identifier:'test-id']]"));
+                + "actions: [[label:'test-label', description:'test-desc', identifier:'test-id']], "
+                + "annotations: ["
+                + "    [path:'Jenkinsfile', startLine:1, endLine:1, message:'test with only required params'], "
+                + "    [path:'Jenkinsfile', startLine:2, endLine:2, message:'test with all params', "
+                + "        annotationLevel:'NOTICE', startColumn:0, endColumn:10, title:'integration test', "
+                + "        rawDetails:'raw details']]"));
 
         assertThat(JenkinsRule.getLog(buildSuccessfully(job)))
                 .contains("[Pipeline] publishChecks");
@@ -58,5 +64,24 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         assertThat(output.getTitle()).isPresent().get().isEqualTo("Publish Checks Step");
         assertThat(output.getSummary()).isPresent().get().isEqualTo("customized check created in pipeline");
         assertThat(output.getText()).isPresent().get().isEqualTo("Pipeline support for checks");
+        assertThat(output.getChecksAnnotations()).usingFieldByFieldElementComparator().containsExactlyInAnyOrder(
+                new ChecksAnnotation.ChecksAnnotationBuilder()
+                        .withPath("Jenkinsfile")
+                        .withStartLine(1)
+                        .withEndLine(1)
+                        .withAnnotationLevel(ChecksAnnotation.ChecksAnnotationLevel.WARNING)
+                        .withMessage("test with only required params")
+                        .build(),
+                new ChecksAnnotation.ChecksAnnotationBuilder()
+                        .withPath("Jenkinsfile")
+                        .withStartLine(2)
+                        .withEndLine(2)
+                        .withAnnotationLevel(ChecksAnnotation.ChecksAnnotationLevel.NOTICE)
+                        .withMessage("test with all params")
+                        .withStartColumn(0)
+                        .withEndColumn(10)
+                        .withTitle("integration test")
+                        .withRawDetails("raw details")
+                        .build());
     }
 }
