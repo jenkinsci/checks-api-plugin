@@ -1,6 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,19 +15,26 @@ import static java.util.Objects.requireNonNull;
  */
 @SuppressWarnings("PMD.DataClass")
 public class ChecksDetails {
+    @CheckForNull
     private final String name;
-    private final ChecksStatus status;
+    @CheckForNull
     private final String detailsURL;
+    @CheckForNull
     private final LocalDateTime startedAt;
-    private final ChecksConclusion conclusion;
+    @CheckForNull
     private final LocalDateTime completedAt;
+    @CheckForNull
     private final ChecksOutput output;
+
+    private final ChecksStatus status;
+    private final ChecksConclusion conclusion;
     private final List<ChecksAction> actions;
 
     @SuppressWarnings("ParameterNumber")
-    private ChecksDetails(final String name, final ChecksStatus status, final String detailsURL,
-            final LocalDateTime startedAt, final ChecksConclusion conclusion, final LocalDateTime completedAt,
-            final ChecksOutput output, final List<ChecksAction> actions) {
+    private ChecksDetails(@CheckForNull final String name, final ChecksStatus status,
+                          @CheckForNull final String detailsURL, @CheckForNull final LocalDateTime startedAt,
+                          final ChecksConclusion conclusion, @CheckForNull final LocalDateTime completedAt,
+                          @CheckForNull final ChecksOutput output, final List<ChecksAction> actions) {
         this.name = name;
         this.status = status;
         this.detailsURL = detailsURL;
@@ -128,21 +135,26 @@ public class ChecksDetails {
      * Builder for {@link ChecksDetails}.
      */
     public static class ChecksDetailsBuilder {
+        @CheckForNull
         private String name;
-        private ChecksStatus status;
+        @CheckForNull
         private String detailsURL;
+        @CheckForNull
         private LocalDateTime startedAt;
-        private ChecksConclusion conclusion;
+        @CheckForNull
         private LocalDateTime completedAt;
+        @CheckForNull
         private ChecksOutput output;
+
+        private ChecksStatus status;
+        private ChecksConclusion conclusion;
         private List<ChecksAction> actions;
 
         /**
          * Construct a builder for {@link ChecksDetails}.
          */
-        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksDetailsBuilder() {
+            this.status = ChecksStatus.NONE;
             this.conclusion = ChecksConclusion.NONE;
             this.actions = new ArrayList<>();
         }

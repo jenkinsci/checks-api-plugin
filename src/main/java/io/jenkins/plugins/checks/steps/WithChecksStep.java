@@ -135,7 +135,7 @@ public class WithChecksStep extends Step implements Serializable {
             catch (IOException | InterruptedException e) {
                 String msg = "Failed getting Run from the context on the start of withChecks step: " + e;
                 pluginLogger.log(msg.replaceAll("\r\n", ""));
-                SYSTEM_LOGGER.log(Level.WARNING, msg);
+                SYSTEM_LOGGER.log(Level.WARNING, msg.replaceAll("\r\n", ""));
                 context.onFailure(new IllegalStateException(msg));
                 return false;
             }

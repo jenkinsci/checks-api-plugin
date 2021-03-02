@@ -1,6 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,14 +14,19 @@ import static java.util.Objects.requireNonNull;
  * annotations, etc.
  */
 public class ChecksOutput {
+    @CheckForNull
     private final String title;
+    @CheckForNull
     private final TruncatedString summary;
+    @CheckForNull
     private final TruncatedString text;
+
     private final List<ChecksAnnotation> annotations;
     private final List<ChecksImage> images;
 
-    private ChecksOutput(final String title, final TruncatedString summary, final TruncatedString text,
-            final List<ChecksAnnotation> annotations, final List<ChecksImage> images) {
+    private ChecksOutput(@CheckForNull final String title, @CheckForNull final TruncatedString summary,
+                         @CheckForNull final TruncatedString text, final List<ChecksAnnotation> annotations,
+                         final List<ChecksImage> images) {
         this.title = title;
         this.summary = summary;
         this.text = text;
@@ -97,9 +102,13 @@ public class ChecksOutput {
      * Builder for {@link ChecksOutput}.
      */
     public static class ChecksOutputBuilder {
+        @CheckForNull
         private String title;
+        @CheckForNull
         private TruncatedString summary;
+        @CheckForNull
         private TruncatedString text;
+
         private List<ChecksAnnotation> annotations;
         private List<ChecksImage> images;
 
@@ -107,8 +116,6 @@ public class ChecksOutput {
          * Construct a builder for a {@link ChecksOutput}.
          *
          */
-        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksOutputBuilder() {
             this.annotations = new ArrayList<>();
             this.images = new ArrayList<>();

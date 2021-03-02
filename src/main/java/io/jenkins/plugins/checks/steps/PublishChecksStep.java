@@ -1,8 +1,8 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -251,9 +251,13 @@ public class PublishChecksStep extends Step implements Serializable {
         private final int endLine;
         private final String message;
 
+        @CheckForNull
         private Integer startColumn;
+        @CheckForNull
         private Integer endColumn;
+        @CheckForNull
         private String title;
+        @CheckForNull
         private String rawDetails;
 
         private ChecksAnnotation.ChecksAnnotationLevel annotationLevel = ChecksAnnotation.ChecksAnnotationLevel.WARNING;
@@ -271,8 +275,6 @@ public class PublishChecksStep extends Step implements Serializable {
          *         annotation message
          */
         @DataBoundConstructor
-        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public StepChecksAnnotation(final String path, final int startLine, final int endLine, final String message) {
             super();
 
@@ -323,18 +325,22 @@ public class PublishChecksStep extends Step implements Serializable {
             return message;
         }
 
+        @CheckForNull
         public Integer getStartColumn() {
             return startColumn;
         }
 
+        @CheckForNull
         public Integer getEndColumn() {
             return endColumn;
         }
 
+        @CheckForNull
         public String getTitle() {
             return title;
         }
 
+        @CheckForNull
         public String getRawDetails() {
             return rawDetails;
         }

@@ -1,6 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 import java.util.Optional;
 
@@ -11,24 +11,31 @@ import static java.util.Objects.*;
  */
 @SuppressWarnings("PMD.DataClass")
 public class ChecksAnnotation {
+    @CheckForNull
     private final String path;
+    @CheckForNull
     private final Integer startLine;
+    @CheckForNull
     private final Integer endLine;
-    private final ChecksAnnotationLevel annotationLevel;
+    @CheckForNull
     private final String message;
+    @CheckForNull
     private final Integer startColumn;
+    @CheckForNull
     private final Integer endColumn;
+    @CheckForNull
     private final String title;
+    @CheckForNull
     private final String rawDetails;
 
+    private final ChecksAnnotationLevel annotationLevel;
+
     @SuppressWarnings("ParameterNumber")
-    private ChecksAnnotation(final String path,
-            final Integer startLine, final Integer endLine,
-            final ChecksAnnotationLevel annotationLevel,
-            final String message,
-            final Integer startColumn, final Integer endColumn,
-            final String title,
-            final String rawDetails) {
+    private ChecksAnnotation(@CheckForNull final String path,
+                             @CheckForNull final Integer startLine, @CheckForNull final Integer endLine,
+                             final ChecksAnnotationLevel annotationLevel, @CheckForNull final String message,
+                             @CheckForNull final Integer startColumn, @CheckForNull final Integer endColumn,
+                             @CheckForNull final String title, @CheckForNull final String rawDetails) {
         this.path = path;
         this.startLine = startLine;
         this.endLine = endLine;
@@ -118,21 +125,28 @@ public class ChecksAnnotation {
      * Builder for {@link ChecksAnnotation}.
      */
     public static class ChecksAnnotationBuilder {
+        @CheckForNull
         private String path;
+        @CheckForNull
         private Integer startLine;
+        @CheckForNull
         private Integer endLine;
-        private ChecksAnnotationLevel annotationLevel;
+        @CheckForNull
         private String message;
+        @CheckForNull
         private Integer startColumn;
+        @CheckForNull
         private Integer endColumn;
+        @CheckForNull
         private String title;
+        @CheckForNull
         private String rawDetails;
+
+        private ChecksAnnotationLevel annotationLevel;
 
         /**
          * Constructs a builder for {@link ChecksAnnotation}.
          */
-        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
-                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksAnnotationBuilder() {
             this.annotationLevel = ChecksAnnotationLevel.NONE;
         }
