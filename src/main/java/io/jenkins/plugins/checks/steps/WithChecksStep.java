@@ -96,7 +96,7 @@ public class WithChecksStep extends Step implements Serializable {
             ChecksInfo info = extractChecksInfo();
             getContext().newBodyInvoker()
                     .withContext(info)
-                    .withCallback(new WithChecksCallBack(info))
+                    .withCallback(new WithChecksCallBack(info, this))
                     .start();
             return false;
         }
@@ -154,20 +154,22 @@ public class WithChecksStep extends Step implements Serializable {
             return true;
         }
 
-        class WithChecksCallBack extends BodyExecutionCallback {
+        static class WithChecksCallBack extends BodyExecutionCallback {
             private static final long serialVersionUID = 1L;
 
             private final ChecksInfo info;
+            private final WithChecksStepExecution execution;
 
-            WithChecksCallBack(final ChecksInfo info) {
+            WithChecksCallBack(final ChecksInfo info, final WithChecksStepExecution execution) {
                 super();
 
                 this.info = info;
+                this.execution = execution;
             }
 
             @Override
             public void onStart(final StepContext context) {
-                publish(context, new ChecksDetails.ChecksDetailsBuilder()
+                execution.publish(context, new ChecksDetails.ChecksDetailsBuilder()
                         .withName(info.getName())
                         .withStatus(ChecksStatus.IN_PROGRESS)
                         .withConclusion(ChecksConclusion.NONE));
@@ -204,7 +206,7 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
-                publish(context, builder);
+                execution.publish(context, builder);
                 context.onFailure(t);
             }
         }
