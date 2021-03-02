@@ -1,5 +1,7 @@
 package io.jenkins.plugins.checks.api;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -105,6 +107,8 @@ public class ChecksOutput {
          * Construct a builder for a {@link ChecksOutput}.
          *
          */
+        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksOutputBuilder() {
             this.annotations = new ArrayList<>();
             this.images = new ArrayList<>();

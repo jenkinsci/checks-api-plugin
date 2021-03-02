@@ -1,5 +1,7 @@
 package io.jenkins.plugins.checks.api;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Optional;
 
 import static java.util.Objects.*;
@@ -129,6 +131,8 @@ public class ChecksAnnotation {
         /**
          * Constructs a builder for {@link ChecksAnnotation}.
          */
+        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksAnnotationBuilder() {
             this.annotationLevel = ChecksAnnotationLevel.NONE;
         }

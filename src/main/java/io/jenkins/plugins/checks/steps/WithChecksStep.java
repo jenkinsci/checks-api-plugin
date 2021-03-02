@@ -122,7 +122,8 @@ public class WithChecksStep extends Step implements Serializable {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
             }
             catch (IOException | InterruptedException e) {
-                SYSTEM_LOGGER.log(Level.WARNING, "Failed getting TaskListener from the context: " + e);
+                SYSTEM_LOGGER.log(Level.WARNING,
+                        ("Failed getting TaskListener from the context: " + e).replaceAll("\r\n", ""));
             }
 
             PluginLogger pluginLogger = new PluginLogger(listener.getLogger(), "Checks API");
@@ -133,7 +134,7 @@ public class WithChecksStep extends Step implements Serializable {
             }
             catch (IOException | InterruptedException e) {
                 String msg = "Failed getting Run from the context on the start of withChecks step: " + e;
-                pluginLogger.log(msg);
+                pluginLogger.log(msg.replaceAll("\r\n", ""));
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
                 context.onFailure(new IllegalStateException(msg));
                 return false;

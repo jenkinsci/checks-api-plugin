@@ -1,5 +1,7 @@
 package io.jenkins.plugins.checks.api;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -138,6 +140,8 @@ public class ChecksDetails {
         /**
          * Construct a builder for {@link ChecksDetails}.
          */
+        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public ChecksDetailsBuilder() {
             this.conclusion = ChecksConclusion.NONE;
             this.actions = new ArrayList<>();

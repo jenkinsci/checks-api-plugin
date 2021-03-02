@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -270,6 +271,8 @@ public class PublishChecksStep extends Step implements Serializable {
          *         annotation message
          */
         @DataBoundConstructor
+        @SuppressFBWarnings(value = "NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR",
+                justification = "Null values are a reasonable state implying the user doesn't specify it.")
         public StepChecksAnnotation(final String path, final int startLine, final int endLine, final String message) {
             super();
 
