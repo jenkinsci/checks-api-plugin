@@ -188,7 +188,7 @@ public class TruncatedString {
             }
         }
 
-        private int getLength(String text) {
+        private int getLength(final String text) {
             return chunkOnChars ? text.length() : text.getBytes(StandardCharsets.UTF_8).length;
         }
 

@@ -49,16 +49,15 @@ public class TruncatedStringTest {
     private TruncatedString.Builder builder;
 
     @Before
-    public void getBuilder() {
-        TruncatedString.Builder builder = new TruncatedString.Builder()
+    public void makeBuilder() {
+        this.builder = new TruncatedString.Builder()
                 .withTruncationText(MESSAGE);
         if (chunkOnNewlines) {
-            builder = builder.setChunkOnNewlines();
+            builder.setChunkOnNewlines();
         }
-        this.builder = builder;
     }
 
-    private String build(int maxSize) {
+    private String build(final int maxSize) {
         return chunkOnChars ? builder.build().buildByChars(maxSize) : builder.build().buildByBytes(maxSize);
     }
 
@@ -130,7 +129,7 @@ public class TruncatedStringTest {
         builder.addText("yyyyyyyyyyy"); // 11
         assertThat(build(20)).isEqualTo(chunkOnNewlines ? "Truncated" : "xxxxxxxxxxTruncated");
 
-        getBuilder();
+        makeBuilder();
         builder.addText("wwww\n"); // 5
         builder.addText("xxxx\nyyyy\nzzzzz\n"); // 16
         assertThat(build(20)).isEqualTo(chunkOnNewlines ? "wwww\nxxxx\nTruncated" : "wwww\nTruncated");
