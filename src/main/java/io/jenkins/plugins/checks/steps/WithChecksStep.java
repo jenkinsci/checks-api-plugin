@@ -79,8 +79,18 @@ public class WithChecksStep extends Step implements Serializable {
 
     private static class WithChecksPublishException extends Exception {
 
+        public static final long serialVersionUID = 1L;
+
         WithChecksPublishException(final Throwable cause) {
             super(cause);
+        }
+
+        WithChecksPublishException(final String msg) {
+            super(msg);
+        }
+
+        WithChecksPublishException(final String msg, final Throwable e) {
+            super(msg, e);
         }
     }
 
@@ -116,20 +126,19 @@ public class WithChecksStep extends Step implements Serializable {
         @Override
         public void stop(final Throwable cause) {
             try {
-                if (publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
+                publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
                         .withName(step.getName())
                         .withStatus(ChecksStatus.COMPLETED)
-                        .withConclusion(ChecksConclusion.CANCELED))) {
-                    getContext().onFailure(cause);
-                }
+                        .withConclusion(ChecksConclusion.CANCELED));
             }
             catch (WithChecksPublishException e) {
-                getContext().onFailure(e);
+                cause.addSuppressed(e);
             }
+            getContext().onFailure(cause);
         }
 
         @SuppressWarnings("IllegalCatch")
-        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) throws WithChecksPublishException {
+        private void publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) throws WithChecksPublishException {
             TaskListener listener = TaskListener.NULL;
             try {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
@@ -146,26 +155,23 @@ public class WithChecksStep extends Step implements Serializable {
                 run = context.get(Run.class);
             }
             catch (IOException | InterruptedException e) {
-                String msg = "Failed getting Run from the context on the start of withChecks step: " + e;
-                pluginLogger.log(msg.replaceAll("\r\n", ""));
-                SYSTEM_LOGGER.log(Level.WARNING, msg.replaceAll("\r\n", ""));
-                context.onFailure(new IllegalStateException(msg));
-                return false;
+                String msg = "Failed getting Run from the context on the start of withChecks step";
+                pluginLogger.log((msg + ": " + e).replaceAll("\r\n", ""));
+                SYSTEM_LOGGER.log(Level.WARNING, msg, e);
+                throw new WithChecksPublishException(msg, e);
             }
 
             if (run == null) {
                 String msg = "No Run found in the context.";
                 pluginLogger.log(msg);
                 SYSTEM_LOGGER.log(Level.WARNING, msg);
-                context.onFailure(new IllegalStateException(msg));
-                return false;
+                throw new WithChecksPublishException(msg);
             }
 
             try {
                 ChecksPublisherFactory.fromRun(run, listener)
                         .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
                                 .build());
-                return true;
             }
             catch (RuntimeException e) {
                 throw new WithChecksPublishException(e);
