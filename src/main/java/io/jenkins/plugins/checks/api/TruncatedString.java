@@ -68,7 +68,7 @@ public class TruncatedString {
      * @param maxSize the maximum size of the resultant string.
      * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
      * string if truncation was necessary.
-     * @deprecated use the explicit {@link #buildByBytes(int)} or {@link #buildByChars(int)} method according ot your requirements.
+     * @deprecated use the explicit {@link #buildByBytes(int)} or {@link #buildByChars(int)} method according to your requirements.
      */
     @Deprecated
     public String build(final int maxSize) {
