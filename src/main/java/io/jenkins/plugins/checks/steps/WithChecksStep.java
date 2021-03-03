@@ -79,7 +79,7 @@ public class WithChecksStep extends Step implements Serializable {
 
     private static class WithChecksPublishException extends Exception {
 
-        public WithChecksPublishException(Throwable cause) {
+        WithChecksPublishException(final Throwable cause) {
             super(cause);
         }
     }
@@ -122,12 +122,14 @@ public class WithChecksStep extends Step implements Serializable {
                         .withConclusion(ChecksConclusion.CANCELED))) {
                     getContext().onFailure(cause);
                 }
-            } catch (WithChecksPublishException e) {
+            }
+            catch (WithChecksPublishException e) {
                 getContext().onFailure(e);
             }
         }
 
-        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) throws WithChecksPublishException{
+        @SuppressWarnings("IllegalCatch")
+        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) throws WithChecksPublishException {
             TaskListener listener = TaskListener.NULL;
             try {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
@@ -164,7 +166,8 @@ public class WithChecksStep extends Step implements Serializable {
                         .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
                                 .build());
                 return true;
-            } catch (RuntimeException e) {
+            }
+            catch (RuntimeException e) {
                 throw new WithChecksPublishException(e);
             }
         }
@@ -189,7 +192,8 @@ public class WithChecksStep extends Step implements Serializable {
                             .withName(info.getName())
                             .withStatus(ChecksStatus.IN_PROGRESS)
                             .withConclusion(ChecksConclusion.NONE));
-                } catch (WithChecksPublishException e) {
+                }
+                catch (WithChecksPublishException e) {
                     context.onFailure(e);
                 }
             }
