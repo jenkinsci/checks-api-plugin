@@ -1,5 +1,7 @@
 package io.jenkins.plugins.checks.api;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,14 +14,19 @@ import static java.util.Objects.requireNonNull;
  * annotations, etc.
  */
 public class ChecksOutput {
+    @CheckForNull
     private final String title;
+    @CheckForNull
     private final TruncatedString summary;
+    @CheckForNull
     private final TruncatedString text;
+
     private final List<ChecksAnnotation> annotations;
     private final List<ChecksImage> images;
 
-    private ChecksOutput(final String title, final TruncatedString summary, final TruncatedString text,
-            final List<ChecksAnnotation> annotations, final List<ChecksImage> images) {
+    private ChecksOutput(@CheckForNull final String title, @CheckForNull final TruncatedString summary,
+                         @CheckForNull final TruncatedString text, final List<ChecksAnnotation> annotations,
+                         final List<ChecksImage> images) {
         this.title = title;
         this.summary = summary;
         this.text = text;
@@ -95,9 +102,13 @@ public class ChecksOutput {
      * Builder for {@link ChecksOutput}.
      */
     public static class ChecksOutputBuilder {
+        @CheckForNull
         private String title;
+        @CheckForNull
         private TruncatedString summary;
+        @CheckForNull
         private TruncatedString text;
+
         private List<ChecksAnnotation> annotations;
         private List<ChecksImage> images;
 

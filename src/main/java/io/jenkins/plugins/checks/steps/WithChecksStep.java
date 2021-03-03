@@ -96,7 +96,7 @@ public class WithChecksStep extends Step implements Serializable {
             ChecksInfo info = extractChecksInfo();
             getContext().newBodyInvoker()
                     .withContext(info)
-                    .withCallback(new WithChecksCallBack(info))
+                    .withCallback(new WithChecksCallBack(info, this))
                     .start();
             return false;
         }
@@ -122,7 +122,8 @@ public class WithChecksStep extends Step implements Serializable {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
             }
             catch (IOException | InterruptedException e) {
-                SYSTEM_LOGGER.log(Level.WARNING, "Failed getting TaskListener from the context: " + e);
+                SYSTEM_LOGGER.log(Level.WARNING,
+                        ("Failed getting TaskListener from the context: " + e).replaceAll("\r\n", ""));
             }
 
             PluginLogger pluginLogger = new PluginLogger(listener.getLogger(), "Checks API");
@@ -133,8 +134,8 @@ public class WithChecksStep extends Step implements Serializable {
             }
             catch (IOException | InterruptedException e) {
                 String msg = "Failed getting Run from the context on the start of withChecks step: " + e;
-                pluginLogger.log(msg);
-                SYSTEM_LOGGER.log(Level.WARNING, msg);
+                pluginLogger.log(msg.replaceAll("\r\n", ""));
+                SYSTEM_LOGGER.log(Level.WARNING, msg.replaceAll("\r\n", ""));
                 context.onFailure(new IllegalStateException(msg));
                 return false;
             }
@@ -153,20 +154,22 @@ public class WithChecksStep extends Step implements Serializable {
             return true;
         }
 
-        class WithChecksCallBack extends BodyExecutionCallback {
+        static class WithChecksCallBack extends BodyExecutionCallback {
             private static final long serialVersionUID = 1L;
 
             private final ChecksInfo info;
+            private final WithChecksStepExecution execution;
 
-            WithChecksCallBack(final ChecksInfo info) {
+            WithChecksCallBack(final ChecksInfo info, final WithChecksStepExecution execution) {
                 super();
 
                 this.info = info;
+                this.execution = execution;
             }
 
             @Override
             public void onStart(final StepContext context) {
-                publish(context, new ChecksDetails.ChecksDetailsBuilder()
+                execution.publish(context, new ChecksDetails.ChecksDetailsBuilder()
                         .withName(info.getName())
                         .withStatus(ChecksStatus.IN_PROGRESS)
                         .withConclusion(ChecksConclusion.NONE));
@@ -203,7 +206,7 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
-                publish(context, builder);
+                execution.publish(context, builder);
                 context.onFailure(t);
             }
         }

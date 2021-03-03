@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
@@ -250,9 +251,13 @@ public class PublishChecksStep extends Step implements Serializable {
         private final int endLine;
         private final String message;
 
+        @CheckForNull
         private Integer startColumn;
+        @CheckForNull
         private Integer endColumn;
+        @CheckForNull
         private String title;
+        @CheckForNull
         private String rawDetails;
 
         private ChecksAnnotation.ChecksAnnotationLevel annotationLevel = ChecksAnnotation.ChecksAnnotationLevel.WARNING;
@@ -320,18 +325,22 @@ public class PublishChecksStep extends Step implements Serializable {
             return message;
         }
 
+        @CheckForNull
         public Integer getStartColumn() {
             return startColumn;
         }
 
+        @CheckForNull
         public Integer getEndColumn() {
             return endColumn;
         }
 
+        @CheckForNull
         public String getTitle() {
             return title;
         }
 
+        @CheckForNull
         public String getRawDetails() {
             return rawDetails;
         }

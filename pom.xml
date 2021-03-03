@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>analysis-pom</artifactId>
-    <version>4.7.0</version>
+    <version>5.0.0</version>
     <relativePath />
   </parent>
 
@@ -116,6 +116,7 @@
         <artifactId>revapi-maven-plugin</artifactId>
         <configuration>
           <versionFormat>\d+\.\d+\.\d+</versionFormat>
+          <checkDependencies>false</checkDependencies>
           <analysisConfiguration>
             <revapi.ignore combine.children="append">
               <item>
@@ -123,6 +124,11 @@
                 <old>field io.jenkins.plugins.checks.steps.PublishChecksStep.serialVersionUID</old>
                 <serialVersionUID>1</serialVersionUID>
                 <justification>Adding actions list with an initial empty value should not break the compatibility.</justification>
+              </item>
+              <item>
+                <regex>true</regex>
+                <code>java.missing.*</code>
+                <justification>Dependencies are not being checked, so they are reported as missing</justification>
               </item>
             </revapi.ignore>
           </analysisConfiguration>
