@@ -68,20 +68,36 @@ public class TruncatedString {
      * @param maxSize the maximum size of the resultant string.
      * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
      * string if truncation was necessary.
+     * @deprecated use the explicit {@link #buildByBytes(int)} or {@link #buildByChars(int)} method according ot your requirements.
      */
+    @Deprecated
     public String build(final int maxSize) {
         return build(maxSize, false);
     }
 
     /**
-     * Builds the string such that it does not exceed maxSize in bytes or chars, including the truncation string.
+     * Builds the string such that it does not exceed maxSize in bytes, including the truncation string.
      *
      * @param maxSize the maximum size of the resultant string.
-     * @param chunkOnChars calculate length of strings as chars instead of bytes
      * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
      * string if truncation was necessary.
      */
-    public String build(final int maxSize, final boolean chunkOnChars) {
+    public String buildByBytes(final int maxSize) {
+        return build(maxSize, false);
+    }
+
+    /**
+     * Builds the string such that it does not exceed maxSize in chars, including the truncation string.
+     *
+     * @param maxSize the maximum size of the resultant string.
+     * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
+     * string if truncation was necessary.
+     */
+    public String buildByChars(final int maxSize) {
+        return build(maxSize, true);
+    }
+
+    String build(final int maxSize, final boolean chunkOnChars) {
         List<String> parts = getChunks();
         if (truncateStart) {
             Collections.reverse(parts);

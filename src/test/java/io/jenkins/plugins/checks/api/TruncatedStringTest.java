@@ -131,7 +131,7 @@ public class TruncatedStringTest {
     }
 
     @Test
-    public void shouldTruncateToBytesNotChars() {
+    public void shouldTruncateByBytesOrChars() {
         TruncatedString.Builder builder = getBuilder();
         builder.addText("☃☃☃\n"); // 3 + 1
         assertThat(builder.build().toString().length()).isEqualTo(4);
@@ -145,7 +145,7 @@ public class TruncatedStringTest {
     }
 
     @Test
-    public void shouldHandleLongCharsInTruncationTest() {
+    public void shouldHandleLongCharsInTruncationText() {
         String truncationText = "E_TOO_MUCH_☃";
         assertThat(truncationText.length()).isEqualTo(12);
         assertThat(truncationText.getBytes(StandardCharsets.UTF_8).length).isEqualTo(14);
