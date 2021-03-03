@@ -77,6 +77,13 @@ public class WithChecksStep extends Step implements Serializable {
         }
     }
 
+    private static class WithChecksPublishException extends Exception {
+
+        public WithChecksPublishException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     /**
      * The step's execution to actually inject the {@link ChecksInfo} into the closure.
      */
@@ -108,15 +115,19 @@ public class WithChecksStep extends Step implements Serializable {
 
         @Override
         public void stop(final Throwable cause) {
-            if (publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
-                    .withName(step.getName())
-                    .withStatus(ChecksStatus.COMPLETED)
-                    .withConclusion(ChecksConclusion.CANCELED))) {
-                getContext().onFailure(cause);
+            try {
+                if (publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
+                        .withName(step.getName())
+                        .withStatus(ChecksStatus.COMPLETED)
+                        .withConclusion(ChecksConclusion.CANCELED))) {
+                    getContext().onFailure(cause);
+                }
+            } catch (WithChecksPublishException e) {
+                getContext().onFailure(e);
             }
         }
 
-        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) {
+        private boolean publish(final StepContext context, final ChecksDetails.ChecksDetailsBuilder builder) throws WithChecksPublishException{
             TaskListener listener = TaskListener.NULL;
             try {
                 listener = fixNull(context.get(TaskListener.class), TaskListener.NULL);
@@ -148,10 +159,14 @@ public class WithChecksStep extends Step implements Serializable {
                 return false;
             }
 
-            ChecksPublisherFactory.fromRun(run, listener)
-                    .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
-                            .build());
-            return true;
+            try {
+                ChecksPublisherFactory.fromRun(run, listener)
+                        .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
+                                .build());
+                return true;
+            } catch (RuntimeException e) {
+                throw new WithChecksPublishException(e);
+            }
         }
 
         static class WithChecksCallBack extends BodyExecutionCallback {
@@ -169,10 +184,14 @@ public class WithChecksStep extends Step implements Serializable {
 
             @Override
             public void onStart(final StepContext context) {
-                execution.publish(context, new ChecksDetails.ChecksDetailsBuilder()
-                        .withName(info.getName())
-                        .withStatus(ChecksStatus.IN_PROGRESS)
-                        .withConclusion(ChecksConclusion.NONE));
+                try {
+                    execution.publish(context, new ChecksDetails.ChecksDetailsBuilder()
+                            .withName(info.getName())
+                            .withStatus(ChecksStatus.IN_PROGRESS)
+                            .withConclusion(ChecksConclusion.NONE));
+                } catch (WithChecksPublishException e) {
+                    context.onFailure(e);
+                }
             }
 
             @Override
@@ -206,7 +225,12 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Failed")
                                     .withText(t.toString()).build());
                 }
-                execution.publish(context, builder);
+                try {
+                    execution.publish(context, builder);
+                }
+                catch (WithChecksPublishException e) {
+                    t.addSuppressed(e);
+                }
                 context.onFailure(t);
             }
         }
