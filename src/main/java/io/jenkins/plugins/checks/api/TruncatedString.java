@@ -97,7 +97,7 @@ public class TruncatedString {
         return build(maxSize, true);
     }
 
-    String build(final int maxSize, final boolean chunkOnChars) {
+    private String build(final int maxSize, final boolean chunkOnChars) {
         List<String> parts = getChunks();
         if (truncateStart) {
             Collections.reverse(parts);
