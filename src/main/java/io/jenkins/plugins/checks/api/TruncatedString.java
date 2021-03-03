@@ -2,6 +2,7 @@ package io.jenkins.plugins.checks.api;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -62,18 +63,46 @@ public class TruncatedString {
     }
 
     /**
-     * Builds the string such that it does not exceed maxSize, including the truncation string.
+     * Builds the string such that it does not exceed maxSize in bytes, including the truncation string.
+     *
+     * @param maxSize the maximum size of the resultant string.
+     * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
+     * string if truncation was necessary.
+     * @deprecated use the explicit {@link #buildByBytes(int)} or {@link #buildByChars(int)} method according to your requirements.
+     */
+    @Deprecated
+    public String build(final int maxSize) {
+        return build(maxSize, false);
+    }
+
+    /**
+     * Builds the string such that it does not exceed maxSize in bytes, including the truncation string.
      *
      * @param maxSize the maximum size of the resultant string.
      * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
      * string if truncation was necessary.
      */
-    public String build(final int maxSize) {
+    public String buildByBytes(final int maxSize) {
+        return build(maxSize, false);
+    }
+
+    /**
+     * Builds the string such that it does not exceed maxSize in chars, including the truncation string.
+     *
+     * @param maxSize the maximum size of the resultant string.
+     * @return A string comprising as many of the joined chunks that will fit in the given size, plus the truncation
+     * string if truncation was necessary.
+     */
+    public String buildByChars(final int maxSize) {
+        return build(maxSize, true);
+    }
+
+    private String build(final int maxSize, final boolean chunkOnChars) {
         List<String> parts = getChunks();
         if (truncateStart) {
             Collections.reverse(parts);
         }
-        List<String> truncatedParts = parts.stream().collect(new Joiner(truncationText, maxSize));
+        List<String> truncatedParts = parts.stream().collect(new Joiner(truncationText, maxSize, chunkOnChars));
         if (truncateStart) {
             Collections.reverse(truncatedParts);
         }
@@ -148,13 +177,19 @@ public class TruncatedString {
 
         private final int maxLength;
         private final String truncationText;
+        private final boolean chunkOnChars;
 
-        Joiner(final String truncationText, final int maxLength) {
-            if (maxLength < truncationText.length()) {
-                throw new IllegalArgumentException("Maximum length is less than truncation text.");
-            }
+        Joiner(final String truncationText, final int maxLength, final boolean chunkOnChars) {
             this.truncationText = truncationText;
             this.maxLength = maxLength;
+            this.chunkOnChars = chunkOnChars;
+            if (maxLength < getLength(truncationText)) {
+                throw new IllegalArgumentException("Maximum length is less than truncation text.");
+            }
+        }
+
+        private int getLength(final String text) {
+            return chunkOnChars ? text.length() : text.getBytes(StandardCharsets.UTF_8).length;
         }
 
         @Override
@@ -196,17 +231,17 @@ public class TruncatedString {
                 if (truncated) {
                     return;
                 }
-                if (length + chunk.length() > maxLength) {
+                if (length + getLength(chunk) > maxLength) {
                     truncated = true;
                     return;
                 }
                 chunks.add(chunk);
-                length += chunk.length();
+                length += getLength(chunk);
             }
 
             List<String> truncate() {
                 if (truncated) {
-                    if (length + truncationText.length() > maxLength) {
+                    if (length + getLength(truncationText) > maxLength) {
                         chunks.remove(chunks.size() - 1);
                     }
                     chunks.add(truncationText);
