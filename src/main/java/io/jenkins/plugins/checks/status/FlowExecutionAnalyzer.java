@@ -35,10 +35,12 @@ class FlowExecutionAnalyzer {
     private final Run<?, ?> run;
     private final FlowExecution execution;
     private final Stack<Integer> indentationStack = new Stack<>();
+    private final boolean suppressLogs;
 
-    FlowExecutionAnalyzer(final Run<?, ?> run, final FlowExecution execution) {
+    FlowExecutionAnalyzer(final Run<?, ?> run, final FlowExecution execution, final boolean suppressLogs) {
         this.run = run;
         this.execution = execution;
+        this.suppressLogs = suppressLogs;
     }
 
     private static Optional<String> getStageOrBranchName(final FlowNode node) {
@@ -117,11 +119,12 @@ class FlowExecutionAnalyzer {
         nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
         if (warningAction == null) {
             nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-            String log = getLog(flowNode);
-            if (StringUtils.isNotBlank(log)) {
-                nodeSummaryBuilder.append(String.format("```%n%s%n```%n<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>",
-                        errorAction.getDisplayName(),
-                        log));
+            nodeSummaryBuilder.append(String.format("```%n%s%n```%n", errorAction.getDisplayName()));
+            if (!suppressLogs) {
+                String log = getLog(flowNode);
+                if (StringUtils.isNotBlank(log)) {
+                    nodeSummaryBuilder.append(String.format("<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>", log));
+                }
             }
         }
         else {

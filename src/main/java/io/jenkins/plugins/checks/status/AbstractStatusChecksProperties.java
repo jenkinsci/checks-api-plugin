@@ -48,6 +48,17 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     public boolean isUnstableBuildNeutral(final Job<?, ?> job) {
         return false;
     }
+
+    /**
+     * Returns whether to suppress log output in the {@link io.jenkins.plugins.checks.status.FlowExecutionAnalyzer}.
+     *
+     * @param job
+     *         A jenkins job.
+     * @return true if logs should be suppressed from checks output.
+     */
+    public boolean isSuppressLogs(Job<?, ?> job) {
+        return false;
+    }
 }
 
 class DefaultStatusCheckProperties extends AbstractStatusChecksProperties {
