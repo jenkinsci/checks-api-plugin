@@ -115,6 +115,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     public void shouldPublishStageDetails() {
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
+        PROPERTIES.setSuppressLogs(false);
         PROPERTIES.setName("Test Status");
         WorkflowJob job = createPipeline();
 
