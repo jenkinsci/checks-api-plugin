@@ -56,7 +56,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *         A jenkins job.
      * @return true if logs should be suppressed from checks output.
      */
-    public boolean isSuppressLogs(Job<?, ?> job) {
+    public boolean isSuppressLogs(final Job<?, ?> job) {
         return false;
     }
 }

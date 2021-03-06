@@ -356,7 +356,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         }
 
         @Override
-        public boolean isSuppressLogs(Job<?, ?> job) {
+        public boolean isSuppressLogs(final Job<?, ?> job) {
             return suppressLogs;
         }
     }
