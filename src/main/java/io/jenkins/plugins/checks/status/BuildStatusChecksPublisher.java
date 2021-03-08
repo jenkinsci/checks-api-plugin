@@ -99,7 +99,7 @@ public final class BuildStatusChecksPublisher {
     }
 
     static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
-        return new FlowExecutionAnalyzer(run, execution).extractOutput();
+        return new FlowExecutionAnalyzer(run, execution, findProperties(run.getParent()).isSuppressLogs(run.getParent())).extractOutput();
     }
 
     /**

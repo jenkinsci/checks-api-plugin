@@ -13,6 +13,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.internal.Checks;
 import org.jvnet.hudson.test.TestExtension;
 
 import java.util.List;
@@ -114,6 +115,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     public void shouldPublishStageDetails() {
         PROPERTIES.setApplicable(true);
         PROPERTIES.setSkipped(false);
+        PROPERTIES.setSuppressLogs(false);
         PROPERTIES.setName("Test Status");
         WorkflowJob job = createPipeline();
 
@@ -213,8 +215,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                     + "Archiving artifacts\\s+"
                     + "‘oh dear’ doesn’t match anything\\s+"
                     + "```\\s+"
-                    + "</details>"
-                    + ".*", Pattern.DOTALL));
+                    + "</details>\\s+", Pattern.DOTALL));
             assertThat(output.getText()).isPresent().asString().matches(Pattern.compile(".*"
                     + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
                     + "  \\* In parallel \\*\\([^)]+\\)\\*\n"
@@ -225,6 +226,71 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                     + "    \\* p2 \\*\\([^)]+\\)\\*\n"
                     + "  \\* Fails \\*\\([^)]+\\)\\*\n"
                     + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\n.*",
+                    Pattern.DOTALL));
+        });
+    }
+
+    /**
+     * Test checks output includes pipeline details, but not logs, when requested.
+     */
+    @Test
+    public void shouldPublishStageDetailsWithoutLogsIfRequested() {
+        PROPERTIES.setApplicable(true);
+        PROPERTIES.setSkipped(false);
+        PROPERTIES.setName("Test Status");
+        PROPERTIES.setSuppressLogs(true);
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  stage('Simple Stage') {\n"
+                + "  }\n"
+                + "  stage('In parallel') {\n"
+                + "    parallel 'p1': {\n"
+                + "      stage('p1s1') {\n"
+                + "        unstable('something went wrong')\n"
+                + "      }\n"
+                + "      stage('p1s2') {\n"
+                + "      }\n"
+                + "    }, 'p2': {}\n"
+                + "  }\n"
+                + "  stage('Fails') {\n"
+                + "    archiveArtifacts artifacts: 'oh dear', fingerprint: true\n"
+                + "  }\n"
+                + "}", true));
+
+        buildWithResult(job, Result.FAILURE);
+
+        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+
+        assertThat(checksDetails).hasSize(9);
+
+        ChecksDetails details = checksDetails.get(8);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'archiveArtifacts' step");
+            assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
+                    + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
+                    + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
+                    + "```\\s+"
+                    + "something went wrong\\s+"
+                    + "```\\s+"
+                    + "### `Fails / Archive the artifacts`\\s+"
+                    + "Error in `archiveArtifacts` step\\.\\s+"
+                    + "```\\s+"
+                    + "No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
+                    + "```\\s+", Pattern.DOTALL));
+            assertThat(output.getText()).isPresent().asString().matches(Pattern.compile(".*"
+                            + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
+                            + "  \\* In parallel \\*\\([^)]+\\)\\*\n"
+                            + "    \\* p1 \\*\\([^)]+\\)\\*\n"
+                            + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
+                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
+                            + "      \\* p1s2 \\*\\([^)]+\\)\\*\n"
+                            + "    \\* p2 \\*\\([^)]+\\)\\*\n"
+                            + "  \\* Fails \\*\\([^)]+\\)\\*\n"
+                            + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\n.*",
                     Pattern.DOTALL));
         });
     }
@@ -256,6 +322,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         private boolean applicable;
         private boolean skipped;
         private String name;
+        private boolean suppressLogs;
 
         public void setApplicable(final boolean applicable) {
             this.applicable = applicable;
@@ -267,6 +334,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         public void setName(final String name) {
             this.name = name;
+        }
+
+        public void setSuppressLogs(final boolean suppressLogs) {
+            this.suppressLogs = suppressLogs;
         }
 
         @Override
@@ -282,6 +353,11 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         @Override
         public boolean isSkipped(final Job<?, ?> job) {
             return skipped;
+        }
+
+        @Override
+        public boolean isSuppressLogs(final Job<?, ?> job) {
+            return suppressLogs;
         }
     }
 }
