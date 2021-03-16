@@ -14,9 +14,9 @@ import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.util.JenkinsFacade;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
 import org.jenkinsci.plugins.workflow.flow.GraphListener;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,10 +89,13 @@ public final class BuildStatusChecksPublisher {
 
     @CheckForNull
     static ChecksOutput getOutput(final Run run) {
-        if (run instanceof WorkflowRun) {
-            FlowExecution execution = ((WorkflowRun) run).getExecution();
-            if (execution != null) {
-                return getOutput(run, execution);
+        if (run instanceof FlowExecutionOwner.Executable) {
+            FlowExecutionOwner owner = ((FlowExecutionOwner.Executable) run).asFlowExecutionOwner();
+            if (owner != null) {
+                FlowExecution execution = owner.getOrNull();
+                if (execution != null) {
+                    return getOutput(run, execution);
+                }
             }
         }
         return null;
