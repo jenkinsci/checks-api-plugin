@@ -3,20 +3,28 @@ package io.jenkins.plugins.checks.status;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.model.*;
+import hudson.model.Job;
+import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
-import io.jenkins.plugins.checks.api.*;
+import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksPublisher;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.util.JenkinsFacade;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
 import org.jenkinsci.plugins.workflow.flow.GraphListener;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,13 +97,18 @@ public final class BuildStatusChecksPublisher {
 
     @CheckForNull
     static ChecksOutput getOutput(final Run run) {
-        if (run instanceof WorkflowRun) {
-            FlowExecution execution = ((WorkflowRun) run).getExecution();
-            if (execution != null) {
-                return getOutput(run, execution);
-            }
+        if (!(run instanceof FlowExecutionOwner.Executable)) {
+            return null;
         }
-        return null;
+        FlowExecutionOwner owner = ((FlowExecutionOwner.Executable) run).asFlowExecutionOwner();
+        if (owner == null) {
+            return null;
+        }
+        FlowExecution execution = owner.getOrNull();
+        if (execution == null) {
+            return null;
+        }
+        return getOutput(run, execution);
     }
 
     static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
