@@ -91,12 +91,8 @@ public final class BuildStatusChecksPublisher {
     static ChecksOutput getOutput(final Run run) {
         if (run instanceof FlowExecutionOwner.Executable) {
             FlowExecutionOwner owner = ((FlowExecutionOwner.Executable) run).asFlowExecutionOwner();
-            if (owner != null) {
-                FlowExecution execution = owner.getOrNull();
-                if (execution != null) {
-                    return getOutput(run, execution);
-                }
-            }
+            FlowExecution execution = owner != null ? owner.getOrNull() : null;
+            return execution != null ? getOutput(run, execution) : null;
         }
         return null;
     }
