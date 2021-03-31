@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.status;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Computer;
@@ -133,6 +134,7 @@ public final class BuildStatusChecksPublisher {
          * </p>
          */
         @Override
+        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         public void onEnterWaiting(final Queue.WaitingItem wi) {
             if (!(wi.task instanceof Job)) {
                 return;
@@ -140,12 +142,10 @@ public final class BuildStatusChecksPublisher {
 
             final Job<?, ?> job = (Job<?, ?>) wi.task;
             getChecksName(job).ifPresent(checksName ->
-                Computer.threadPoolForRemoting.submit(() ->
-                    {
+                    Computer.threadPoolForRemoting.submit(() -> {
                         ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
                         publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
-                    }
-                ));
+                    }));
         }
     }
 
