@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.status;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.model.Computer;
 import hudson.model.Job;
 import hudson.model.Queue;
 import hudson.model.Result;
@@ -96,7 +97,7 @@ public final class BuildStatusChecksPublisher {
     }
 
     @CheckForNull
-    static ChecksOutput getOutput(final Run run) {
+    static ChecksOutput getOutput(final Run<?, ?> run) {
         if (!(run instanceof FlowExecutionOwner.Executable)) {
             return null;
         }
@@ -111,7 +112,7 @@ public final class BuildStatusChecksPublisher {
         return getOutput(run, execution);
     }
 
-    static ChecksOutput getOutput(final Run run, final FlowExecution execution) {
+    static ChecksOutput getOutput(final Run<?, ?> run, final FlowExecution execution) {
         return new FlowExecutionAnalyzer(run, execution, findProperties(run.getParent()).isSuppressLogs(run.getParent())).extractOutput();
     }
 
@@ -137,9 +138,14 @@ public final class BuildStatusChecksPublisher {
                 return;
             }
 
-            final Job job = (Job) wi.task;
-            getChecksName(job).ifPresent(checksName -> publish(ChecksPublisherFactory.fromJob(job, TaskListener.NULL),
-                    ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null));
+            final Job<?, ?> job = (Job<?, ?>) wi.task;
+            getChecksName(job).ifPresent(checksName ->
+                Computer.threadPoolForRemoting.submit(() ->
+                    {
+                        ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
+                        publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
+                    }
+                ));
         }
     }
 
@@ -236,7 +242,7 @@ public final class BuildStatusChecksPublisher {
 
             Run<?, ?> run;
             try {
-                run = (Run) node.getExecution().getOwner().getExecutable();
+                run = (Run<?, ?>) node.getExecution().getOwner().getExecutable();
             }
             catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Unable to find Run from flow node.", e);
