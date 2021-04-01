@@ -140,18 +140,15 @@ public final class BuildStatusChecksPublisher {
             }
 
             final Job<?, ?> job = (Job<?, ?>) wi.task;
-            //noinspection Convert2Lambda https://github.com/spotbugs/spotbugs/issues/724
-            getChecksName(job).ifPresent(checksName ->
-                    Computer.threadPoolForRemoting.submit(
-                            new Runnable() {
-                                @Override
-                                @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-                                public void run() {
-                                    ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
-                                    publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
-                                }
-                            }
-                    ));
+            getChecksName(job).ifPresent(checksName -> runAsync(() -> {
+                ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
+                publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
+            }));
+        }
+
+        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+        private void runAsync(Runnable run) {
+            Computer.threadPoolForRemoting.submit(run);
         }
     }
 
