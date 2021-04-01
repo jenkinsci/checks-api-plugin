@@ -255,7 +255,7 @@ public final class BuildStatusChecksPublisher {
             Job<?, ?> job = run.getParent();
             if (!findProperties(job).isSkipProgressUpdates(job)) {
                 getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
-                    ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
+                        ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
             }
 
         }
