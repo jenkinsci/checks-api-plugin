@@ -133,6 +133,12 @@
               </item>
               <item>
                 <regex>true</regex>
+                <code>java.annotation.*</code>
+                <annotation>@edu.umd.cs.findbugs.annotations.*</annotation>
+                <justification>Annotation should be safe to change.</justification>
+              </item>
+              <item>
+                <regex>true</regex>
                 <code>java.missing.*</code>
                 <justification>Dependencies are not being checked, so they are reported as missing</justification>
               </item>
