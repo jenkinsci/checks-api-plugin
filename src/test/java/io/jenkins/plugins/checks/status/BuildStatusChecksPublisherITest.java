@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.status;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * accordingly.
  */
 @SuppressWarnings("PMD.AddEmptyString")
+@SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
 
     /**
