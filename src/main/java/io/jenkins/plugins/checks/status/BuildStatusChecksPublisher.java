@@ -134,18 +134,24 @@ public final class BuildStatusChecksPublisher {
          * </p>
          */
         @Override
-        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         public void onEnterWaiting(final Queue.WaitingItem wi) {
             if (!(wi.task instanceof Job)) {
                 return;
             }
 
             final Job<?, ?> job = (Job<?, ?>) wi.task;
+            //noinspection Convert2Lambda https://github.com/spotbugs/spotbugs/issues/724
             getChecksName(job).ifPresent(checksName ->
-                    Computer.threadPoolForRemoting.submit(() -> {
-                        ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
-                        publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
-                    }));
+                    Computer.threadPoolForRemoting.submit(
+                            new Runnable() {
+                                @Override
+                                @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+                                public void run() {
+                                    ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
+                                    publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
+                                }
+                            }
+                    ));
         }
     }
 
