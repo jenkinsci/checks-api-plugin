@@ -59,6 +59,18 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     public boolean isSuppressLogs(final Job<?, ?> job) {
         return false;
     }
+
+    /**
+     * Returns whether to suppress progress updates from the {@link io.jenkins.plugins.checks.status.FlowExecutionAnalyzer}.
+     * Queued, Checkout and Completed will still run but not 'onNewHead'
+     *
+     * @param job
+     *         A jenkins job.
+     * @return true if progress updates should be skipped.
+     */
+    public boolean isSkipProgressUpdates(final Job<?, ?> job) {
+        return false;
+    }
 }
 
 class DefaultStatusCheckProperties extends AbstractStatusChecksProperties {
