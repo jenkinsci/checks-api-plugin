@@ -20,7 +20,7 @@ ChecksDetails details = new ChecksDetailsBuilder()
 Then you can create a publisher based on a Jenkins `Run` to publish the check you just constructed:
 
 ```
-ChecksPublisher publisher = ChecksPublisher.fromRun(run);
+ChecksPublisher publisher = ChecksPublisherFactory.fromRun(run);
 publisher.publish(details);
 ```
 
