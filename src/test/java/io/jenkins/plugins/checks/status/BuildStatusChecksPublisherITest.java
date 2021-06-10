@@ -135,7 +135,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                 + "    }, 'p2': {}\n"
                 + "  }\n"
                 + "  stage('Fails') {\n"
-                + "    archiveArtifacts artifacts: 'oh dear', fingerprint: true\n"
+                + "    error('a fatal error occurs')\n"
                 + "  }\n"
                 + "}", true));
 
@@ -185,13 +185,13 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
                     + "```\n"
                     + "\n");
             assertThat(output.getText()).isPresent().get().asString().matches(Pattern.compile(".*"
-                        + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
-                        + "  \\* In parallel \\*\\(running\\)\\*\n"
-                        + "    \\* p1 \\*\\(running\\)\\*\n"
-                        + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
-                        + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
-                        + "      \\* p1s2 \\*\\(running\\)\\*\n"
-                        + "    \\* p2 \\*\\([^)]+\\)\\*\n.*", Pattern.DOTALL));
+                    + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
+                    + "  \\* In parallel \\*\\(running\\)\\*\n"
+                    + "    \\* p1 \\*\\(running\\)\\*\n"
+                    + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
+                    + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
+                    + "      \\* p1s2 \\*\\(running\\)\\*\n"
+                    + "    \\* p2 \\*\\([^)]+\\)\\*\n.*", Pattern.DOTALL));
         });
 
         // Details 8, final checks
@@ -199,35 +199,28 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'archiveArtifacts' step");
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'error' step");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
                     + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
                     + "```\\s+"
                     + "something went wrong\\s+"
                     + "```\\s+"
-                    + "### `Fails / Archive the artifacts`\\s+"
-                    + "Error in `archiveArtifacts` step\\.\\s+"
+                    + "### `Fails / Error signal`\\s+"
+                    + "Error in `error` step, with arguments `a fatal error occurs`\\.\\s+"
                     + "```\\s+"
-                    + "No artifacts found that match the file pattern \"oh dear\"\\. Configuration error\\?\\s+"
-                    + "```\\s+"
-                    + "<details>\\s+"
-                    + "<summary>Build log</summary>\\s+"
-                    + "```\\s+"
-                    + "Archiving artifacts\\s+"
-                    + "‘oh dear’ doesn’t match anything\\s+"
-                    + "```\\s+"
-                    + "</details>\\s+", Pattern.DOTALL));
+                    + "a fatal error occurs\\s+"
+                    + "```\\s+", Pattern.DOTALL));
             assertThat(output.getText()).isPresent().asString().matches(Pattern.compile(".*"
-                    + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
-                    + "  \\* In parallel \\*\\([^)]+\\)\\*\n"
-                    + "    \\* p1 \\*\\([^)]+\\)\\*\n"
-                    + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
-                    + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
-                    + "      \\* p1s2 \\*\\([^)]+\\)\\*\n"
-                    + "    \\* p2 \\*\\([^)]+\\)\\*\n"
-                    + "  \\* Fails \\*\\([^)]+\\)\\*\n"
-                    + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\n.*",
+                            + "  \\* Simple Stage \\*\\([^)]+\\)\\*\n"
+                            + "  \\* In parallel \\*\\([^)]+\\)\\*\n"
+                            + "    \\* p1 \\*\\([^)]+\\)\\*\n"
+                            + "      \\* p1s1 \\*\\([^)]+\\)\\*\n"
+                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\n"
+                            + "      \\* p1s2 \\*\\([^)]+\\)\\*\n"
+                            + "    \\* p2 \\*\\([^)]+\\)\\*\n"
+                            + "  \\* Fails \\*\\([^)]+\\)\\*\n"
+                            + "    \\*\\*Error\\*\\*: \\*a fatal error occurs\\*\n.*",
                     Pattern.DOTALL));
         });
     }
