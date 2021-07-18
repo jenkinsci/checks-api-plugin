@@ -11,7 +11,7 @@
 
   <groupId>io.jenkins.plugins</groupId>
   <artifactId>checks-api</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${revision}-${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>Checks API plugin</name>
@@ -19,8 +19,8 @@
 
   <properties>
     <java.level>8</java.level>
-    <revision>1.7.1</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>1.7</revision>
+    <changelist>999999-SNAPSHOT</changelist>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>2.3.0</plugin-util-api.version>
