@@ -199,7 +199,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'error' step");
+            assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: a fatal error occurs");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
                     + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"

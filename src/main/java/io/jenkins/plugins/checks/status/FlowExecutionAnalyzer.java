@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -175,14 +176,59 @@ class FlowExecutionAnalyzer {
                 .build();
     }
 
-    private String getPotentialTitle(final FlowNode flowNode, final ErrorAction errorAction) {
-        final String whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error",
-                flowNode.getDisplayFunctionName());
+    private String getPotentialTitle(@NonNull final FlowNode flowNode, final ErrorAction errorAction) {
+        String whereBuildFailed = null;
+        if (errorAction != null
+                && isTrivialErrorOrUnstable(flowNode, "error", errorAction.getDisplayName())) {
+            whereBuildFailed = summarize(errorAction.getDisplayName());
+        }
+        if (whereBuildFailed == null) {
+            whereBuildFailed = String.format("%s in '%s' step", errorAction == null ? "warning" : "error",
+                    flowNode.getDisplayFunctionName());
+        }
 
         List<FlowNode> enclosingStagesAndParallels = getEnclosingStagesAndParallels(flowNode);
         List<String> enclosingBlockNames = getEnclosingBlockNames(enclosingStagesAndParallels);
 
         return StringUtils.join(new ReverseListIterator(enclosingBlockNames), "/") + ": " + whereBuildFailed;
+    }
+
+    /**
+     * Check whether the node is an "error" or "unstable" step with the
+     * specified message and no other arguments.  In that case, the caller
+     * can simplify the output.
+     *
+     * @param node The flow node to examine.
+     * @param name The expected name of the step; either "error" or "unstable".
+     * @param message The error or warning that was reported from the node.
+     */
+    private static boolean isTrivialErrorOrUnstable(@NonNull final FlowNode node,
+                                                    @NonNull final String name,
+                                                    final String message) {
+        if (node instanceof StepNode) {
+            StepDescriptor d = ((StepNode) node).getDescriptor();
+            if (d != null && d.getFunctionName().equals(name)) {
+                Map<String, Object> arguments = ArgumentsAction.getArguments(node);
+                if (arguments != null && arguments.size() == 1) {
+                    Object argument = arguments.get("message");
+                    return argument instanceof String
+                        && argument.equals(message);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static String summarize(String message) {
+        if (message != null) {
+            final String firstLine = message.split("\r?\n", 2)[0];
+            if (!firstLine.isEmpty()) {
+                return firstLine;
+            }
+        }
+
+        return null;
     }
 
     private static boolean isStageNode(@NonNull final FlowNode node) {
