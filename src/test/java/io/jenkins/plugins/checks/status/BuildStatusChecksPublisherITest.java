@@ -179,7 +179,6 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
             assertThat(output.getTitle()).isPresent().get().isEqualTo("In parallel/p1/p1s1: warning in 'unstable' step");
             assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
-                    + "Warning in `unstable` step, with arguments `something went wrong`.\n"
                     + "```\n"
                     + "something went wrong\n"
                     + "```\n"
@@ -202,12 +201,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
             assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: a fatal error occurs");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
-                    + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
                     + "```\\s+"
                     + "something went wrong\\s+"
                     + "```\\s+"
                     + "### `Fails / Error signal`\\s+"
-                    + "Error in `error` step, with arguments `a fatal error occurs`\\.\\s+"
                     + "```\\s+"
                     + "a fatal error occurs\\s+"
                     + "```\\s+", Pattern.DOTALL));
@@ -267,7 +264,6 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
             assertThat(output.getTitle()).isPresent().get().isEqualTo("Fails: error in 'archiveArtifacts' step");
             assertThat(output.getSummary()).isPresent().get().asString().matches(Pattern.compile(".*"
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\\s+"
-                    + "Warning in `unstable` step, with arguments `something went wrong`\\.\\s+"
                     + "```\\s+"
                     + "something went wrong\\s+"
                     + "```\\s+"

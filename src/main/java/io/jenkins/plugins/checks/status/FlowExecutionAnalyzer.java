@@ -107,14 +107,20 @@ class FlowExecutionAnalyzer {
 
         nodeSummaryBuilder.append(String.format("### `%s`%n", String.join(" / ", location)));
 
-        nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error",
-                flowNode.getDisplayFunctionName()));
-        String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
-        if (arguments == null) {
-            nodeSummaryBuilder.append(".\n");
-        }
-        else {
-            nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
+        if (errorAction != null && isTrivialErrorOrUnstable(flowNode, "error", errorAction.getDisplayName())
+            || warningAction != null && isTrivialErrorOrUnstable(flowNode, "unstable", warningAction.getMessage())) {
+            // Suppress the step name and arguments because they
+            // would be mostly redundant with other text.
+        } else {
+            nodeSummaryBuilder.append(String.format("%s in `%s` step", errorAction == null ? "Warning" : "Error",
+                    flowNode.getDisplayFunctionName()));
+            String arguments = ArgumentsAction.getStepArgumentsAsString(flowNode);
+            if (arguments == null) {
+                nodeSummaryBuilder.append(".\n");
+            }
+            else {
+                nodeSummaryBuilder.append(String.format(", with arguments `%s`.%n", arguments));
+            }
         }
 
         nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
