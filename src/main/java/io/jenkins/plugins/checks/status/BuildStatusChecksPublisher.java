@@ -193,7 +193,7 @@ public final class BuildStatusChecksPublisher {
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
             Result result = run.getResult();
             if (result == null) {
-                throw new IllegalStateException("No result when the run completes, run: " + run);
+                throw new IllegalStateException("No result when the run completes, run: " + run.toString());
             }
 
             Job<?, ?> job = run.getParent();
