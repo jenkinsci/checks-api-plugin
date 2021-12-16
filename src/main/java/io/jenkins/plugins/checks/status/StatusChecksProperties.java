@@ -4,9 +4,8 @@ import hudson.ExtensionPoint;
 import hudson.model.Job;
 
 /**
- * Properties that controls status checks.
- *
- * When no implementations is provided for a job, a {@link DefaultStatusCheckProperties} will be used.
+ * Properties that controls status checks. When no implementations is provided for a job, a {@link
+ * DefaultStatusCheckProperties} will be used.
  *
  * @deprecated The interface is incompatible for future changes, use {@link AbstractStatusChecksProperties} instead
  */
@@ -17,6 +16,7 @@ public interface StatusChecksProperties extends ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if applicable
      */
     boolean isApplicable(Job<?, ?> job);
@@ -26,6 +26,7 @@ public interface StatusChecksProperties extends ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return the name of the status check
      */
     String getName(Job<?, ?> job);
@@ -35,6 +36,7 @@ public interface StatusChecksProperties extends ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if skip
      */
     boolean isSkip(Job<?, ?> job);

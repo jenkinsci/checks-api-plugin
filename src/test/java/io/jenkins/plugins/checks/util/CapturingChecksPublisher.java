@@ -1,22 +1,23 @@
 package io.jenkins.plugins.checks.util;
 
-import hudson.ExtensionList;
-import hudson.model.Job;
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import io.jenkins.plugins.checks.api.ChecksDetails;
-import io.jenkins.plugins.checks.api.ChecksPublisher;
-import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import hudson.ExtensionList;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+
+import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksPublisher;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
+
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that records each captured checks in a simple list.
- *
+ * <p>
  * For example:
- *
+ * </p>
  * <pre>
  * public class ChecksPublishingTest extends IntegrationTestWithJenkinsPerTest {
  *
@@ -39,8 +40,9 @@ import java.util.Optional;
  *     }
  * }
  * </pre>
- *
+ * <p>
  * An example of this can be found in {@link io.jenkins.plugins.checks.steps.PublishChecksStepITest}
+ * </p>
  */
 public class CapturingChecksPublisher extends ChecksPublisher {
 
@@ -55,7 +57,6 @@ public class CapturingChecksPublisher extends ChecksPublisher {
      * Implementation of {@link ChecksPublisherFactory} that returns a {@link CapturingChecksPublisher}.
      */
     public static class Factory extends ChecksPublisherFactory {
-
         private final CapturingChecksPublisher publisher = new CapturingChecksPublisher();
 
         @Override

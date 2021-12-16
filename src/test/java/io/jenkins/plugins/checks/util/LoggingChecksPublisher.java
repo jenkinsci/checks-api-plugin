@@ -1,18 +1,20 @@
 package io.jenkins.plugins.checks.util;
 
+import java.util.Optional;
+
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 
-import java.util.Optional;
-
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that logs the checks details in user specified format.
- *
+ * <p>
  * For example:
+ * </p>
  *
  * <pre>
  * public class ChecksPublishingTest extends IntegrationTestWithJenkinsPerTest {
@@ -37,8 +39,9 @@ import java.util.Optional;
  *     }
  * }
  * </pre>
- *
+ * <p>
  * An example of this can be found in {@link io.jenkins.plugins.checks.status.BuildStatusChecksPublisherITest}
+ * </p>
  */
 public class LoggingChecksPublisher extends ChecksPublisher {
     private Formatter formatter = ChecksDetails::toString;
