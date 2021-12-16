@@ -293,7 +293,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     }
 
     /**
-     * Validates the a simple successful pipeline works.
+     * Validates that a simple successful pipeline works.
      */
     @Test
     public void shouldPublishSimplePipeline() {

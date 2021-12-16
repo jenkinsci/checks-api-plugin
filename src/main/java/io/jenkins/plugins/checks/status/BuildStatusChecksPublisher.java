@@ -1,7 +1,20 @@
 package io.jenkins.plugins.checks.status;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
+import org.jenkinsci.plugins.workflow.flow.GraphListener;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Computer;
@@ -15,6 +28,7 @@ import hudson.model.listeners.SCMListener;
 import hudson.model.queue.QueueListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails.ChecksDetailsBuilder;
 import io.jenkins.plugins.checks.api.ChecksOutput;
@@ -22,25 +36,12 @@ import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.util.JenkinsFacade;
-import org.jenkinsci.plugins.workflow.actions.LabelAction;
-import org.jenkinsci.plugins.workflow.flow.FlowExecution;
-import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
-import org.jenkinsci.plugins.workflow.flow.GraphListener;
-import org.jenkinsci.plugins.workflow.graph.FlowNode;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
 public final class BuildStatusChecksPublisher {
-
     private static final Logger LOGGER = Logger.getLogger(BuildStatusChecksPublisher.class.getName());
 
     private BuildStatusChecksPublisher() {
@@ -118,11 +119,7 @@ public final class BuildStatusChecksPublisher {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * <p>
      * Listens to the queue and publishes checks in "queued" state for entering items.
-     * </p>
      */
     @Extension
     public static class JobScheduledListener extends QueueListener {
@@ -147,17 +144,14 @@ public final class BuildStatusChecksPublisher {
         }
 
         @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-        private void runAsync(Runnable run) {
+        @SuppressWarnings("PMD.DoNotUseThreads")
+        private void runAsync(final Runnable run) {
             Computer.threadPoolForRemoting.submit(run);
         }
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * <p>
      * Listens to the SCM checkout and publishes checks.
-     * </p>
      */
     @Extension
     public static class JobCheckoutListener extends SCMListener {
@@ -178,11 +172,7 @@ public final class BuildStatusChecksPublisher {
 
 
     /**
-     * {@inheritDoc}
-     *
-     * <p>
      * Listens to the run and publishes checks.
-     * </p>
      */
     @Extension
     public static class JobCompletedListener extends RunListener<Run<?, ?>> {
@@ -199,10 +189,11 @@ public final class BuildStatusChecksPublisher {
                     ChecksStatus.COMPLETED, extractConclusion(run), checksName, getOutput(run)));
         }
 
+        @SuppressWarnings("PMD.CyclomaticComplexity")
         private ChecksConclusion extractConclusion(final Run<?, ?> run) {
             Result result = run.getResult();
             if (result == null) {
-                throw new IllegalStateException("No result when the run completes, run: " + run.toString());
+                throw new IllegalStateException("No result when the run completes, run: " + run);
             }
 
             Job<?, ?> job = run.getParent();
@@ -228,11 +219,7 @@ public final class BuildStatusChecksPublisher {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * <p>
      * As a job progresses, record a representation of the flow graph.
-     * </p>
      */
     @Extension
     public static class ChecksGraphListener implements GraphListener {

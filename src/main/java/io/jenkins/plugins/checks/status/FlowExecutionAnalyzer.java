@@ -1,21 +1,5 @@
 package io.jenkins.plugins.checks.status;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.model.Result;
-import hudson.model.Run;
-import io.jenkins.plugins.checks.api.ChecksOutput;
-import io.jenkins.plugins.checks.api.TruncatedString;
-import org.apache.commons.collections.iterators.ReverseListIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.jenkinsci.plugins.workflow.actions.*;
-import org.jenkinsci.plugins.workflow.flow.FlowExecution;
-import org.jenkinsci.plugins.workflow.graph.FlowNode;
-import org.jenkinsci.plugins.workflow.graph.StepNode;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
-import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +12,31 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.iterators.ReverseListIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
+import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
+import org.jenkinsci.plugins.workflow.actions.ErrorAction;
+import org.jenkinsci.plugins.workflow.actions.LabelAction;
+import org.jenkinsci.plugins.workflow.actions.LogAction;
+import org.jenkinsci.plugins.workflow.actions.ThreadNameAction;
+import org.jenkinsci.plugins.workflow.actions.WarningAction;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
+import org.jenkinsci.plugins.workflow.graph.StepNode;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
+import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
+import hudson.model.Result;
+import hudson.model.Run;
+
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.TruncatedString;
+
+@SuppressWarnings("PMD.GodClass")
 class FlowExecutionAnalyzer {
     private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
