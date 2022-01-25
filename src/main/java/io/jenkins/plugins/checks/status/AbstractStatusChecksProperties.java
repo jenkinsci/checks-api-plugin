@@ -4,9 +4,8 @@ import hudson.ExtensionPoint;
 import hudson.model.Job;
 
 /**
- * Extension points for implementations to provide status checks properties.
- *
- * When no implementations is provided for a job, a {@link DefaultStatusCheckProperties} will be used.
+ * Extension points for implementations to provide status checks properties. When no implementations is provided for a
+ * job, a {@link DefaultStatusCheckProperties} will be used.
  */
 public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     /**
@@ -14,6 +13,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if applicable
      */
     public abstract boolean isApplicable(Job<?, ?> job);
@@ -23,6 +23,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return the name of the status check
      */
     public abstract String getName(Job<?, ?> job);
@@ -32,17 +33,18 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if skip
      */
     public abstract boolean isSkipped(Job<?, ?> job);
 
     /**
-     * Whether to conclude an unstable build as {@link io.jenkins.plugins.checks.api.ChecksConclusion#NEUTRAL},
-     * else it would be concluded as {@link io.jenkins.plugins.checks.api.ChecksConclusion#FAILURE};
-     * the default is false.
+     * Whether to conclude an unstable build as {@link io.jenkins.plugins.checks.api.ChecksConclusion#NEUTRAL}, else it
+     * would be concluded as {@link io.jenkins.plugins.checks.api.ChecksConclusion#FAILURE}; the default is false.
      *
      * @param job
      *         A jenkins job.
+     *
      * @return false to treat a unstable build as failure.
      */
     public boolean isUnstableBuildNeutral(final Job<?, ?> job) {
@@ -54,6 +56,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if logs should be suppressed from checks output.
      */
     public boolean isSuppressLogs(final Job<?, ?> job) {
@@ -66,6 +69,7 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
      *
      * @param job
      *         A jenkins job.
+     *
      * @return true if progress updates should be skipped.
      */
     public boolean isSkipProgressUpdates(final Job<?, ?> job) {

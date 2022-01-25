@@ -1,13 +1,13 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+
+import static java.util.Objects.*;
 
 /**
  * An output of a check. The output usually contains the most useful information like summary, description,
@@ -101,6 +101,7 @@ public class ChecksOutput {
     /**
      * Builder for {@link ChecksOutput}.
      */
+    @SuppressWarnings("ParameterHidesMemberVariable")
     public static class ChecksOutputBuilder {
         @CheckForNull
         private String title;
@@ -139,7 +140,7 @@ public class ChecksOutput {
          *
          * <p>
          *     Note that for the GitHub check runs, the {@code summary} supports Markdown.
-         * <p>
+         * </p>
          *
          * @param summary
          *         the summary of the check run
@@ -155,7 +156,7 @@ public class ChecksOutput {
          *
          * <p>
          *     Note that for the GitHub check runs, the {@code summary} supports Markdown.
-         * <p>
+         * </p>
          *
          * @param summary
          *         the summary of the check run as a {@link TruncatedString}
@@ -172,7 +173,7 @@ public class ChecksOutput {
          *
          * <p>
          *     Note that for a GitHub check run, the {@code text} supports Markdown.
-         * <p>
+         * </p>
          *
          * @param text
          *         the details description in Markdown
@@ -188,7 +189,7 @@ public class ChecksOutput {
          *
          * <p>
          *     Note that for a GitHub check run, the {@code text} supports Markdown.
-         * <p>
+         * </p>
          *
          * @param text
          *         the details description in Markdown as a {@link TruncatedString}

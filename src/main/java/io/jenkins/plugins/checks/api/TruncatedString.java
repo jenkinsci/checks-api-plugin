@@ -1,14 +1,19 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * Utility wrapper that silently truncates output with a message at a certain size.
@@ -17,6 +22,7 @@ import java.util.stream.Collector;
  * truncate to the required length as this could lead to unterminated syntax. The use of this class allows for adding
  * chunks of complete markdown until an overflow is detected, at which point a message will be added and all future
  * additions will be silently discarded.
+ * </p>
  */
 public class TruncatedString {
 
@@ -26,7 +32,6 @@ public class TruncatedString {
     private final String truncationText;
     private final boolean truncateStart;
     private final boolean chunkOnNewlines;
-
 
     private TruncatedString(@NonNull final List<String> chunks, @NonNull final String truncationText, final boolean truncateStart, final boolean chunkOnNewlines) {
         this.chunks = Collections.unmodifiableList(Objects.requireNonNull(chunks));
@@ -109,10 +114,10 @@ public class TruncatedString {
         return String.join("", truncatedParts);
     }
 
-
     /**
      * Builder for {@link TruncatedString}.
      */
+    @SuppressWarnings({"ParameterHidesMemberVariable", "UnusedReturnValue"})
     public static class Builder {
         private String truncationText = "Output truncated.";
         private boolean truncateStart = false;
@@ -170,11 +175,9 @@ public class TruncatedString {
             this.chunkOnNewlines = true;
             return this;
         }
-
     }
 
     private static class Joiner implements Collector<String, Joiner.Accumulator, List<String>> {
-
         private final int maxLength;
         private final String truncationText;
         private final boolean chunkOnChars;
@@ -250,5 +253,4 @@ public class TruncatedString {
             }
         }
     }
-
 }

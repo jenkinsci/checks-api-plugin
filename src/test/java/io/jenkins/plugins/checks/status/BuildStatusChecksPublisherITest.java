@@ -1,32 +1,34 @@
 package io.jenkins.plugins.checks.status;
 
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
+import org.junit.Test;
+import org.jvnet.hudson.test.TestExtension;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
+
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
-import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
-import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.internal.Checks;
-import org.jvnet.hudson.test.TestExtension;
 
-import java.util.List;
-import java.util.regex.Pattern;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Tests that the {@link BuildStatusChecksPublisher} listens to the status of a {@link Run} and publishes status
  * accordingly.
  */
-@SuppressWarnings("PMD.AddEmptyString")
+@SuppressWarnings({"PMD.AddEmptyString", "checkstyle:LambdaBodyLength"})
 @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
 
@@ -291,7 +293,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
     }
 
     /**
-     * Validates the a simple successful pipeline works.
+     * Validates that a simple successful pipeline works.
      */
     @Test
     public void shouldPublishSimplePipeline() {

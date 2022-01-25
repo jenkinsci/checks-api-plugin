@@ -1,14 +1,14 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+
+import static java.util.Objects.*;
 
 /**
  * Details of a check. This class is a top class which contains all parameters needed for a check.
@@ -134,6 +134,7 @@ public class ChecksDetails {
     /**
      * Builder for {@link ChecksDetails}.
      */
+    @SuppressWarnings("ParameterHidesMemberVariable")
     public static class ChecksDetailsBuilder {
         @CheckForNull
         private String name;
@@ -165,7 +166,7 @@ public class ChecksDetails {
          * <p>
          *     Note that for GitHub check runs, the name shown on GitHub UI will be the same as this attribute and
          *     GitHub uses this attribute to identify a check run, so make sure this name is unique, e.g. "Coverage".
-         * <p>
+         * </p>
          *
          * @param name
          *         the check's name
