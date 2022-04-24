@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>analysis-pom</artifactId>
-    <version>5.18.0</version>
+    <version>5.24.0</version>
     <relativePath />
   </parent>
 
@@ -18,13 +18,12 @@
   <description>Defines an API for Jenkins to publish checks to SCM platforms.</description>
 
   <properties>
-    <java.level>8</java.level>
     <revision>1.7.3</revision>
     <changelist>-SNAPSHOT</changelist>
+    <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
     <plugin-util-api.version>2.14.0</plugin-util-api.version>
-    <pipeline-stage-step.version>2.5</pipeline-stage-step.version>
   </properties>
 
   <licenses>
@@ -36,9 +35,9 @@
 
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
+    <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
+    <url>https://github.com/${gitHubRepo}</url>
     <tag>${scmTag}</tag>
   </scm>
 
@@ -93,7 +92,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>pipeline-stage-step</artifactId>
-      <version>${pipeline-stage-step.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- steps -->
