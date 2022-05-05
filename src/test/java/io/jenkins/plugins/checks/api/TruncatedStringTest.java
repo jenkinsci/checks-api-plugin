@@ -45,7 +45,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldBuildStrings(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldBuildStrings(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -59,7 +59,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldTruncateStrings(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldTruncateStrings(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -73,7 +73,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldHandleEdgeCases(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldHandleEdgeCases(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -89,7 +89,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldHandleReversedChunking(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldHandleReversedChunking(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -106,7 +106,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldHandleEdgeCasesReversed(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldHandleEdgeCasesReversed(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -123,7 +123,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldChunkNewlinesDifferently(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldChunkNewlinesDifferently(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -142,7 +142,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldTruncateByBytesOrChars(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldTruncateByBytesOrChars(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
@@ -159,7 +159,7 @@ class TruncatedStringTest {
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void shouldHandleLongCharsInTruncationText(boolean chunkOnNewlines, boolean chunkOnChars) {
+    public void shouldHandleLongCharsInTruncationText(final boolean chunkOnNewlines, final boolean chunkOnChars) {
         if (chunkOnNewlines) {
             builder.setChunkOnNewlines();
         }
