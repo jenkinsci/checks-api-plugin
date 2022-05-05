@@ -20,7 +20,7 @@ class ArchitectureTest {
     static final ArchRule NO_JENKINS_INSTANCE_CALL = PluginArchitectureRules.NO_JENKINS_INSTANCE_CALL;
 
     @ArchTest
-    static final ArchRule NO_PUBLIC_TEST_CLASSES = ((ClassesShouldConjunction) PluginArchitectureRules.NO_PUBLIC_TEST_CLASSES)
+    static final ArchRule NO_PUBLIC_TEST_CLASSES = ((ClassesShouldConjunction) ArchitectureRules.NO_PUBLIC_TEST_CLASSES)
             .andShould().notBeAnnotatedWith(RunWith.class); // Allow for JUnit4 tests.
 
     @ArchTest

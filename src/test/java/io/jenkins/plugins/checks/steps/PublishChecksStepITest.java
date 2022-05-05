@@ -5,11 +5,12 @@ import io.jenkins.plugins.checks.api.ChecksAnnotation;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 
@@ -20,13 +21,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests the pipeline step to publish checks.
  */
-public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
+class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
     /**
      * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
      */
     @TestExtension
-    public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
+    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
+    }
+
+    private CapturingChecksPublisher.Factory getFactory() {
+        return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
+                .stream()
+                .filter(f -> f instanceof CapturingChecksPublisher.Factory)
+                .map(f -> (CapturingChecksPublisher.Factory) f)
+                .findAny()
+                .orElseThrow(() -> new AssertionError("No CapturingChecksPublisher registered as @TestExtension?"));
+    }
 
     /**
      * Tests that the step "publishChecks" can be used in pipeline script.
@@ -49,9 +61,9 @@ public class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         assertThat(JenkinsRule.getLog(buildSuccessfully(job)))
                 .contains("[Pipeline] publishChecks");
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(1);
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(1);
 
-        ChecksDetails details = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+        ChecksDetails details = getFactory().getPublishedChecks().get(0);
 
         assertThat(details.getName()).isPresent().get().isEqualTo("customized-check");
         assertThat(details.getOutput()).isPresent();
