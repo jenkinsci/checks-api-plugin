@@ -1,12 +1,13 @@
 package io.jenkins.plugins.checks.api;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,51 +16,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Test behavior of the {@link TruncatedString}.
  */
 @SuppressWarnings({"VisibilityModifier", "MissingJavadocMethod"})
-@RunWith(Parameterized.class)
-@SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
-public class TruncatedStringTest {
+class TruncatedStringTest {
     private static final String MESSAGE = "Truncated";  // length 9
 
-    /**
-     * Human readable test name.
-     */
-    @Parameterized.Parameter
-    public String testName;
-
-    /**
-     * Parameter for chunking on new lines (or not!).
-     */
-    @Parameterized.Parameter(1)
-    public boolean chunkOnNewlines;
-
-    /**
-     * Parameter for chunking on chars (or not!).
-     */
-    @Parameterized.Parameter(2)
-    public boolean chunkOnChars;
-
-    @Parameterized.Parameters(name = "{0}")
-    public static Object[][] parameters() {
-        return new Object[][]{
-                {"Chunks+Bytes", false, false},
-                {"Newlines+Bytes", true, false},
-                {"Chunks+Chars", false, true},
-                {"Newlines+Chars", true, true}
-        };
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Called by JUnit")
+    private static Stream<Arguments> parameters() {
+        return Stream.of(
+                Arguments.of(false, false),
+                Arguments.of(true, false),
+                Arguments.of(false, true),
+                Arguments.of(true, true));
     }
 
     private TruncatedString.Builder builder;
 
-    @Before
+    @BeforeEach
     public void makeBuilder() {
-        this.builder = new TruncatedString.Builder()
-                .withTruncationText(MESSAGE);
-        if (chunkOnNewlines) {
-            builder.setChunkOnNewlines();
-        }
+        this.builder = new TruncatedString.Builder().withTruncationText(MESSAGE);
     }
 
-    private String build(final int maxSize) {
+    private String build(final boolean chunkOnChars, final int maxSize) {
         return chunkOnChars ? builder.build().buildByChars(maxSize) : builder.build().buildByBytes(maxSize);
     }
 
@@ -67,91 +43,126 @@ public class TruncatedStringTest {
         return builder.build().toString();
     }
 
-    @Test
-    public void shouldBuildStrings() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldBuildStrings(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.addText("Hello\n");
         assertThat(buildRawString()).isEqualTo("Hello\n");
-        assertThat(build(1000)).isEqualTo("Hello\n");
+        assertThat(build(chunkOnChars, 1000)).isEqualTo("Hello\n");
         builder.addText(", world!");
         assertThat(buildRawString()).isEqualTo("Hello\n, world!");
-        assertThat(build(1000)).isEqualTo("Hello\n, world!");
+        assertThat(build(chunkOnChars, 1000)).isEqualTo("Hello\n, world!");
     }
 
-    @Test
-    public void shouldTruncateStrings() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldTruncateStrings(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.addText("xxxxxxxxx\n"); // 10
-        assertThat(build(20)).isEqualTo("xxxxxxxxx\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("xxxxxxxxx\n");
         builder.addText("yyyy\n"); // 5, doesn't cause overflow
-        assertThat(build(20)).isEqualTo("xxxxxxxxx\nyyyy\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("xxxxxxxxx\nyyyy\n");
         builder.addText("zzzzzz\n"); // 7, does cause overflow
-        assertThat(build(20)).isEqualTo("xxxxxxxxx\nTruncated");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("xxxxxxxxx\nTruncated");
     }
 
-    @Test
-    public void shouldHandleEdgeCases() {
-        assertThat(build(10)).isEqualTo("");
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldHandleEdgeCases(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
+        assertThat(build(chunkOnChars, 10)).isEqualTo("");
         assertThat(buildRawString()).isEqualTo("");
         builder.addText("xxxxxxxxxxxxxx\n"); // 15
-        assertThat(build(10)).isEqualTo("Truncated");
+        assertThat(build(chunkOnChars, 10)).isEqualTo("Truncated");
         assertThatThrownBy(() -> {
-            build(5);
+            build(chunkOnChars, 5);
         }).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Maximum length is less than truncation text.");
     }
 
-    @Test
-    public void shouldHandleReversedChunking() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldHandleReversedChunking(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.setTruncateStart();
         builder.addText("zzzz\n"); // 5
-        assertThat(build(20)).isEqualTo("zzzz\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("zzzz\n");
         builder.addText("xxxx\n"); // 5, doesn't cause overflow
-        assertThat(build(20)).isEqualTo("zzzz\nxxxx\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("zzzz\nxxxx\n");
         builder.addText("cccc\n"); // 5, doesn't cause overflow
-        assertThat(build(20)).isEqualTo("zzzz\nxxxx\ncccc\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("zzzz\nxxxx\ncccc\n");
         builder.addText("aaaaaa\n"); // 7, does cause overflow
-        assertThat(build(20)).isEqualTo("Truncatedcccc\naaaaaa\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("Truncatedcccc\naaaaaa\n");
     }
 
-    @Test
-    public void shouldHandleEdgeCasesReversed() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldHandleEdgeCasesReversed(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.setTruncateStart();
-        assertThat(build(10)).isEqualTo("");
+        assertThat(build(chunkOnChars, 10)).isEqualTo("");
         assertThat(buildRawString()).isEqualTo("");
         builder.addText("xxxxxxxxxxxxxx\n"); // 15
-        assertThat(build(10)).isEqualTo("Truncated");
+        assertThat(build(chunkOnChars, 10)).isEqualTo("Truncated");
         assertThatThrownBy(() -> {
-            build(5);
+            build(chunkOnChars, 5);
         }).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Maximum length is less than truncation text.");
     }
 
-    @Test
-    public void shouldChunkNewlinesDifferently() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldChunkNewlinesDifferently(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.addText("xxxxxxxxxx"); // 10
         builder.addText("yyyyyyyyyyy"); // 11
-        assertThat(build(20)).isEqualTo(chunkOnNewlines ? "Truncated" : "xxxxxxxxxxTruncated");
+        assertThat(build(chunkOnChars, 20)).isEqualTo(chunkOnNewlines ? "Truncated" : "xxxxxxxxxxTruncated");
 
         makeBuilder();
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.addText("wwww\n"); // 5
         builder.addText("xxxx\nyyyy\nzzzzz\n"); // 16
-        assertThat(build(20)).isEqualTo(chunkOnNewlines ? "wwww\nxxxx\nTruncated" : "wwww\nTruncated");
+        assertThat(build(chunkOnChars, 20)).isEqualTo(chunkOnNewlines ? "wwww\nxxxx\nTruncated" : "wwww\nTruncated");
     }
 
-    @Test
-    public void shouldTruncateByBytesOrChars() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldTruncateByBytesOrChars(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         builder.addText("☃☃☃\n"); // 3 + 1
         assertThat(buildRawString().length()).isEqualTo(4);
         assertThat(buildRawString().getBytes(StandardCharsets.UTF_8).length).isEqualTo(10);
-        assertThat(build(20)).isEqualTo("☃☃☃\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("☃☃☃\n");
 
         builder.addText("🕴️🕴️\n"); // 2 + 1
         assertThat(buildRawString().length()).isEqualTo(11);
         assertThat(buildRawString().getBytes(StandardCharsets.UTF_8).length).isEqualTo(25);
-        assertThat(build(20)).isEqualTo(chunkOnChars ? "☃☃☃\n🕴️🕴️\n" : "☃☃☃\nTruncated");
+        assertThat(build(chunkOnChars, 20)).isEqualTo(chunkOnChars ? "☃☃☃\n🕴️🕴️\n" : "☃☃☃\nTruncated");
     }
 
-    @Test
-    public void shouldHandleLongCharsInTruncationText() {
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldHandleLongCharsInTruncationText(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
         String truncationText = "E_TOO_MUCH_☃";
         assertThat(truncationText.length()).isEqualTo(12);
         assertThat(truncationText.getBytes(StandardCharsets.UTF_8).length).isEqualTo(14);
@@ -159,8 +170,8 @@ public class TruncatedStringTest {
         builder.withTruncationText(truncationText);
         builder.addText("xxxx\n"); // 5
         builder.addText("x\n"); // 2
-        assertThat(build(20)).isEqualTo("xxxx\nx\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("xxxx\nx\n");
         builder.addText("xxxxxxxxxxxxxxx"); // 15
-        assertThat(build(20)).isEqualTo(chunkOnChars ? "xxxx\nx\nE_TOO_MUCH_☃" : "xxxx\nE_TOO_MUCH_☃");
+        assertThat(build(chunkOnChars, 20)).isEqualTo(chunkOnChars ? "xxxx\nx\nE_TOO_MUCH_☃" : "xxxx\nE_TOO_MUCH_☃");
     }
 }

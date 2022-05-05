@@ -4,15 +4,17 @@ import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
+import io.jenkins.plugins.checks.util.CapturingChecksPublisher.Factory;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.jenkinsci.plugins.workflow.support.steps.ExecutorStepExecution;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.TestExtension;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -27,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests the "withChecks" step.
  */
-public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
+class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
     /**
      * Tests that the step can inject the {@link ChecksInfo} into the closure.
@@ -40,18 +42,21 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         buildSuccessfully(job);
     }
 
-    /**
-     * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
-     */
-    @TestExtension
-    public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
+    private CapturingChecksPublisher.Factory getFactory() {
+        return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
+                .stream()
+                .filter(f -> f instanceof Factory)
+                .map(f -> (Factory) f)
+                .findAny()
+                .orElseThrow(() -> new AssertionError("No CapturingChecksPublisher registered as @TestExtension?"));
+    }
 
     /**
-     * Clear captured checks on the {@link WithChecksStepITest#PUBLISHER_FACTORY} after each test.
+     * Clear captured checks on the {@link CapturingChecksPublisher.Factory} after each test.
      */
-    @After
+    @AfterEach
     public void clearPublisher() {
-        PUBLISHER_FACTORY.getPublishedChecks().clear();
+        getFactory().getPublishedChecks().clear();
     }
 
     /**
@@ -64,9 +69,9 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
         buildSuccessfully(job);
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
-        ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
-        ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+        ChecksDetails manualChecks = getFactory().getPublishedChecks().get(1);
 
         assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test injection");
         assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
@@ -87,9 +92,9 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
         buildSuccessfully(job);
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
-        ChecksDetails autoChecks = PUBLISHER_FACTORY.getPublishedChecks().get(0);
-        ChecksDetails manualChecks = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+        ChecksDetails manualChecks = getFactory().getPublishedChecks().get(1);
 
         assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test injection");
         assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
@@ -110,8 +115,8 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
         buildWithResult(job, Result.FAILURE);
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
-        ChecksDetails failure = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails failure = getFactory().getPublishedChecks().get(1);
 
         assertThat(failure.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(failure.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
@@ -133,8 +138,8 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
         buildWithResult(job, Result.ABORTED);
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks().size()).isEqualTo(2);
-        ChecksDetails abort = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails abort = getFactory().getPublishedChecks().get(1);
 
         assertThat(abort.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
         assertThat(abort.getConclusion()).isEqualTo(ChecksConclusion.CANCELED);
@@ -213,5 +218,13 @@ public class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
                 return null;
             }
         }
+    }
+
+    /**
+     * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
+     */
+    @TestExtension
+    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
     }
 }

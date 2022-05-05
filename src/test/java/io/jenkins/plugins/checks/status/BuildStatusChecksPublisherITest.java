@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -18,6 +18,7 @@ import hudson.model.Run;
 
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
+import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
@@ -30,27 +31,31 @@ import static org.assertj.core.api.Assertions.*;
  */
 @SuppressWarnings({"PMD.AddEmptyString", "checkstyle:LambdaBodyLength"})
 @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
-public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
+class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
 
-    /**
-     * Provide a {@link io.jenkins.plugins.checks.util.CapturingChecksPublisher} to capture details.
-     */
-    @TestExtension
-    public static final CapturingChecksPublisher.Factory PUBLISHER_FACTORY = new CapturingChecksPublisher.Factory();
+    private CapturingChecksPublisher.Factory getFactory() {
+        return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
+                .stream()
+                .filter(f -> f instanceof CapturingChecksPublisher.Factory)
+                .map(f -> (CapturingChecksPublisher.Factory) f)
+                .findAny()
+                .orElseThrow(() -> new AssertionError("No CapturingChecksPublisher registered as @TestExtension?"));
+    }
 
     /**
      * Clean captured checks between tests.
      */
-    @After
+    @AfterEach
     public void clearChecks() {
-        PUBLISHER_FACTORY.getPublishedChecks().clear();
+        getFactory().getPublishedChecks().clear();
     }
 
-    /**
-     * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
-     */
-    @TestExtension
-    public static final ChecksProperties PROPERTIES = new ChecksProperties();
+    private ChecksProperties getProperties() {
+        return getJenkins().getInstance().getExtensionList(ChecksProperties.class)
+                .stream()
+                .findAny()
+                .orElseThrow(() -> new AssertionError("No ChecksProperties registered as @TestExtension?"));
+    }
 
     /**
      * Tests when the implementation of {@link AbstractStatusChecksProperties} is not applicable,
@@ -58,11 +63,11 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldNotPublishStatusWhenNotApplicable() {
-        PROPERTIES.setApplicable(false);
+        getProperties().setApplicable(false);
 
         buildSuccessfully(createFreeStyleProject());
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(0);
+        assertThat(getFactory().getPublishedChecks()).hasSize(0);
     }
 
     /**
@@ -70,13 +75,13 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldNotPublishStatusWhenSkipped() {
-        PROPERTIES.setApplicable(true);
-        PROPERTIES.setSkipped(true);
-        PROPERTIES.setName("Test Status");
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(true);
+        getProperties().setName("Test Status");
 
         buildSuccessfully(createFreeStyleProject());
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(0);
+        assertThat(getFactory().getPublishedChecks()).hasSize(0);
     }
 
     /**
@@ -85,27 +90,27 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldPublishStatusWithProperties() {
-        PROPERTIES.setApplicable(true);
-        PROPERTIES.setSkipped(false);
-        PROPERTIES.setName("Test Status");
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
 
         buildSuccessfully(createFreeStyleProject());
 
-        assertThat(PUBLISHER_FACTORY.getPublishedChecks()).hasSize(3);
+        assertThat(getFactory().getPublishedChecks()).hasSize(3);
 
-        ChecksDetails details = PUBLISHER_FACTORY.getPublishedChecks().get(0);
+        ChecksDetails details = getFactory().getPublishedChecks().get(0);
 
         assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.QUEUED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
 
-        details = PUBLISHER_FACTORY.getPublishedChecks().get(1);
+        details = getFactory().getPublishedChecks().get(1);
 
         assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
 
-        details = PUBLISHER_FACTORY.getPublishedChecks().get(2);
+        details = getFactory().getPublishedChecks().get(2);
 
         assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
@@ -117,10 +122,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldPublishStageDetails() {
-        PROPERTIES.setApplicable(true);
-        PROPERTIES.setSkipped(false);
-        PROPERTIES.setSuppressLogs(false);
-        PROPERTIES.setName("Test Status");
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setSuppressLogs(false);
+        getProperties().setName("Test Status");
         WorkflowJob job = createPipeline();
 
         job.setDefinition(new CpsFlowDefinition(""
@@ -143,7 +148,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         buildWithResult(job, Result.FAILURE);
 
-        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
 
         assertThat(checksDetails).hasSize(9);
 
@@ -232,10 +237,10 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldPublishStageDetailsWithoutLogsIfRequested() {
-        PROPERTIES.setApplicable(true);
-        PROPERTIES.setSkipped(false);
-        PROPERTIES.setName("Test Status");
-        PROPERTIES.setSuppressLogs(true);
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        getProperties().setSuppressLogs(true);
         WorkflowJob job = createPipeline();
 
         job.setDefinition(new CpsFlowDefinition(""
@@ -258,7 +263,7 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         buildWithResult(job, Result.FAILURE);
 
-        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
 
         assertThat(checksDetails).hasSize(9);
 
@@ -297,9 +302,9 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
      */
     @Test
     public void shouldPublishSimplePipeline() {
-        PROPERTIES.setApplicable(true);
-        PROPERTIES.setSkipped(false);
-        PROPERTIES.setName("Test Status");
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
         WorkflowJob job = createPipeline();
 
         job.setDefinition(new CpsFlowDefinition(""
@@ -309,10 +314,26 @@ public class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsP
 
         buildWithResult(job, Result.SUCCESS);
 
-        List<ChecksDetails> checksDetails = PUBLISHER_FACTORY.getPublishedChecks();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
 
         ChecksDetails details = checksDetails.get(1);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> assertThat(output.getTitle()).isPresent().get().isEqualTo("Success"));
+    }
+
+    /**
+     * Provide a {@link io.jenkins.plugins.checks.util.CapturingChecksPublisher} to capture details.
+     */
+    @TestExtension
+    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
+    }
+
+    /**
+     * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
+     */
+    @TestExtension
+    public static class ChecksPropertiesTestExtension extends ChecksProperties {
+        // activate test extension
     }
 
     static class ChecksProperties extends AbstractStatusChecksProperties {
