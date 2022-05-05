@@ -33,14 +33,6 @@ import static org.assertj.core.api.Assertions.*;
 @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest {
 
-    /**
-     * Provide a {@link io.jenkins.plugins.checks.util.CapturingChecksPublisher} to capture details.
-     */
-    @TestExtension
-    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
-        // activate test extension
-    }
-
     private CapturingChecksPublisher.Factory getFactory() {
         return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
                 .stream()
@@ -334,6 +326,14 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
         ChecksDetails details = checksDetails.get(1);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> assertThat(output.getTitle()).isPresent().get().isEqualTo("Success"));
+    }
+
+    /**
+     * Provide a {@link io.jenkins.plugins.checks.util.CapturingChecksPublisher} to capture details.
+     */
+    @TestExtension
+    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
     }
 
     static class ChecksProperties extends AbstractStatusChecksProperties {

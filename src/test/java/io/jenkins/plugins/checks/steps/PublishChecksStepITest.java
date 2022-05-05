@@ -23,14 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
-    /**
-     * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
-     */
-    @TestExtension
-    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
-        // activate test extension
-    }
-
     private CapturingChecksPublisher.Factory getFactory() {
         return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
                 .stream()
@@ -95,5 +87,13 @@ class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
                         .withTitle("integration test")
                         .withRawDetails("raw details")
                         .build());
+    }
+
+    /**
+     * Provide a {@link CapturingChecksPublisher} to check published checks on each test.
+     */
+    @TestExtension
+    public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
     }
 }
