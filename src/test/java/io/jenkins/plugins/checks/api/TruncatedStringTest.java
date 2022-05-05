@@ -16,10 +16,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Test behavior of the {@link TruncatedString}.
  */
 @SuppressWarnings({"VisibilityModifier", "MissingJavadocMethod"})
-@SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
 class TruncatedStringTest {
     private static final String MESSAGE = "Truncated";  // length 9
 
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Called by JUnit")
     private static Stream<Arguments> parameters() {
         return Stream.of(
                 Arguments.of(false, false),
