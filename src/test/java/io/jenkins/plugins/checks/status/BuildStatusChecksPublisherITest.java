@@ -50,14 +50,6 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         getFactory().getPublishedChecks().clear();
     }
 
-    /**
-     * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
-     */
-    @TestExtension
-    public static class ChecksPropertiesTestExtension extends ChecksProperties {
-        // activate test extension
-    }
-
     private ChecksProperties getProperties() {
         return getJenkins().getInstance().getExtensionList(ChecksProperties.class)
                 .stream()
@@ -333,6 +325,14 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      */
     @TestExtension
     public static class CapturingChecksPublisherTestExtension extends CapturingChecksPublisher.Factory {
+        // activate test extension
+    }
+
+    /**
+     * Provide inject an implementation of {@link AbstractStatusChecksProperties} to control the checks.
+     */
+    @TestExtension
+    public static class ChecksPropertiesTestExtension extends ChecksProperties {
         // activate test extension
     }
 
