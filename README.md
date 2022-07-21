@@ -18,6 +18,7 @@ Known consumers:
 
 Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
+* [Gitea Checks Plugin](https://plugins.jenkins.io/gitea-checks/)
 
 This plugin, along with it's [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain over 1500 Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
 
