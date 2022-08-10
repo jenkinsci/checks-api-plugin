@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
  * @author Ullrich Hafner
  */
 @SuppressWarnings("hideutilityclassconstructor")
-@AnalyzeClasses(packages = "io.jenkins.plugins..")
+@AnalyzeClasses(packages = "io.jenkins.plugins.checks..")
 class ArchitectureTest {
     @ArchTest
     static final ArchRule NO_JENKINS_INSTANCE_CALL = PluginArchitectureRules.NO_JENKINS_INSTANCE_CALL;
