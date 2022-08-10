@@ -23,7 +23,7 @@
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
-    <plugin-util-api.version>2.16.0</plugin-util-api.version>
+    <plugin-util-api.version>2.17.0</plugin-util-api.version>
     <testcontainers.version>1.17.3</testcontainers.version>
   </properties>
 
