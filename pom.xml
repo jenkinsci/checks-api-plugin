@@ -23,7 +23,6 @@
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
     <!-- Jenkins Plug-in Dependencies Versions -->
-    <plugin-util-api.version>2.18.0</plugin-util-api.version>
     <testcontainers.version>1.17.5</testcontainers.version>
   </properties>
 
@@ -46,14 +45,12 @@
     <dependency>
       <groupId>io.jenkins.plugins</groupId>
       <artifactId>plugin-util-api</artifactId>
-      <version>${plugin-util-api.version}</version>
     </dependency>
     <dependency>
       <groupId>io.jenkins.plugins</groupId>
       <artifactId>plugin-util-api</artifactId>
-      <version>${plugin-util-api.version}</version>
+      <classifier>tests</classifier>
       <scope>test</scope>
-      <type>test-jar</type>
     </dependency>
 
     <dependency>
