@@ -18,7 +18,7 @@
   <description>Defines an API for Jenkins to publish checks to SCM platforms.</description>
 
   <properties>
-    <revision>1.7.6</revision>
+    <revision>1.8.0</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
