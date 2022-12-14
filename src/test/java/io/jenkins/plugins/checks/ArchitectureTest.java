@@ -26,7 +26,7 @@ class ArchitectureTest {
                 .and().haveSimpleNameNotContaining("_jmh")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT).should().bePublic()
             .andShould().notBeAnnotatedWith(RunWith.class)
-            .because("test classes are not part of the API and should be hidden in a package");;
+            .because("test classes are not part of the API and should be hidden in a package");
 
     @ArchTest
     static final ArchRule NO_TEST_API_CALLED = ArchitectureRules.NO_TEST_API_CALLED;
