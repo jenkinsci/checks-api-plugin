@@ -1,9 +1,10 @@
 package io.jenkins.plugins.checks;
 
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.lang.syntax.elements.ClassesShouldConjunction;
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import edu.hm.hafner.util.ArchitectureRules;
 import io.jenkins.plugins.util.PluginArchitectureRules;
 import org.junit.runner.RunWith;
@@ -20,8 +21,12 @@ class ArchitectureTest {
     static final ArchRule NO_JENKINS_INSTANCE_CALL = PluginArchitectureRules.NO_JENKINS_INSTANCE_CALL;
 
     @ArchTest
-    static final ArchRule NO_PUBLIC_TEST_CLASSES = ((ClassesShouldConjunction) ArchitectureRules.NO_PUBLIC_TEST_CLASSES)
-            .andShould().notBeAnnotatedWith(RunWith.class); // Allow for JUnit4 tests.
+    static final ArchRule NO_PUBLIC_TEST_CLASSES =  ArchRuleDefinition.noClasses()
+            .that().haveSimpleNameEndingWith("Test")
+                .and().haveSimpleNameNotContaining("_jmh")
+                .and().doNotHaveModifier(JavaModifier.ABSTRACT).should().bePublic()
+            .andShould().notBeAnnotatedWith(RunWith.class)
+            .because("test classes are not part of the API and should be hidden in a package");
 
     @ArchTest
     static final ArchRule NO_TEST_API_CALLED = ArchitectureRules.NO_TEST_API_CALLED;
