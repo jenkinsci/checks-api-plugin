@@ -21,7 +21,7 @@ Implementations:
 * [GitHub Checks Plugin](https://plugins.jenkins.io/github-checks)
 * [Gitea Checks Plugin](https://plugins.jenkins.io/gitea-checks/)
 
-This plugin, along with it's [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain over 1500 Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
+This plugin, along with its [GitHub implementation](https://plugins.jenkins.io/github-checks), has been installed on [ci.jenkins.io](https://ci.jenkins.io/Plugins) to help maintain over 1500 Jenkins plugins. You can take a look at the [action](https://github.com/jenkinsci/checks-api-plugin/runs/1025532156) for this repository or other plugin repositories under [Jenkins organization](https://github.com/jenkinsci) for the results.
 
 ## Embedded Features
 
@@ -46,8 +46,8 @@ publishChecks name: 'example', title: 'Pipeline Check', summary: 'check through 
     actions: [[label:'an-user-request-action', description:'actions allow users to request pre-defined behaviours', identifier:'an unique identifier']]
 ```
 
-*To use customized actions, you will need to write a Jenkins plugin
-If you want to add GitHub checks actions which are basically buttons on the checks report,
+*To use customized actions, you will need to write a Jenkins plugin.
+If you want to add GitHub checks actions, which are basically buttons on the checks report,
 you need to extend [GHEventSubscriber](https://github.com/jenkinsci/github-plugin/blob/master/src/main/java/org/jenkinsci/plugins/github/extension/GHEventsSubscriber.java) to handle the event,
 see [the handler](https://github.com/jenkinsci/github-checks-plugin/blob/ea060be67dad522ab6c31444fc4274955ac6e918/src/main/java/io/jenkins/plugins/checks/github/CheckRunGHEventSubscriber.java) for re-run requests as an example.*
 
