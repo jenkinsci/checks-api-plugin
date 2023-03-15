@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>analysis-pom</artifactId>
-    <version>5.37.0</version>
+    <version>6.2.0</version>
     <relativePath />
   </parent>
 
@@ -18,12 +18,12 @@
   <description>Defines an API for Jenkins to publish checks to SCM platforms.</description>
 
   <properties>
-    <revision>1.8.2</revision>
+    <revision>2.0.0</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
     <testcontainers.version>1.17.6</testcontainers.version>
-    <plugin-util-api.version>2.20.0</plugin-util-api.version>
+    <plugin-util-api.version>3.1.0</plugin-util-api.version>
   </properties>
 
   <licenses>
