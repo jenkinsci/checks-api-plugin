@@ -22,7 +22,7 @@
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
-    <testcontainers.version>1.17.6</testcontainers.version>
+    <testcontainers.version>1.18.1</testcontainers.version>
     <plugin-util-api.version>3.1.0</plugin-util-api.version>
   </properties>
 
