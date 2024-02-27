@@ -156,7 +156,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         ChecksDetails details = checksDetails.get(0);
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.QUEUED);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
-        assertThat(details.getName()).isPresent().get().isEqualTo("Test Status");
+        assertThat(details.getName()).isPresent().contains("Test Status");
         assertThat(details.getOutput()).isNotPresent();
 
         // Details 1, first stage
@@ -164,7 +164,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.NONE);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("In progress");
+            assertThat(output.getTitle()).isPresent().contains("In progress");
             assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
             assertThat(output.getText()).isPresent().get().asString().contains("* Simple Stage *(running)*");
         });
@@ -174,16 +174,16 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
             assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
             assertThat(output.getText()).isPresent().get().satisfies(text -> {
-                assertThat(output.getTitle()).isPresent().get().isEqualTo("In progress");
-                assertThat(text).matches(Pattern.compile(".*\\* Simple Stage \\*\\([^)]+\\)\\*.*", Pattern.DOTALL));
-                assertThat(text).contains("  * In parallel *(running)*");
+                assertThat(output.getTitle()).isPresent().contains("In progress");
+                assertThat(text).doesNotContain("* Simple Stage *(running)*");
+                assertThat(text).contains("* Simple Stage", "* In parallel *(running)*");
             });
         });
 
         // Details 6, p1s1 has finished and emitted unstable
         details = checksDetails.get(6);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
-            assertThat(output.getTitle()).isPresent().get().isEqualTo("In parallel/p1/p1s1: warning in 'unstable' step");
+            assertThat(output.getTitle()).isPresent().contains("In parallel/p1/p1s1: warning in 'unstable' step");
             assertThat(output.getSummary()).isPresent().get().asString().isEqualToIgnoringNewLines(""
                     + "### `In parallel / p1 / p1s1 / Set stage result to unstable`\n"
                     + "Warning in `unstable` step, with arguments `something went wrong`.\n"
