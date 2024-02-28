@@ -197,7 +197,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                     + "      \\* p1s1 \\*\\([^)]+\\)\\*\\s*"
                     + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\\s*"
                     + "      \\* p1s2 \\*\\(running\\)\\*\\s*"
-                    + "    \\* p2 \\*\\([^)]+\\)\\*\\s*.*", Pattern.DOTALL | Pattern.UNIX_LINES));
+                    + "    \\* p2 \\*\\([^)]+\\)\\*\\s*.*", Pattern.DOTALL));
         });
 
         // Details 8, final checks
