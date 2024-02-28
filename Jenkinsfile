@@ -1,8 +1,13 @@
 def configurations = [
-  [ platform: "linux", jdk: "11" ],
-  [ platform: "windows", jdk: "11" ]
+  [ platform: "linux", jdk: "21" ],
+  [ platform: "windows", jdk: "17" ]
 ]
 
-buildPlugin(failFast: false, configurations: configurations,
+def params = [
+    failFast: false,
+    configurations: configurations,
     checkstyle: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]],
-    pmd: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]] )
+    spotbugs: [qualityGates: [[threshold: 1, type: 'NEW', unstable: true]]]]
+]
+
+buildPlugin(params)
