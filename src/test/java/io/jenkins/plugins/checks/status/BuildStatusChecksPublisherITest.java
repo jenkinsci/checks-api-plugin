@@ -217,7 +217,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                     + "```\\s+"
                     + "a fatal error occurs\\s+"
                     + "```\\s+", Pattern.DOTALL));
-            assertThat(output.getText()).isPresent().asString().matches(Pattern.compile(".*"
+            assertThat(output.getText()).isPresent().get().asString().matches(Pattern.compile(".*"
                             + "  \\* Simple Stage \\*\\([^)]+\\)\\*\\s+"
                             + "  \\* In parallel \\*\\([^)]+\\)\\*\\s+"
                             + "    \\* p1 \\*\\([^)]+\\)\\*\\s+"
