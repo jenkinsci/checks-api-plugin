@@ -171,9 +171,9 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         // Details 2, first stage finished, parallel started
         details = checksDetails.get(2);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getTitle()).contains("In progress");
             assertThat(output.getSummary()).isPresent().get().satisfies(StringUtils::isBlank);
             assertThat(output.getText()).isPresent().get().satisfies(text -> {
-                assertThat(output.getTitle()).contains("In progress");
                 assertThat(text).matches(Pattern.compile(".*\\* Simple Stage \\*\\([^)]+\\)\\*.*", Pattern.DOTALL));
                 assertThat(text).contains("  * In parallel *(running)*");
             });
