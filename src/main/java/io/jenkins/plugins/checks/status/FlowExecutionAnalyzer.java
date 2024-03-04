@@ -89,7 +89,7 @@ class FlowExecutionAnalyzer {
         if (row.getNode().isActive()) {
             nodeTextBuilder.append(" *(running)*");
         }
-        else if (row.getDurationMillis() > 0) {
+        else {
             nodeTextBuilder.append(String.format(" *(%s)*", row.getDurationString()));
         }
         nodeTextBuilder.append("\n");
