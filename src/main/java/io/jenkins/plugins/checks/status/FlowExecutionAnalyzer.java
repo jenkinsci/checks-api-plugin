@@ -26,6 +26,7 @@ import org.jenkinsci.plugins.workflow.actions.LogAction;
 import org.jenkinsci.plugins.workflow.actions.ThreadNameAction;
 import org.jenkinsci.plugins.workflow.actions.WarningAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
+import org.jenkinsci.plugins.workflow.graph.BlockStartNode;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graph.StepNode;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
@@ -53,9 +54,14 @@ class FlowExecutionAnalyzer {
     }
 
     private static Optional<String> getStageOrBranchName(final FlowNode node) {
-        return getParallelName(node)
-                .map(Optional::of)
-                .orElse(getStageName(node));
+        if (node instanceof BlockStartNode) {
+            // a stage or parallel branch must be a BlockStartNode
+            return getParallelName(node).or(() -> getStageName(node));
+        }
+        else {
+            // otherwise, this is a regular step, don't return a name
+            return Optional.empty();
+        }
     }
 
     private static Optional<String> getStageName(final FlowNode node) {
