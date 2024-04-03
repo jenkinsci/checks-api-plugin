@@ -82,6 +82,21 @@ class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
         assertThat(manualChecks.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
     }
 
+    @Test
+    public void publishChecksShouldIncludeEnclosingBlocksWhenEnabled() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks(name: 'tests', includeStage: true) {}"));
+
+        buildSuccessfully(job);
+
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(1);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("tests / Integration Test");
+        assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
+        assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
+    }
+
     /**
      * Tests that withChecks step ignores names from the withChecks context if one has been explicitly set.
      */

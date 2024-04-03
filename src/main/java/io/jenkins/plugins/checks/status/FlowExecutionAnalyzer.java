@@ -1,9 +1,16 @@
 package io.jenkins.plugins.checks.status;
 
+import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingBlockNames;
+import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingStagesAndParallels;
+
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import hudson.model.Result;
+import hudson.model.Run;
+import io.jenkins.plugins.checks.api.ChecksOutput;
+import io.jenkins.plugins.checks.api.TruncatedString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -11,14 +18,9 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
@@ -28,14 +30,7 @@ import org.jenkinsci.plugins.workflow.actions.WarningAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.graph.BlockStartNode;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
-import org.jenkinsci.plugins.workflow.graph.StepNode;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
-import hudson.model.Result;
-import hudson.model.Run;
-
-import io.jenkins.plugins.checks.api.ChecksOutput;
-import io.jenkins.plugins.checks.api.TruncatedString;
 
 @SuppressWarnings("PMD.GodClass")
 class FlowExecutionAnalyzer {
@@ -198,54 +193,6 @@ class FlowExecutionAnalyzer {
         List<String> enclosingBlockNames = getEnclosingBlockNames(enclosingStagesAndParallels);
 
         return StringUtils.join(new ReverseListIterator(enclosingBlockNames), "/") + ": " + whereBuildFailed;
-    }
-
-    private static boolean isStageNode(@NonNull final FlowNode node) {
-        if (node instanceof StepNode) {
-            StepDescriptor d = ((StepNode) node).getDescriptor();
-            return d != null && d.getFunctionName().equals("stage");
-        }
-        else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the stage and parallel branch start node IDs (not the body nodes) for this node, innermost first.
-     * @param node A flownode.
-     * @return A nonnull, possibly empty list of stage/parallel branch start nodes, innermost first.
-     */
-    @NonNull
-    private static List<FlowNode> getEnclosingStagesAndParallels(final FlowNode node) {
-        List<FlowNode> enclosingBlocks = new ArrayList<>();
-        for (FlowNode enclosing : node.getEnclosingBlocks()) {
-            if (enclosing != null && enclosing.getAction(LabelAction.class) != null
-                    && (isStageNode(enclosing) || enclosing.getAction(ThreadNameAction.class) != null)) {
-                enclosingBlocks.add(enclosing);
-            }
-        }
-
-        return enclosingBlocks;
-    }
-
-    @NonNull
-    private static List<String> getEnclosingBlockNames(@NonNull final List<FlowNode> nodes) {
-        List<String> names = new ArrayList<>();
-        for (FlowNode n : nodes) {
-            ThreadNameAction threadNameAction = n.getPersistentAction(ThreadNameAction.class);
-            LabelAction labelAction = n.getPersistentAction(LabelAction.class);
-            if (threadNameAction != null) {
-                // If we're on a parallel branch with the same name as the previous (inner) node, that generally
-                // means we're in a Declarative parallel stages situation, so don't add the redundant branch name.
-                if (names.isEmpty() || !threadNameAction.getThreadName().equals(names.get(names.size() - 1))) {
-                    names.add(threadNameAction.getThreadName());
-                }
-            }
-            else if (labelAction != null) {
-                names.add(labelAction.getDisplayName());
-            }
-        }
-        return names;
     }
 
     @CheckForNull

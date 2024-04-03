@@ -18,7 +18,7 @@
   <description>Defines an API for Jenkins to publish checks to SCM platforms.</description>
 
   <properties>
-    <revision>2.1.0</revision>
+    <revision>2.2.0</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
@@ -165,6 +165,12 @@
                 <old>field io.jenkins.plugins.checks.steps.PublishChecksStep.serialVersionUID</old>
                 <serialVersionUID>1</serialVersionUID>
                 <justification>Adding actions list with an initial empty value should not break the compatibility.</justification>
+              </item>
+              <item>
+                <code>java.field.serialVersionUIDUnchanged</code>
+                <old>field io.jenkins.plugins.checks.steps.WithChecksStep.serialVersionUID</old>
+                <serialVersionUID>1</serialVersionUID>
+                <justification>Boolean value added, will have no impact on backwards compat.</justification>
               </item>
               <item>
                 <regex>true</regex>

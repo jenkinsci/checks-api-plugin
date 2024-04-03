@@ -9,10 +9,13 @@ skinparam component {
 [API] <<..checks.api>>
 [Steps] <<..checks.steps>>
 [Status] <<..checks.status>>
+[Utils] <<..checks.utils>>
 [Checks] <<..checks>>
 
 [Steps] --> [API]
+[Steps] --> [Utils
 [Status] --> [API]
+[Status] --> [Utils]
 [Checks] --> [API]
 
 @enduml

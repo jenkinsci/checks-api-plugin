@@ -88,13 +88,14 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      * a status checks using the specified name should be published.
      */
     @Test
-    public void shouldPublishStatusWithProperties() {
+    public void shouldPublishStatusWithProperties() throws Exception {
         getProperties().setApplicable(true);
         getProperties().setSkipped(false);
         getProperties().setName("Test Status");
 
         buildSuccessfully(createFreeStyleProject());
-
+        // Wait for the job to finish to work around slow Windows builds sometimes
+        this.getJenkins().waitUntilNoActivity();
         assertThat(getFactory().getPublishedChecks()).hasSize(3);
 
         ChecksDetails details = getFactory().getPublishedChecks().get(0);
