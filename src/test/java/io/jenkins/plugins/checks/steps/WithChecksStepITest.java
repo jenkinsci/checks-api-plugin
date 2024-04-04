@@ -89,10 +89,10 @@ class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
 
         buildSuccessfully(job);
 
-        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(1);
+        assertThat(getFactory().getPublishedChecks()).hasSize(1);
         ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
 
-        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("tests / Integration Test");
+        assertThat(autoChecks.getName()).contains("tests / Integration Test");
         assertThat(autoChecks.getStatus()).isEqualTo(ChecksStatus.IN_PROGRESS);
         assertThat(autoChecks.getConclusion()).isEqualTo(ChecksConclusion.NONE);
     }

@@ -13,7 +13,7 @@ skinparam component {
 [Checks] <<..checks>>
 
 [Steps] --> [API]
-[Steps] --> [Utils
+[Steps] --> [Utils]
 [Status] --> [API]
 [Status] --> [Utils]
 [Checks] --> [API]
