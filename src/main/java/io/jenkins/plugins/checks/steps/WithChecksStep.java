@@ -142,7 +142,7 @@ public class WithChecksStep extends Step implements Serializable {
             if (step.isIncludeStage()) {
                 FlowNode flowNode = getContext().get(FlowNode.class);
                 if (flowNode == null) {
-                    throw new IllegalArgumentException("No FlowNode found in the context.");
+                    throw new IllegalStateException("No FlowNode found in the context.");
                 }
 
                 List<FlowNode> enclosingStagesAndParallels = FlowNodeUtils.getEnclosingStagesAndParallels(flowNode);
