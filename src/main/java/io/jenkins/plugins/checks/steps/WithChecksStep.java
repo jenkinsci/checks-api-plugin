@@ -6,9 +6,13 @@ import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.*;
+import io.jenkins.plugins.checks.utils.FlowNodeUtils;
 import io.jenkins.plugins.util.PluginLogger;
 import jenkins.model.CauseOfInterruption;
+import org.apache.commons.collections.iterators.ReverseListIterator;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.displayurlapi.DisplayURLProvider;
+import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -18,6 +22,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import static hudson.Util.fixNull;
 
@@ -28,6 +33,7 @@ public class WithChecksStep extends Step implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String name;
+    private boolean includeStage;
 
     /**
      * Creates the step with a name to inject.
@@ -43,6 +49,15 @@ public class WithChecksStep extends Step implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isIncludeStage() {
+        return includeStage;
+    }
+
+    @DataBoundSetter
+    public void setIncludeStage(boolean includeStage) {
+        this.includeStage = includeStage;
     }
 
     @Override
@@ -109,7 +124,7 @@ public class WithChecksStep extends Step implements Serializable {
         }
 
         @Override
-        public boolean start() {
+        public boolean start() throws IOException, InterruptedException {
             ChecksInfo info = extractChecksInfo();
             getContext().newBodyInvoker()
                     .withContext(info)
@@ -119,19 +134,36 @@ public class WithChecksStep extends Step implements Serializable {
         }
 
         @VisibleForTesting
-        ChecksInfo extractChecksInfo() {
-            return new ChecksInfo(step.name);
+        ChecksInfo extractChecksInfo() throws IOException, InterruptedException {
+            return new ChecksInfo(getName());
+        }
+
+        private String getName() throws IOException, InterruptedException {
+            if (step.isIncludeStage()) {
+                FlowNode flowNode = getContext().get(FlowNode.class);
+                if (flowNode == null) {
+                    throw new IllegalStateException("No FlowNode found in the context.");
+                }
+
+                List<FlowNode> enclosingStagesAndParallels = FlowNodeUtils.getEnclosingStagesAndParallels(flowNode);
+                List<String> checksComponents = FlowNodeUtils.getEnclosingBlockNames(enclosingStagesAndParallels);
+
+                checksComponents.add(step.getName());
+
+                return StringUtils.join(new ReverseListIterator(checksComponents), " / ");
+            }
+            return step.getName();
         }
 
         @Override
         public void stop(final Throwable cause) {
             try {
                 publish(getContext(), new ChecksDetails.ChecksDetailsBuilder()
-                        .withName(step.getName())
+                        .withName(getName())
                         .withStatus(ChecksStatus.COMPLETED)
                         .withConclusion(ChecksConclusion.CANCELED));
             }
-            catch (WithChecksPublishException e) {
+            catch (WithChecksPublishException | IOException | InterruptedException e) {
                 cause.addSuppressed(e);
             }
             getContext().onFailure(cause);

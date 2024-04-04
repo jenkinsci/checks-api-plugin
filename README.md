@@ -53,11 +53,56 @@ see [the handler](https://github.com/jenkinsci/github-checks-plugin/blob/ea060be
 
 - withChecks: you can inject the check's name into the closure for other steps to use:
 
-```
-withChecks(name: 'injected name') {
+```groovy
+withChecks('injected name') {
     // some other steps that will extract the name
 }
 ```
+
+`withChecks` will publish an in progress check immediately and then other consuming plugins will publish the final check.
+
+You can also include the checks stage name with `includeStage`:
+
+```groovy
+withChecks(name: 'Tests', includeStage: true) {
+    sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
+    junit '**/target/surefire-reports/TEST-*.xml'
+}
+```
+
+Combining `includeStage` with the JUnit plugin works well to publish checks for each test suite:
+
+![With Checks multiple stages](docs/images/github-status.png)
+
+<details>
+
+<summary>Example full pipeline with parallel stages</summary>
+
+```groovy
+def axes = [
+        platforms: ['linux', 'windows'],
+        jdks: [17, 21],
+]
+def builds = [:]
+axes.values().combinations {
+    def (platform, jdk) = it
+    builds["${platform}-jdk${jdk}"] = {
+        node(platform) {
+            stage("${platform.capitalize()} - JDK ${jdk} - Test") {
+                checkout scm
+                withChecks(name: 'Tests', includeStage: true) {
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean verify'
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                }
+            }
+        }
+    }
+}
+
+parallel builds
+```
+
+</details>
 
 ## Guides
 
