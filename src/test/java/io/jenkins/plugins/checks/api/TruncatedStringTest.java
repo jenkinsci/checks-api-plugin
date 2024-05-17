@@ -1,7 +1,6 @@
 package io.jenkins.plugins.checks.api;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,11 +27,12 @@ class TruncatedStringTest {
                 Arguments.of(true, true));
     }
 
-    private TruncatedString.Builder builder;
+    private TruncatedString.Builder builder = makeBuilder();
 
-    @BeforeEach
-    public void makeBuilder() {
+    private TruncatedString.Builder makeBuilder() {
         this.builder = new TruncatedString.Builder().withTruncationText(MESSAGE);
+
+        return builder;
     }
 
     private String build(final boolean chunkOnChars, final int maxSize) {

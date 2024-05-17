@@ -25,10 +25,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * </p>
  */
 public class TruncatedString {
-
-    @NonNull
     private final List<String> chunks;
-    @NonNull
     private final String truncationText;
     private final boolean truncateStart;
     private final boolean chunkOnNewlines;

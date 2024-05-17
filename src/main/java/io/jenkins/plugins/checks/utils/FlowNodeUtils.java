@@ -68,4 +68,8 @@ public class FlowNodeUtils {
             return false;
         }
     }
+
+    private FlowNodeUtils() {
+        // prevent instantiation
+    }
 }

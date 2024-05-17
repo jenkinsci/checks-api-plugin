@@ -56,7 +56,7 @@ public class WithChecksStep extends Step implements Serializable {
     }
 
     @DataBoundSetter
-    public void setIncludeStage(boolean includeStage) {
+    public void setIncludeStage(final boolean includeStage) {
         this.includeStage = includeStage;
     }
 
@@ -93,7 +93,6 @@ public class WithChecksStep extends Step implements Serializable {
     }
 
     private static class WithChecksPublishException extends Exception {
-
         public static final long serialVersionUID = 1L;
 
         WithChecksPublishException(final Throwable cause) {
@@ -259,7 +258,6 @@ public class WithChecksStep extends Step implements Serializable {
                                     .withTitle("Cancelled")
                                     .withText(summary)
                                     .build());
-
                 }
                 else {
                     builder.withConclusion(ChecksConclusion.FAILURE)

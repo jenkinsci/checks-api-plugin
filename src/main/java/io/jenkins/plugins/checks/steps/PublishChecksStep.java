@@ -1,42 +1,24 @@
 package io.jenkins.plugins.checks.steps;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
-
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.jenkinsci.plugins.workflow.steps.Step;
-import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
-import org.jenkinsci.plugins.workflow.steps.StepExecution;
-import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
+import io.jenkins.plugins.checks.api.*;
+import org.apache.commons.lang3.StringUtils;
+import org.jenkinsci.plugins.workflow.steps.*;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
-import io.jenkins.plugins.checks.api.ChecksAction;
-import io.jenkins.plugins.checks.api.ChecksAnnotation;
-import io.jenkins.plugins.checks.api.ChecksConclusion;
-import io.jenkins.plugins.checks.api.ChecksDetails;
-import io.jenkins.plugins.checks.api.ChecksOutput;
-import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
-import io.jenkins.plugins.checks.api.ChecksStatus;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Pipeline step to publish customized checks.
@@ -93,8 +75,7 @@ public class PublishChecksStep extends Step implements Serializable {
      * When the {@code status} is {@link ChecksStatus#QUEUED} or {@link ChecksStatus#IN_PROGRESS},
      * the conclusion will be reset to {@link ChecksConclusion#NONE}
      *
-     * @param status
-     *         the status to be set
+     * @param status the status to be set
      */
     @DataBoundSetter
     public void setStatus(final ChecksStatus status) {
@@ -216,7 +197,9 @@ public class PublishChecksStep extends Step implements Serializable {
 
         @Override
         protected Void run() throws IOException, InterruptedException {
-            ChecksPublisherFactory.fromRun(getContext().get(Run.class), getContext().get(TaskListener.class))
+            ChecksPublisherFactory.fromRun(
+                            Objects.requireNonNull(getContext().get(Run.class)),
+                            Objects.requireNonNull(getContext().get(TaskListener.class)))
                     .publish(extractChecksDetails());
 
             return null;
@@ -277,14 +260,10 @@ public class PublishChecksStep extends Step implements Serializable {
         /**
          * Creates an annotation with required parameters.
          *
-         * @param path
-         *         path of the file to annotate
-         * @param startLine
-         *         start line of the annotation
-         * @param endLine
-         *         end line of the annotation
-         * @param message
-         *         annotation message
+         * @param path      path of the file to annotate
+         * @param startLine start line of the annotation
+         * @param endLine   end line of the annotation
+         * @param message   annotation message
          */
         @DataBoundConstructor
         public StepChecksAnnotation(final String path, final int startLine, final int endLine, final String message) {
@@ -424,10 +403,8 @@ public class PublishChecksStep extends Step implements Serializable {
         /**
          * Creates an instance that wraps a newly constructed {@link ChecksAction} with according parameters.
          *
-         * @param label
-         *         label of the action to display in the checks report on SCMs
-         * @param identifier
-         *         identifier for the action, useful to identify which action is requested by users
+         * @param label      label of the action to display in the checks report on SCMs
+         * @param identifier identifier for the action, useful to identify which action is requested by users
          */
         @DataBoundConstructor
         public StepChecksAction(final String label, final String identifier) {
