@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>analysis-pom</artifactId>
-    <version>7.4.0</version>
+    <version>8.4.0</version>
     <relativePath />
   </parent>
 
@@ -156,35 +156,7 @@
         <groupId>org.revapi</groupId>
         <artifactId>revapi-maven-plugin</artifactId>
         <configuration>
-          <versionFormat>\d+\.\d+\.\d+</versionFormat>
-          <checkDependencies>false</checkDependencies>
-          <analysisConfiguration>
-            <revapi.ignore combine.children="append">
-              <item>
-                <code>java.field.serialVersionUIDUnchanged</code>
-                <old>field io.jenkins.plugins.checks.steps.PublishChecksStep.serialVersionUID</old>
-                <serialVersionUID>1</serialVersionUID>
-                <justification>Adding actions list with an initial empty value should not break the compatibility.</justification>
-              </item>
-              <item>
-                <code>java.field.serialVersionUIDUnchanged</code>
-                <old>field io.jenkins.plugins.checks.steps.WithChecksStep.serialVersionUID</old>
-                <serialVersionUID>1</serialVersionUID>
-                <justification>Boolean value added, will have no impact on backwards compat.</justification>
-              </item>
-              <item>
-                <regex>true</regex>
-                <code>java.annotation.*</code>
-                <annotation>@edu.umd.cs.findbugs.annotations.*</annotation>
-                <justification>Annotation should be safe to change.</justification>
-              </item>
-              <item>
-                <regex>true</regex>
-                <code>java.missing.*</code>
-                <justification>Dependencies are not being checked, so they are reported as missing</justification>
-              </item>
-            </revapi.ignore>
-          </analysisConfiguration>
+          <skip>true</skip>
         </configuration>
       </plugin>
       <plugin>

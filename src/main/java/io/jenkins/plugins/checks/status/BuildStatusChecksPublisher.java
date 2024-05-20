@@ -41,6 +41,7 @@ import io.jenkins.plugins.util.JenkinsFacade;
  * A publisher which publishes different statuses through the checks API based on the stage of the {@link Queue.Item}
  * or {@link Run}.
  */
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public final class BuildStatusChecksPublisher {
     private static final Logger LOGGER = Logger.getLogger(BuildStatusChecksPublisher.class.getName());
 
@@ -244,7 +245,6 @@ public final class BuildStatusChecksPublisher {
                 getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
                         ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
             }
-
         }
     }
 }

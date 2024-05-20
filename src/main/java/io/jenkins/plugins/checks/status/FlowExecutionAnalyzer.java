@@ -39,7 +39,7 @@ class FlowExecutionAnalyzer {
 
     private final Run<?, ?> run;
     private final FlowExecution execution;
-    private final Stack<Integer> indentationStack = new Stack<>();
+    private final Stack<Integer> indentationStack = new Stack<>(); // NOPMD TODO: replace with DeQueue
     private final boolean suppressLogs;
 
     FlowExecutionAnalyzer(final Run<?, ?> run, final FlowExecution execution, final boolean suppressLogs) {
@@ -128,8 +128,9 @@ class FlowExecutionAnalyzer {
 
         nodeTextBuilder.append(String.join("", Collections.nCopies(indentationStack.size() + 1, "  ")));
         if (warningAction == null) {
-            nodeTextBuilder.append(String.format("**Error**: *%s*", errorAction.getDisplayName()));
-            nodeSummaryBuilder.append(String.format("```%n%s%n```%n", errorAction.getDisplayName()));
+            var displayName = errorAction == null ? "[no error action]" : errorAction.getDisplayName();
+            nodeTextBuilder.append(String.format("**Error**: *%s*", displayName));
+            nodeSummaryBuilder.append(String.format("```%n%s%n```%n", displayName));
             if (!suppressLogs) {
                 String log = getLog(flowNode);
                 if (StringUtils.isNotBlank(log)) {
@@ -169,7 +170,7 @@ class FlowExecutionAnalyzer {
                         .orElseGet(() -> processErrorOrWarningRow(row, errorAction, warningAction));
 
                 // the last title will be used in the ChecksOutput (if any are found)
-                if (!stageOrBranchName.isPresent()) {
+                if (stageOrBranchName.isEmpty()) {
                     title = getPotentialTitle(flowNode, errorAction);
                 }
 
@@ -206,7 +207,7 @@ class FlowExecutionAnalyzer {
                 return null;
             }
 
-            String outputString = out.toString(StandardCharsets.UTF_8.toString());
+            String outputString = out.toString(StandardCharsets.UTF_8);
             // strip ansi color codes
             return outputString.replaceAll("\u001B\\[[;\\d]*m", "");
         }

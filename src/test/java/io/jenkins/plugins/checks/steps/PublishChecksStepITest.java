@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests the pipeline step to publish checks.
  */
 class PublishChecksStepITest extends IntegrationTestWithJenkinsPerTest {
-
     private CapturingChecksPublisher.Factory getFactory() {
         return getJenkins().getInstance().getExtensionList(ChecksPublisherFactory.class)
                 .stream()

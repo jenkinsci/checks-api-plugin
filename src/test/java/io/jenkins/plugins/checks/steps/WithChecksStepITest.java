@@ -30,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests the "withChecks" step.
  */
 class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
-
     /**
      * Tests that the step can inject the {@link ChecksInfo} into the closure.
      */

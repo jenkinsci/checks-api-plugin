@@ -45,7 +45,6 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
  * </p>
  */
 public class CapturingChecksPublisher extends ChecksPublisher {
-
     private final List<ChecksDetails> publishedChecks = new ArrayList<>();
 
     @Override

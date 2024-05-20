@@ -19,7 +19,7 @@ class WithChecksStepTest {
         when(context.get(Run.class)).thenReturn(mock(Run.class));
         when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
 
-        assertThat(((WithChecksStep.WithChecksStepExecution) (new WithChecksStep("test").start(context)))
+        assertThat(((WithChecksStep.WithChecksStepExecution) new WithChecksStep("test").start(context))
                 .extractChecksInfo())
                 .hasFieldOrPropertyWithValue("name", "test");
     }
