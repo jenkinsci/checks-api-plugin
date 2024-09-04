@@ -5,4 +5,10 @@
     <f:textbox />
   </f:entry>
 
+  <f:advanced>
+    <f:entry title="${%Include stage}" field="includeStage">
+      <f:checkbox />
+    </f:entry>
+  </f:advanced>
+
 </j:jelly>
