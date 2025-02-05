@@ -98,7 +98,7 @@ class ChecksOutputTest {
     }
 
     @Test
-    void shouldTruncateTestFromStart() {
+    void shouldTruncateTextFromStart() {
         String longText = "This is the beginning.\n" + "Middle part.\n".repeat(10) + "This is the end.\n";
         ChecksOutput checksOutput = new ChecksOutputBuilder()
                 .withText(longText)
