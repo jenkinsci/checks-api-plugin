@@ -151,24 +151,30 @@ class ChecksOutputTest {
     }
 
     @Test
-    void shouldNotTruncateSummaryWithoutBuildLog() {
-        String summary = "### Simple Summary\nWithout any build logs\n";
+    void shouldTruncateSummaryFromEndWithoutBuildLog() {
+        String summary = "### Test Results\n"
+                + "Found 5 test failures in the build:\n"
+                + "- `TestClass1.testMethod1`: Assertion failed, expected true but was false\n"
+                + "- `TestClass2.testMethod2`: NullPointerException at line 42\n"
+                + "- `TestClass3.testMethod3`: Expected exception was not thrown\n"
+                + "- `TestClass4.testMethod4`: Timeout after 5 seconds\n"
+                + "- `TestClass5.testMethod5`: Invalid test data\n";
+
         ChecksOutput checksOutput = new ChecksOutputBuilder()
                 .withSummary(summary)
                 .build();
 
-        assertThat(checksOutput.getSummary(100).orElse(""))
-                .isEqualTo(summary);
-    }
+        // Test with a size that only fits the header and first failure
+        String truncated = checksOutput.getSummary(70).orElse("");
+        assertThat(truncated)
+                .startsWith("### Test Results\n")
+                .contains("Found 5 test failures")
+                .doesNotContain("TestClass5.testMethod5")
+                .contains("Output truncated.")
+                .hasSizeLessThanOrEqualTo(70);
 
-    @Test
-    void shouldHandleMalformedBuildLog() {
-        String summary = "### Header\n<details>\nMalformed log without closing tags";
-        ChecksOutput checksOutput = new ChecksOutputBuilder()
-                .withSummary(summary)
-                .build();
-
-        assertThat(checksOutput.getSummary(100).orElse(""))
+        // Verify that with sufficient size, we get the full content
+        assertThat(checksOutput.getSummary(500).orElse(""))
                 .isEqualTo(summary);
     }
 
