@@ -76,13 +76,7 @@ public class ChecksOutput {
      * @return Text, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getText(final int maxSize) {
-        return Optional.ofNullable(text).map(s -> new TruncatedString.Builder()
-                .setChunkOnNewlines()
-                .setTruncateStart()
-                .withTruncationText("Output truncated.\n")
-                .addText(s.toString())
-                .build()
-                .buildByChars(maxSize));
+        return Optional.ofNullable(text).map(s -> s.build(maxSize));
     }
 
     public List<ChecksAnnotation> getChecksAnnotations() {
