@@ -101,18 +101,18 @@ public class ChecksOutput {
     /**
      * Truncates the summary to the given maxSize. Tries to truncate from start of build log section if possible.
      *
-     * @param summary the summary to truncate
+     * @param summaryToTruncate the summary to truncate
      * @param maxSize the maximum size to truncate to
      * @return the truncated summary
      */
-    private Optional<String> truncateSummary(final TruncatedString summary, final int maxSize) {
-        if (summary == null) {
+    private Optional<String> truncateSummary(final TruncatedString summaryToTruncate, final int maxSize) {
+        if (summaryToTruncate == null) {
             return Optional.empty();
         }
 
-        String content = summary.toString();
+        String content = summaryToTruncate.toString();
         if (!content.contains("<summary>")) {
-            return Optional.of(summary.build(maxSize));
+            return Optional.of(summaryToTruncate.build(maxSize));
         }
 
         // Find the build log section
@@ -120,7 +120,7 @@ public class ChecksOutput {
         int detailsEnd = content.indexOf("</details>") + "</details>".length();
         
         if (detailsStart == -1 || detailsEnd == -1) {
-            return Optional.of(summary.build(maxSize));
+            return Optional.of(summaryToTruncate.build(maxSize));
         }
 
         // Split into pre-details, details block, and post-details
@@ -133,7 +133,7 @@ public class ChecksOutput {
         int logEnd = details.lastIndexOf("\n```");
         
         if (logStart == -1 || logEnd == -1) {
-            return Optional.of(summary.build(maxSize));
+            return Optional.of(summaryToTruncate.build(maxSize));
         }
 
         String beforeLog = details.substring(0, logStart);
@@ -146,7 +146,7 @@ public class ChecksOutput {
 
         if (availableForLog <= 0) {
             // If no space for log, truncate the whole content
-            return Optional.of(summary.build(maxSize));
+            return Optional.of(summaryToTruncate.build(maxSize));
         }
 
         // Truncate the log using TruncatedString
