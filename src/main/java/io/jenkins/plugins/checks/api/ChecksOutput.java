@@ -62,7 +62,7 @@ public class ChecksOutput {
      * @return Summary, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getSummary(final int maxSize) {
-        return Optional.ofNullable(summary).map(s -> s.build(maxSize));
+        return truncateSummary(summary, maxSize);
     }
 
     public Optional<String> getText() {
@@ -76,13 +76,13 @@ public class ChecksOutput {
      * @return Text, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getText(final int maxSize) {
-        return Optional.ofNullable(text)
-                .map(s -> new TruncatedString.Builder()
-                        .setChunkOnNewlines()
-                        .setTruncateStart()
-                        .addText(s.toString())
-                        .build()
-                        .buildByChars(maxSize));
+        return Optional.ofNullable(text).map(s -> new TruncatedString.Builder()
+                .setChunkOnNewlines()
+                .setTruncateStart()
+                .withTruncationText("Output truncated.\n")
+                .addText(s.toString())
+                .build()
+                .buildByChars(maxSize));
     }
 
     public List<ChecksAnnotation> getChecksAnnotations() {
@@ -102,6 +102,64 @@ public class ChecksOutput {
                 + ", annotations=" + annotations
                 + ", images=" + images
                 + '}';
+    }
+
+    private Optional<String> truncateSummary(final TruncatedString summary, final int maxSize) {
+        if (summary == null) {
+            return Optional.empty();
+        }
+
+        String content = summary.toString();
+        if (!content.contains("<summary>")) {
+            return Optional.of(summary.build(maxSize));
+        }
+
+        // Find the build log section
+        int detailsStart = content.indexOf("<details>");
+        int detailsEnd = content.indexOf("</details>") + "</details>".length();
+        
+        if (detailsStart == -1 || detailsEnd == -1) {
+            return Optional.of(summary.build(maxSize));
+        }
+
+        // Split into pre-details, details block, and post-details
+        String preDetails = content.substring(0, detailsStart);
+        String details = content.substring(detailsStart, detailsEnd);
+        String postDetails = content.substring(detailsEnd);
+
+        // Find the actual log content within the details
+        int logStart = details.indexOf("```\n") + 4;
+        int logEnd = details.lastIndexOf("\n```");
+        
+        if (logStart == -1 || logEnd == -1) {
+            return Optional.of(summary.build(maxSize));
+        }
+
+        String beforeLog = details.substring(0, logStart);
+        String log = details.substring(logStart, logEnd);
+        String afterLog = details.substring(logEnd);
+
+        // Calculate available space for log
+        int nonLogLength = preDetails.length() + beforeLog.length() + afterLog.length() + postDetails.length();
+        int availableForLog = maxSize - nonLogLength;
+
+        if (availableForLog <= 0) {
+            // If no space for log, truncate the whole content
+            return Optional.of(summary.build(maxSize));
+        }
+
+        // Truncate the log using TruncatedString
+        log = new TruncatedString.Builder()
+                .setChunkOnNewlines()
+                .setTruncateStart()
+                .withTruncationText("Build log truncated.\n")
+                .addText(log)
+                .build()
+                .buildByChars(availableForLog);
+
+        // Reconstruct the content
+        String truncatedContent = preDetails + beforeLog + log + afterLog + postDetails;
+        return Optional.of(truncatedContent);
     }
 
     /**
