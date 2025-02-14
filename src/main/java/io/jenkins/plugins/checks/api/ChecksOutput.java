@@ -62,6 +62,9 @@ public class ChecksOutput {
      * @return Summary, truncated to maxSize with truncation message if appropriate.
      */
     public Optional<String> getSummary(final int maxSize) {
+        if (summary == null) {
+            return Optional.empty();
+        }
         return truncateSummary(summary, maxSize);
     }
 
@@ -106,10 +109,6 @@ public class ChecksOutput {
      * @return the truncated summary
      */
     private Optional<String> truncateSummary(final TruncatedString summaryToTruncate, final int maxSize) {
-        if (summaryToTruncate == null) {
-            return Optional.empty();
-        }
-
         String content = summaryToTruncate.toString();
         if (!content.contains("<summary>")) {
             return Optional.of(summaryToTruncate.build(maxSize));
