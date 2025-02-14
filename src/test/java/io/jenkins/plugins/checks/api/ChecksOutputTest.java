@@ -30,10 +30,9 @@ class ChecksOutputTest {
                 .addImage(images.get(1))
                 .build();
 
-        ChecksOutputAssert.assertThat(checksOutput)
-                .hasTitle(Optional.of(TITLE))
-                .hasSummary(Optional.of(SUMMARY))
-                .hasText(Optional.of(TEXT));
+        assertThat(checksOutput.getTitle()).isEqualTo(Optional.of(TITLE));
+        assertThat(checksOutput.getSummary()).isEqualTo(Optional.of(SUMMARY));
+        assertThat(checksOutput.getText()).isEqualTo(Optional.of(TEXT));
         assertThat(checksOutput.getChecksAnnotations())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(annotations);
@@ -85,10 +84,9 @@ class ChecksOutputTest {
                 .build();
 
         ChecksOutput copied = new ChecksOutput(checksOutput);
-        ChecksOutputAssert.assertThat(copied)
-                .hasTitle(Optional.of(TITLE))
-                .hasSummary(Optional.of(SUMMARY))
-                .hasText(Optional.of(TEXT));
+        assertThat(copied.getTitle()).isEqualTo(Optional.of(TITLE));
+        assertThat(copied.getSummary()).isEqualTo(Optional.of(SUMMARY));
+        assertThat(copied.getText()).isEqualTo(Optional.of(TEXT));
         assertThat(copied.getChecksAnnotations())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(annotations);
@@ -118,32 +116,112 @@ class ChecksOutputTest {
                 + "```\n"
                 + "</details>\n"
                 + "\n";
+        int maxSize = 200;
 
         ChecksOutput checksOutput = new ChecksOutputBuilder()
                 .withSummary(summary)
                 .build();
 
-        String truncated = checksOutput.getSummary(200).orElse("");
-        
+        String truncated = checksOutput.getSummary(maxSize).orElse("");
+        String expected = "### `Fails / Shell Script`\n"
+                + "Error in `sh` step.\n"
+                + "```\n"
+                + "script returned exit code 1\n"
+                + "```\n"
+                + "<details>\n"
+                + "<summary>Build log</summary>\n"
+                + "\n"
+                + "```\n"
+                + "Build log truncated.\n"
+                + "Third line of log\n"
+                + "+ exit 1\n"
+                + "```\n"
+                + "</details>\n"
+                + "\n";
+
         assertThat(truncated)
-                .startsWith("Output truncated.")
-                .endsWith("This is the end.\n");
-        assertThat(truncated.length()).isLessThanOrEqualTo(75);
+                .isEqualTo(expected);
+        assertThat(truncated.length()).isLessThanOrEqualTo(maxSize);
     }
 
-//     @Test
-//     void shouldNotTruncateShortText() {
-//         String shortText = "This is a short text that should not be truncated.";
-//         ChecksOutput checksOutput = new ChecksOutputBuilder()
-//                 .withText(shortText)
-//                 .build();
+    @Test
+    void shouldHandleNullSummary() {
+        ChecksOutput checksOutput = new ChecksOutputBuilder().build();
+        assertThat(checksOutput.getSummary(100)).isEmpty();
+    }
 
-//         String result = checksOutput.getText(100).orElse("");
-        
-//         assertThat(result)
-//                 .isEqualTo(shortText)
-//                 .doesNotContain("Output truncated.");
-//     }
+    @Test
+    void shouldNotTruncateSummaryWithoutBuildLog() {
+        String summary = "### Simple Summary\nWithout any build logs\n";
+        ChecksOutput checksOutput = new ChecksOutputBuilder()
+                .withSummary(summary)
+                .build();
+
+        assertThat(checksOutput.getSummary(100).orElse(""))
+                .isEqualTo(summary);
+    }
+
+    @Test
+    void shouldHandleMalformedBuildLog() {
+        String summary = "### Header\n<details>\nMalformed log without closing tags";
+        ChecksOutput checksOutput = new ChecksOutputBuilder()
+                .withSummary(summary)
+                .build();
+
+        assertThat(checksOutput.getSummary(100).orElse(""))
+                .isEqualTo(summary);
+    }
+
+    @Test
+    void shouldHandleVerySmallMaxSize() {
+        String summary = "### `Fails / Shell Script`\n"
+                + "<details>\n"
+                + "<summary>Build log</summary>\n"
+                + "```\n"
+                + "+ echo 'First line'\n"
+                + "First line\n"
+                + "```\n"
+                + "</details>\n";
+
+        ChecksOutput checksOutput = new ChecksOutputBuilder()
+                .withSummary(summary)
+                .build();
+
+        // Size so small that only header and truncation message fit
+        String truncated = checksOutput.getSummary(50).orElse("");
+        assertThat(truncated)
+                .startsWith("### `Fails / Shell Script`\n")
+                .doesNotContain("<details>")
+                .doesNotContain("<summary>Build log</summary>")
+                .doesNotContain("Build log truncated.")
+                .contains("Output truncated.")
+                .hasSizeLessThanOrEqualTo(50);
+    }
+
+    @Test
+    void shouldPreserveMarkdownStructure() {
+        String summary = "### `Test`\n"
+                + "<details>\n"
+                + "<summary>Build log</summary>\n"
+                + "```\n"
+                + "Line 1\n"
+                + "Line 2\n"
+                + "Line 3\n"
+                + "```\n"
+                + "</details>\n";
+
+        ChecksOutput checksOutput = new ChecksOutputBuilder()
+                .withSummary(summary)
+                .build();
+
+        String truncated = checksOutput.getSummary(100).orElse("");
+        assertThat(truncated)
+                .contains("<details>")
+                .contains("</details>")
+                .contains("```\n")
+                .endsWith("```\n</details>\n")
+                .hasSizeLessThanOrEqualTo(100);
+    }
 
     private List<ChecksAnnotation> createAnnotations() {
         final ChecksAnnotationBuilder builder = new ChecksAnnotationBuilder()

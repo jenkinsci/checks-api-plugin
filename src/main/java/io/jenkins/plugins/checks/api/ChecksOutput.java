@@ -104,6 +104,13 @@ public class ChecksOutput {
                 + '}';
     }
 
+    /**
+     * Truncates the summary to the given maxSize. Tries to truncate from start of build log section if possible.
+     *
+     * @param summary the summary to truncate
+     * @param maxSize the maximum size to truncate to
+     * @return the truncated summary
+     */
     private Optional<String> truncateSummary(final TruncatedString summary, final int maxSize) {
         if (summary == null) {
             return Optional.empty();
