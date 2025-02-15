@@ -135,10 +135,11 @@ class FlowExecutionAnalyzer {
             nodeSummaryBuilder.append(String.format("```%n%s%n```%n", displayName));
             if (!suppressLogs) {
                 // -2 for "\n\n" at the end of the summary
-                int maxMessageSize = MAX_MESSAGE_SIZE_TO_CHECKS_API - nodeSummaryBuilder.length() - 2;
+                String logTemplate = "<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>";
+                int maxMessageSize = MAX_MESSAGE_SIZE_TO_CHECKS_API - nodeSummaryBuilder.length() - logTemplate.length() - 2;
                 String log = getLog(flowNode, maxMessageSize);
                 if (StringUtils.isNotBlank(log)) {
-                    nodeSummaryBuilder.append(String.format("<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>", log));
+                    nodeSummaryBuilder.append(String.format(logTemplate, log));
                 }
             }
         }

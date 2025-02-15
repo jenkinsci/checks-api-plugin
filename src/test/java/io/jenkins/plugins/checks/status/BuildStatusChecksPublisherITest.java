@@ -312,15 +312,17 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         job.setDefinition(new CpsFlowDefinition(""
                 + "node {\n"
                 + "  stage('Large Log Stage') {\n"
-                + "    // Generate a large log by executing shell commands\n"
+                + "    // Generate a large log using Jenkins' built-in commands\n"
                 + "    def logContent = (1..1000).collect { i ->\n"
                 + "      \"Line ${i}: This is a very long log line that will be repeated many times to test truncation. Adding some extra system information here.\"\n"
                 + "    }.join('\\n')\n"
-                + "    sh \"\"\"\n"
-                + "      echo \"${logContent}\"\n"
-                + "      echo 'Generating some additional system logs...'\n"
-                + "      exit 1\n"
-                + "    \"\"\"\n"
+                + "    // Use writeFile and bat/sh based on platform\n"
+                + "    writeFile file: 'large_log.txt', text: logContent\n"
+                + "    if (isUnix()) {\n"
+                + "      sh 'cat large_log.txt && exit 1'\n"
+                + "    } else {\n"
+                + "      bat 'type large_log.txt && exit /b 1'\n"
+                + "    }\n"
                 + "    error('Pipeline failed with large logs')\n"
                 + "  }\n"
                 + "}", true));
@@ -339,8 +341,9 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 assertThat(summary).contains("<details>");
                 assertThat(summary).contains("Build log");
                 assertThat(summary).contains("Build log truncated.");
-                assertThat(summary).contains("Generating some additional system logs...");
-                // Verify the truncation message appears at the start of the log section to show that truncation occurred at start
+                assertThat(summary).doesNotContain("Line 1:");  // Should be truncated from the start
+                assertThat(summary).contains("exit");  // Should see the exit command at the end
+                // Verify the truncation message appears at the start of the log section
                 assertThat(summary).matches(Pattern.compile(".*<summary>Build log</summary>\\s+\\n```\\s*\\nBuild log truncated.\\n\\n.*", Pattern.DOTALL));
                 // Verify the total size is within limits
                 assertThat(summary.length()).isLessThanOrEqualTo(65_535);
