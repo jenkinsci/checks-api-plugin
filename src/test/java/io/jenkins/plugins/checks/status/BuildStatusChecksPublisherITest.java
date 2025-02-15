@@ -317,6 +317,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 + "      for i in {1..1000}; do\n"
                 + "        echo \"Line $i: $(date) - This is a very long log line that will be repeated many times to test truncation. Adding some extra system information here.\"\n"
                 + "      done\n"
+                + "      echo 'Generating some additional system logs...'\n"
                 + "      exit 1\n"
                 + "    '''\n"
                 + "    error('Pipeline failed with large logs')\n"
@@ -337,6 +338,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 assertThat(summary).contains("<details>");
                 assertThat(summary).contains("Build log");
                 assertThat(summary).contains("Build log truncated.");
+                assertThat(summary).contains("Generating some additional system logs...");
                 // Verify the truncation message appears at the start of the log section to show that truncation occurred at start
                 assertThat(summary).matches(Pattern.compile(".*<summary>Build log</summary>\\s+\\n```\\s*\\nBuild log truncated.\\n\\n.*", Pattern.DOTALL));
                 // Verify the total size is within limits
