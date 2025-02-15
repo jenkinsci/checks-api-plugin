@@ -36,6 +36,7 @@ import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable
 class FlowExecutionAnalyzer {
     private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
+    private static final String TRUNCATED_MESSAGE_BUILD_LOG = "Build log truncated.\n\n";
     private static final int MAX_MESSAGE_SIZE_TO_CHECKS_API = 65_535;
 
     private final Run<?, ?> run;
@@ -217,7 +218,7 @@ class FlowExecutionAnalyzer {
             return new TruncatedString.Builder()
                     .setChunkOnNewlines()
                     .setTruncateStart()
-                    .withTruncationText(TRUNCATED_MESSAGE)
+                    .withTruncationText(TRUNCATED_MESSAGE_BUILD_LOG)
                     .addText(log)
                     .build()
                     .build(maxMessageSize);
