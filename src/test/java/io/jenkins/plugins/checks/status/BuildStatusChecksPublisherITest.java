@@ -340,7 +340,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 // Verify the truncation message appears at the start of the log section to show that truncation occurred at start
                 assertThat(summary).matches(Pattern.compile(".*<summary>Build log</summary>\\s+\\n```\\s*\\nBuild log truncated.\\n\\n.*", Pattern.DOTALL));
                 // Verify the total size is within limits
-                assertThat(summary.length()).isLessThanOrEqualTo(65535);
+                assertThat(summary.length()).isLessThanOrEqualTo(65_535);
             });
         });
     }
