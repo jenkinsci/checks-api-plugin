@@ -339,6 +339,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
             assertThat(output.getSummary()).isPresent().get().satisfies(summary -> {
                 // Verify the log section exists and is truncated
                 assertThat(summary).contains("<details>");
+                assertThat(summary).contains("</details>");
                 assertThat(summary).contains("Build log");
                 assertThat(summary).contains("Build log truncated.");
                 assertThat(summary).doesNotContain("Line 1:");  // Should be truncated from the start
