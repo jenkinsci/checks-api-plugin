@@ -298,6 +298,61 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     /**
+     * Test that log messages are properly truncated when they exceed the maximum size limit.
+     */
+    @Test
+    public void shouldTruncateLogsWhenExceedingMaxSize() {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        getProperties().setSuppressLogs(false);
+        WorkflowJob job = createPipeline();
+
+        // Create a pipeline that generates a large log output
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  stage('Large Log Stage') {\n"
+                + "    // Generate a large log using Jenkins' built-in commands\n"
+                + "    def logContent = (1..1000).collect { i ->\n"
+                + "      \"Line ${i}: This is a very long log line that will be repeated many times to test truncation. Adding some extra system information here.\"\n"
+                + "    }.join('\\n')\n"
+                + "    // Use writeFile and bat/sh based on platform\n"
+                + "    writeFile file: 'large_log.txt', text: logContent\n"
+                + "    if (isUnix()) {\n"
+                + "      sh 'cat large_log.txt && exit 1'\n"
+                + "    } else {\n"
+                + "      bat 'type large_log.txt && exit /b 1'\n"
+                + "    }\n"
+                + "    error('Pipeline failed with large logs')\n"
+                + "  }\n"
+                + "}", true));
+
+        buildWithResult(job, Result.FAILURE);
+
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        
+        // Get the final check details which should contain the truncated logs
+        ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.FAILURE);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().satisfies(summary -> {
+                // Verify the log section exists and is truncated
+                assertThat(summary).contains("<details>");
+                assertThat(summary).contains("</details>");
+                assertThat(summary).contains("Build log");
+                assertThat(summary).contains("Build log truncated.");
+                assertThat(summary).doesNotContain("Line 1:");  // Should be truncated from the start
+                assertThat(summary).contains("exit");  // Should see the exit command at the end
+                // Verify the truncation message appears at the start of the log section
+                assertThat(summary).matches(Pattern.compile(".*<summary>Build log</summary>\\s+\\n```\\s*\\nBuild log truncated.\\n\\n.*", Pattern.DOTALL));
+                // Verify the total size is within limits
+                assertThat(summary.length()).isLessThanOrEqualTo(65_535);
+            });
+        });
+    }
+
+    /**
      * Validates that a simple successful pipeline works.
      */
     @Test

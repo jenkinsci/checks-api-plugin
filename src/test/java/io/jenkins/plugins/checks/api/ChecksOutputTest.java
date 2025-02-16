@@ -30,10 +30,9 @@ class ChecksOutputTest {
                 .addImage(images.get(1))
                 .build();
 
-        ChecksOutputAssert.assertThat(checksOutput)
-                .hasTitle(Optional.of(TITLE))
-                .hasSummary(Optional.of(SUMMARY))
-                .hasText(Optional.of(TEXT));
+        assertThat(checksOutput.getTitle()).isEqualTo(Optional.of(TITLE));
+        assertThat(checksOutput.getSummary()).isEqualTo(Optional.of(SUMMARY));
+        assertThat(checksOutput.getText()).isEqualTo(Optional.of(TEXT));
         assertThat(checksOutput.getChecksAnnotations())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(annotations);
@@ -85,45 +84,15 @@ class ChecksOutputTest {
                 .build();
 
         ChecksOutput copied = new ChecksOutput(checksOutput);
-        ChecksOutputAssert.assertThat(copied)
-                .hasTitle(Optional.of(TITLE))
-                .hasSummary(Optional.of(SUMMARY))
-                .hasText(Optional.of(TEXT));
+        assertThat(copied.getTitle()).isEqualTo(Optional.of(TITLE));
+        assertThat(copied.getSummary()).isEqualTo(Optional.of(SUMMARY));
+        assertThat(copied.getText()).isEqualTo(Optional.of(TEXT));
         assertThat(copied.getChecksAnnotations())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(annotations);
         assertThat(copied.getChecksImages())
                 .usingFieldByFieldElementComparator()
                 .containsExactlyInAnyOrderElementsOf(images);
-    }
-
-    @Test
-    void shouldTruncateTextFromStart() {
-        String longText = "This is the beginning.\n" + "Middle part.\n".repeat(10) + "This is the end.\n";
-        ChecksOutput checksOutput = new ChecksOutputBuilder()
-                .withText(longText)
-                .build();
-
-        String truncated = checksOutput.getText(75).orElse("");
-        
-        assertThat(truncated)
-                .startsWith("Output truncated.")
-                .endsWith("This is the end.\n");
-        assertThat(truncated.length()).isLessThanOrEqualTo(75);
-    }
-
-    @Test
-    void shouldNotTruncateShortText() {
-        String shortText = "This is a short text that should not be truncated.";
-        ChecksOutput checksOutput = new ChecksOutputBuilder()
-                .withText(shortText)
-                .build();
-
-        String result = checksOutput.getText(100).orElse("");
-        
-        assertThat(result)
-                .isEqualTo(shortText)
-                .doesNotContain("Output truncated.");
     }
 
     private List<ChecksAnnotation> createAnnotations() {

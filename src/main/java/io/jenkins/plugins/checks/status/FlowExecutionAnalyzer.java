@@ -36,6 +36,8 @@ import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable
 class FlowExecutionAnalyzer {
     private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
     private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
+    private static final String TRUNCATED_MESSAGE_BUILD_LOG = "Build log truncated.\n\n";
+    private static final int MAX_MESSAGE_SIZE_TO_CHECKS_API = 65_535;
 
     private final Run<?, ?> run;
     private final FlowExecution execution;
@@ -132,9 +134,12 @@ class FlowExecutionAnalyzer {
             nodeTextBuilder.append(String.format("**Error**: *%s*", displayName));
             nodeSummaryBuilder.append(String.format("```%n%s%n```%n", displayName));
             if (!suppressLogs) {
-                String log = getLog(flowNode);
+                // -2 for "\n\n" at the end of the summary and -30 for buffer
+                String logTemplate = "<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>";
+                int maxMessageSize = MAX_MESSAGE_SIZE_TO_CHECKS_API - nodeSummaryBuilder.length() - logTemplate.length() - 32;
+                String log = getLog(flowNode, maxMessageSize);
                 if (StringUtils.isNotBlank(log)) {
-                    nodeSummaryBuilder.append(String.format("<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>", log));
+                    nodeSummaryBuilder.append(String.format(logTemplate, log));
                 }
             }
         }
@@ -197,7 +202,7 @@ class FlowExecutionAnalyzer {
     }
 
     @CheckForNull
-    private static String getLog(final FlowNode flowNode) {
+    private static String getLog(final FlowNode flowNode, final int maxMessageSize) {
         LogAction logAction = flowNode.getAction(LogAction.class);
         if (logAction == null) {
             return null;
@@ -209,7 +214,15 @@ class FlowExecutionAnalyzer {
 
             String outputString = out.toString(StandardCharsets.UTF_8);
             // strip ansi color codes
-            return outputString.replaceAll("\u001B\\[[;\\d]*m", "");
+            String log = outputString.replaceAll("\u001B\\[[;\\d]*m", "");
+
+            return new TruncatedString.Builder()
+                    .setChunkOnNewlines()
+                    .setTruncateStart()
+                    .withTruncationText(TRUNCATED_MESSAGE_BUILD_LOG)
+                    .addText(log)
+                    .build()
+                    .build(maxMessageSize);
         }
         catch (IOException e) {
             LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'",
