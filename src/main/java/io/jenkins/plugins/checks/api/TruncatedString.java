@@ -17,6 +17,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * Utility wrapper that silently truncates output with a message at a certain size.
+ *
  * <p>
  * The GitHub Checks API has a size limit on text fields. Because it also accepts markdown, it is not trivial to
  * truncate to the required length as this could lead to unterminated syntax. The use of this class allows for adding

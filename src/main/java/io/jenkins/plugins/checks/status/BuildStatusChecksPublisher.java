@@ -158,6 +158,7 @@ public final class BuildStatusChecksPublisher {
     public static class JobCheckoutListener extends SCMListener {
         /**
          * {@inheritDoc}
+         *
          * <p>
          * When checkout finished, update the check to "in progress".
          * </p>

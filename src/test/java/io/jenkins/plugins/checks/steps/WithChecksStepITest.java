@@ -144,7 +144,7 @@ class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
      * Test that withChecks correctly reports aborts.
      */
     @Test
-    public void withChecksShouldDetectAbort() {
+    public void withChecksShouldDetectAbort() throws Exception {
         WorkflowJob job = createPipeline();
         // Simulate a job cancellation.
         job.setDefinition(new CpsFlowDefinition("withChecks('test injection') { throw new org.jenkinsci.plugins.workflow.steps.FlowInterruptedException("
