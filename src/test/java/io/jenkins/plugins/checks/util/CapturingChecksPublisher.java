@@ -15,6 +15,7 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that records each captured checks in a simple list.
+ *
  * <p>
  * For example:
  * </p>
@@ -40,6 +41,7 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
  *     }
  * }
  * </pre>
+ *
  * <p>
  * An example of this can be found in {@link io.jenkins.plugins.checks.steps.PublishChecksStepITest}
  * </p>

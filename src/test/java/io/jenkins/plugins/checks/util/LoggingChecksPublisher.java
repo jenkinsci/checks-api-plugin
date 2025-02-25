@@ -12,6 +12,7 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that logs the checks details in user specified format.
+ *
  * <p>
  * For example:
  * </p>
@@ -39,6 +40,7 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
  *     }
  * }
  * </pre>
+ *
  * <p>
  * An example of this can be found in {@link io.jenkins.plugins.checks.status.BuildStatusChecksPublisherITest}
  * </p>

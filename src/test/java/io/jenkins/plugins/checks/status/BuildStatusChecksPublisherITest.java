@@ -121,7 +121,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      * Test checks output includes pipeline details.
      */
     @Test
-    public void shouldPublishStageDetails() {
+    public void shouldPublishStageDetails() throws Exception {
         getProperties().setApplicable(true);
         getProperties().setSkipped(false);
         getProperties().setSuppressLogs(false);
@@ -236,7 +236,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      * Test checks output includes pipeline details, but not logs, when requested.
      */
     @Test
-    public void shouldPublishStageDetailsWithoutLogsIfRequested() {
+    public void shouldPublishStageDetailsWithoutLogsIfRequested() throws Exception {
         getProperties().setApplicable(true);
         getProperties().setSkipped(false);
         getProperties().setName("Test Status");
@@ -301,7 +301,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      * Test that log messages are properly truncated when they exceed the maximum size limit.
      */
     @Test
-    public void shouldTruncateLogsWhenExceedingMaxSize() {
+    public void shouldTruncateLogsWhenExceedingMaxSize() throws Exception {
         getProperties().setApplicable(true);
         getProperties().setSkipped(false);
         getProperties().setName("Test Status");
@@ -356,7 +356,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      * Validates that a simple successful pipeline works.
      */
     @Test
-    public void shouldPublishSimplePipeline() {
+    public void shouldPublishSimplePipeline() throws Exception {
         getProperties().setApplicable(true);
         getProperties().setSkipped(false);
         getProperties().setName("Test Status");
