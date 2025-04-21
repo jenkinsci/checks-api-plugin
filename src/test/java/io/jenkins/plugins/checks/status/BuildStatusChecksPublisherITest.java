@@ -196,7 +196,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                     + "  \\* In parallel \\*\\(running\\)\\*\\s+"
                     + "    \\* p1 \\*\\(running\\)\\*\\s+"
                     + "      \\* p1s1 \\*\\([^)]+\\)\\*\\s+"
-                    + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\\s+"
+                    + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\* - \\[logs\\]\\([^)]+\\)\\s+"
                     + "      \\* p1s2 \\*\\(running\\)\\*\\s+"
                     + "    \\* p2 \\*\\([^)]+\\)\\*\\s+.*", Pattern.DOTALL));
         });
@@ -223,7 +223,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                             + "  \\* In parallel \\*\\([^)]+\\)\\*\\s+"
                             + "    \\* p1 \\*\\([^)]+\\)\\*\\s+"
                             + "      \\* p1s1 \\*\\([^)]+\\)\\*\\s+"
-                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\\s+"
+                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\* - \\[logs\\]\\([^)]+\\)\\s+"
                             + "      \\* p1s2 \\*\\([^)]+\\)\\*\\s+"
                             + "    \\* p2 \\*\\([^)]+\\)\\*\\s+"
                             + "  \\* Fails \\*\\([^)]+\\)\\*\\s+"
@@ -288,11 +288,11 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                             + "  \\* In parallel \\*\\([^)]+\\)\\*\\s+"
                             + "    \\* p1 \\*\\([^)]+\\)\\*\\s+"
                             + "      \\* p1s1 \\*\\([^)]+\\)\\*\\s+"
-                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\*\\s+"
+                            + "        \\*\\*Unstable\\*\\*: \\*something went wrong\\* - \\[logs\\]\\([^)]+\\)\\s+"
                             + "      \\* p1s2 \\*\\([^)]+\\)\\*\\s+"
                             + "    \\* p2 \\*\\([^)]+\\)\\*\\s+"
                             + "  \\* Fails \\*\\([^)]+\\)\\*\\s+"
-                            + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\*\\s+.*",
+                            + "    \\*\\*Error\\*\\*: \\*No artifacts found that match the file pattern \"oh dear\". Configuration error\\?\\* - \\[logs\\]\\([^)]+\\)\\s+.*",
                     Pattern.DOTALL));
         });
     }

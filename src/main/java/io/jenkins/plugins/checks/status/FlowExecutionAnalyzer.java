@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jenkinsci.plugins.displayurlapi.DisplayURLProvider;
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.actions.ErrorAction;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
@@ -146,6 +147,14 @@ class FlowExecutionAnalyzer {
         else {
             nodeTextBuilder.append(String.format("**Unstable**: *%s*", warningAction.getMessage()));
             nodeSummaryBuilder.append(String.format("```%n%s%n```", warningAction.getMessage()));
+        }
+        try {
+            String logsUrl = String.format("%s%slog", DisplayURLProvider.get().getRoot(), flowNode.getUrl());
+            nodeTextBuilder.append(String.format(" - [logs](%s)", logsUrl));
+        }
+        catch (IOException e) {
+            LOGGER.log(Level.WARNING, String.format("Failed to get log url for step '%s'",
+                    flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
         }
         nodeTextBuilder.append("\n");
         nodeSummaryBuilder.append("\n\n");  // Ensure a double newline at the end of summary so the subsequence heading works
