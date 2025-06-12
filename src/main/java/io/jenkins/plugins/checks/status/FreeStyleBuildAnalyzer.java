@@ -53,7 +53,7 @@ class FreeStyleBuildAnalyzer extends AbstractBuildAnalyzer {
         catch (IOException e) {
             LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'",
                     getRun().getDisplayName()).replaceAll("[\r\n]", ""), e);
-            return null;
+            return output.build();
         }
 
         return output.withSummary(summaryBuilder.build()).build();
