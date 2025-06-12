@@ -4,7 +4,6 @@ import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingBlockNam
 import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingStagesAndParallels;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import hudson.model.Result;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
