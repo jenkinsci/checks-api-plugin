@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.Functions;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.tasks.BatchFile;
 import hudson.tasks.Shell;
-import hudson.Functions;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
@@ -420,7 +420,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         getProperties().setName("FreeStyle Status");
 
         var project = createFreeStyleProject();
-        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+        if (Functions.isWindows()) {
             project.getBuildersList().add(new BatchFile("echo hello from windows"));
         }
         else {
@@ -454,7 +454,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         for (int i = 0; i < logLines; i++) {
             script.append("echo line ").append(i).append(logSuffix);
         }
-        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+        if (Functions.isWindows()) {
             project.getBuildersList().add(new BatchFile(script.toString()));
         }
         else {
