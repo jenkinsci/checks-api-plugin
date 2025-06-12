@@ -17,6 +17,7 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.tasks.BatchFile;
 import hudson.tasks.Shell;
+import hudson.Functions;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
@@ -386,7 +387,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
         // Create a FreeStyle project and add a build step
         var project = createFreeStyleProject();
-        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+        if (Functions.isWindows()) {
             project.getBuildersList().add(new BatchFile("echo hello from windows"));
         }
         else {

@@ -32,7 +32,7 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 @SuppressWarnings("PMD.GodClass")
-class FlowExecutionAnalyzer extends AbstractBuildAnalyzer {
+class FlowExecutionAnalyzer extends AbstractRunAnalyzer {
     private final FlowExecution execution;
     private final Stack<Integer> indentationStack = new Stack<>(); // NOPMD TODO: replace with DeQueue
 

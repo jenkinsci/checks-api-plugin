@@ -10,7 +10,7 @@ import io.jenkins.plugins.checks.api.TruncatedString;
 
 import org.apache.commons.lang3.StringUtils;
 
-class FreeStyleBuildAnalyzer extends AbstractBuildAnalyzer {
+class FreeStyleBuildAnalyzer extends AbstractRunAnalyzer {
     FreeStyleBuildAnalyzer(final Run<?, ?> run, final boolean suppressLogs) {
         super(run, suppressLogs);
     }

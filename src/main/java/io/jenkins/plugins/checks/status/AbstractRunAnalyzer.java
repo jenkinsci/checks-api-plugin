@@ -10,8 +10,8 @@ import io.jenkins.plugins.checks.api.ChecksOutput;
 /**
  * Base class for build analyzers that extract output from Jenkins builds.
  */
-abstract class AbstractBuildAnalyzer {
-    protected static final Logger LOGGER = Logger.getLogger(AbstractBuildAnalyzer.class.getName());
+abstract class AbstractRunAnalyzer {
+    protected static final Logger LOGGER = Logger.getLogger(AbstractRunAnalyzer.class.getName());
     protected static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
     protected static final String TRUNCATED_MESSAGE_BUILD_LOG = "Build log truncated.\n\n";
     protected static final int MAX_MESSAGE_SIZE_TO_CHECKS_API = 65_535;
@@ -20,7 +20,7 @@ abstract class AbstractBuildAnalyzer {
     private final Run<?, ?> run;
     private final boolean suppressLogs;
 
-    protected AbstractBuildAnalyzer(final Run<?, ?> run, final boolean suppressLogs) {
+    protected AbstractRunAnalyzer(final Run<?, ?> run, final boolean suppressLogs) {
         this.run = run;
         this.suppressLogs = suppressLogs;
     }
