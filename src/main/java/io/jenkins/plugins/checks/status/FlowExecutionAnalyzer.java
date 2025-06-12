@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
@@ -34,21 +33,13 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable;
 
 @SuppressWarnings("PMD.GodClass")
-class FlowExecutionAnalyzer {
-    private static final Logger LOGGER = Logger.getLogger(FlowExecutionAnalyzer.class.getName());
-    private static final String TRUNCATED_MESSAGE = "\n\nOutput truncated.";
-    private static final String TRUNCATED_MESSAGE_BUILD_LOG = "Build log truncated.\n\n";
-    private static final int MAX_MESSAGE_SIZE_TO_CHECKS_API = 65_535;
-
-    private final Run<?, ?> run;
+class FlowExecutionAnalyzer extends AbstractBuildAnalyzer {
     private final FlowExecution execution;
     private final Stack<Integer> indentationStack = new Stack<>(); // NOPMD TODO: replace with DeQueue
-    private final boolean suppressLogs;
 
     FlowExecutionAnalyzer(final Run<?, ?> run, final FlowExecution execution, final boolean suppressLogs) {
-        this.run = run;
+        super(run, suppressLogs);
         this.execution = execution;
-        this.suppressLogs = suppressLogs;
     }
 
     private static Optional<String> getStageOrBranchName(final FlowNode node) {
@@ -134,7 +125,7 @@ class FlowExecutionAnalyzer {
             var displayName = errorAction == null ? "[no error action]" : errorAction.getDisplayName();
             nodeTextBuilder.append(String.format("**Error**: *%s*", displayName));
             nodeSummaryBuilder.append(String.format("```%n%s%n```%n", displayName));
-            if (!suppressLogs) {
+            if (!isSuppressLogs()) {
                 // -2 for "\n\n" at the end of the summary and -30 for buffer
                 String logTemplate = "<details>%n<summary>Build log</summary>%n%n```%n%s%n```%n</details>";
                 int maxMessageSize = MAX_MESSAGE_SIZE_TO_CHECKS_API - nodeSummaryBuilder.length() - logTemplate.length() - 32;
@@ -161,7 +152,8 @@ class FlowExecutionAnalyzer {
         return Pair.of(nodeTextBuilder.toString(), nodeSummaryBuilder.toString());
     }
 
-    ChecksOutput extractOutput() {
+    @Override
+    public ChecksOutput extractOutput() {
         FlowGraphTable table = new FlowGraphTable(execution);
         table.build();
 
@@ -240,31 +232,12 @@ class FlowExecutionAnalyzer {
         }
     }
 
-    private String extractOutputTitle(final String title) {
-        Result result = run.getResult();
-        if (result == null) {
-            return "In progress";
-        }
-        if (result.isBetterOrEqualTo(Result.SUCCESS)) {
-            return "Success";
+    @Override
+    protected String extractOutputTitle(final String customTitle) {
+        if (getRun().getResult() == Result.FAILURE && StringUtils.isNotBlank(customTitle)) {
+            return customTitle;
         }
 
-        if (title != null) {
-            return title;
-        }
-
-        if (result.isBetterOrEqualTo(Result.UNSTABLE)) {
-            return "Unstable";
-        }
-        if (result.isBetterOrEqualTo(Result.FAILURE)) {
-            return "Failure";
-        }
-        if (result.isBetterOrEqualTo(Result.NOT_BUILT)) {
-            return "Skipped";
-        }
-        if (result.isBetterOrEqualTo(Result.ABORTED)) {
-            return "Aborted";
-        }
-        throw new IllegalStateException("Unsupported run result: " + result);
+        return super.extractOutputTitle(customTitle);
     }
 }

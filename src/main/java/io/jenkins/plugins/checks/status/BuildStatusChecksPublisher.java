@@ -18,6 +18,7 @@ import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Computer;
+import hudson.model.FreeStyleBuild;
 import hudson.model.Job;
 import hudson.model.Queue;
 import hudson.model.Result;
@@ -101,6 +102,10 @@ public final class BuildStatusChecksPublisher {
 
     @CheckForNull
     static ChecksOutput getOutput(final Run<?, ?> run) {
+        if (run instanceof FreeStyleBuild) {
+            return getFreeStyleBuildOutput(run);
+        }
+
         if (!(run instanceof FlowExecutionOwner.Executable)) {
             return null;
         }
@@ -117,6 +122,10 @@ public final class BuildStatusChecksPublisher {
 
     static ChecksOutput getOutput(final Run<?, ?> run, final FlowExecution execution) {
         return new FlowExecutionAnalyzer(run, execution, findProperties(run.getParent()).isSuppressLogs(run.getParent())).extractOutput();
+    }
+
+    static ChecksOutput getFreeStyleBuildOutput(final Run<?, ?> run) {
+        return new FreeStyleBuildAnalyzer(run, findProperties(run.getParent()).isSuppressLogs(run.getParent())).extractOutput();
     }
 
     /**

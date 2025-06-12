@@ -4,26 +4,25 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.TestExtension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
-import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
-
+import hudson.tasks.BatchFile;
+import hudson.tasks.Shell;
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
 import io.jenkins.plugins.checks.util.CapturingChecksPublisher;
 import io.jenkins.plugins.util.IntegrationTestWithJenkinsPerTest;
-
-import static org.assertj.core.api.Assertions.*;
 
 /**
  * Tests that the {@link BuildStatusChecksPublisher} listens to the status of a {@link Run} and publishes status
@@ -373,6 +372,112 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
         ChecksDetails details = checksDetails.get(1);
         assertThat(details.getOutput()).isPresent().get().satisfies(output -> assertThat(output.getTitle()).contains("Success"));
+    }
+
+    /**
+     * Tests that FreeStyleBuildAnalyzer publishes build log output in checks.
+     */
+    @Test
+    public void shouldPublishFreeStyleBuildLog() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setSuppressLogs(false);
+        getProperties().setName("FreeStyle Status");
+
+        // Create a FreeStyle project and add a build step
+        var project = createFreeStyleProject();
+        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+            project.getBuildersList().add(new BatchFile("echo hello from windows"));
+        }
+        else {
+            project.getBuildersList().add(new Shell("echo hello from unix"));
+        }
+
+        buildSuccessfully(project);
+        this.getJenkins().waitUntilNoActivity();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        // The last check should contain the build log
+        ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
+        assertThat(details.getName()).contains("FreeStyle Status");
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent();
+            assertThat(output.getSummary().get()).contains("Build Log");
+            assertThat(output.getSummary().get()).contains("hello from");
+        });
+    }
+
+    /**
+     * Tests that FreeStyleBuildAnalyzer suppresses logs when requested.
+     */
+    @Test
+    public void shouldSuppressFreeStyleBuildLog() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setSuppressLogs(true);
+        getProperties().setName("FreeStyle Status");
+
+        var project = createFreeStyleProject();
+        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+            project.getBuildersList().add(new BatchFile("echo hello from windows"));
+        }
+        else {
+            project.getBuildersList().add(new Shell("echo hello from unix"));
+        }
+
+        buildSuccessfully(project);
+        this.getJenkins().waitUntilNoActivity();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isNotPresent();
+        });
+    }
+
+    /**
+     * Tests that FreeStyleBuildAnalyzer truncates large logs.
+     */
+    @Test
+    public void shouldTruncateFreeStyleBuildLog() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setSuppressLogs(false);
+        getProperties().setName("FreeStyle Status");
+
+        var project = createFreeStyleProject();
+        int logLines = 2000;
+        int lineLength = "echo line ".length() + String.valueOf(logLines).length() + "This is a very long log line that will be repeated many times to test truncation. Adding some extra system information here.\n".length();
+        StringBuilder script = new StringBuilder(logLines * lineLength);
+        String logSuffix = "This is a very long log line that will be repeated many times to test truncation. Adding some extra system information here.\n";
+        for (int i = 0; i < logLines; i++) {
+            script.append("echo line ").append(i).append(logSuffix);
+        }
+        if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
+            project.getBuildersList().add(new BatchFile(script.toString().replace("\n", " && ")));
+        }
+        else {
+            project.getBuildersList().add(new Shell(script.toString()));
+        }
+
+        buildSuccessfully(project);
+        this.getJenkins().waitUntilNoActivity();
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output -> {
+            assertThat(output.getSummary()).isPresent().get().satisfies(summary -> {
+                // Verify the log section exists and is truncated
+                assertThat(summary).contains("<details>");
+                assertThat(summary).contains("</details>");
+                assertThat(summary).contains("Build log");
+                assertThat(summary).contains("Build log truncated.");
+                assertThat(summary).doesNotContain("Line 1:");  // Should be truncated from the start
+                // Verify the truncation message appears at the start of the log section
+                assertThat(summary).matches(Pattern.compile(".*<summary>Build Log</summary>\\s+\\n```\\s*\\nBuild log truncated.\\n\\n.*", Pattern.DOTALL));
+                // Verify the total size is within limits\
+                assertThat(summary.length()).isLessThanOrEqualTo(65_535);
+            });
+        });
     }
 
     /**
