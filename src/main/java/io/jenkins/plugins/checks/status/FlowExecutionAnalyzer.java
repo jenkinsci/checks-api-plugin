@@ -186,7 +186,7 @@ class FlowExecutionAnalyzer extends AbstractBuildAnalyzer {
         }
 
         return new ChecksOutput.ChecksOutputBuilder()
-                .withTitle(extractOutputTitle(title))
+                .withTitle(extractOutputTitle(Optional.ofNullable(title)))
                 .withSummary(summaryBuilder.build())
                 .withText(textBuilder.build())
                 .build();
@@ -230,14 +230,5 @@ class FlowExecutionAnalyzer extends AbstractBuildAnalyzer {
                     flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
             return null;
         }
-    }
-
-    @Override
-    protected String extractOutputTitle(final String customTitle) {
-        if (getRun().getResult() == Result.FAILURE && StringUtils.isNotBlank(customTitle)) {
-            return customTitle;
-        }
-
-        return super.extractOutputTitle(customTitle);
     }
 }

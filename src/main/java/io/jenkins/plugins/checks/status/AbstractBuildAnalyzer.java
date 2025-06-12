@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.status;
 
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import hudson.model.Result;
@@ -56,7 +57,7 @@ abstract class AbstractBuildAnalyzer {
      *         custom title to use if the build failed
      * @return the output title
      */
-    protected String extractOutputTitle(final String title) {
+    protected String extractOutputTitle(final Optional<String> title) {
         Result result = getRun().getResult();
         if (result == null) {
             return "In progress";
@@ -65,8 +66,8 @@ abstract class AbstractBuildAnalyzer {
             return "Success";
         }
 
-        if (title != null) {
-            return title;
+        if (title.isPresent()) {
+            return title.get();
         }
 
         if (result.isBetterOrEqualTo(Result.UNSTABLE)) {

@@ -1,11 +1,13 @@
 package io.jenkins.plugins.checks.status;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.logging.Level;
 
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
+
 import org.apache.commons.lang3.StringUtils;
 
 class FreeStyleBuildAnalyzer extends AbstractBuildAnalyzer {
@@ -15,7 +17,7 @@ class FreeStyleBuildAnalyzer extends AbstractBuildAnalyzer {
 
     @Override
     public ChecksOutput extractOutput() {
-        String title = extractOutputTitle(null);
+        String title = extractOutputTitle(Optional.empty());
 
         ChecksOutput.ChecksOutputBuilder output = new ChecksOutput.ChecksOutputBuilder()
                 .withTitle(title);
@@ -49,8 +51,9 @@ class FreeStyleBuildAnalyzer extends AbstractBuildAnalyzer {
             }
         }
         catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to get build log for run: " + getRun(), e);
-            return output.build();
+            LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'",
+                    getRun().getDisplayName()).replaceAll("[\r\n]", ""), e);
+            return null;
         }
 
         return output.withSummary(summaryBuilder.build()).build();

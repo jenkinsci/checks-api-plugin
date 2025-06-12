@@ -454,7 +454,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
             script.append("echo line ").append(i).append(logSuffix);
         }
         if (System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("win")) {
-            project.getBuildersList().add(new BatchFile(script.toString().replace("\n", " && ")));
+            project.getBuildersList().add(new BatchFile(script.toString()));
         }
         else {
             project.getBuildersList().add(new Shell(script.toString()));
