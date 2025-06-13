@@ -1,15 +1,15 @@
 package io.jenkins.plugins.checks.api;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Test behavior of the {@link TruncatedString}.
@@ -173,5 +173,16 @@ class TruncatedStringTest {
         assertThat(build(chunkOnChars, 20)).isEqualTo("xxxx\nx\n");
         builder.addText("xxxxxxxxxxxxxxx"); // 15
         assertThat(build(chunkOnChars, 20)).isEqualTo(chunkOnChars ? "xxxx\nx\nE_TOO_MUCH_☃" : "xxxx\nE_TOO_MUCH_☃");
+    }
+
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldForceTruncationText(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
+        builder.setForceTruncationText();
+        builder.addText("Hello\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("Hello\nTruncated");
     }
 }

@@ -30,12 +30,14 @@ public class TruncatedString {
     private final String truncationText;
     private final boolean truncateStart;
     private final boolean chunkOnNewlines;
+    private final boolean forceTruncationText;
 
-    private TruncatedString(@NonNull final List<String> chunks, @NonNull final String truncationText, final boolean truncateStart, final boolean chunkOnNewlines) {
+    private TruncatedString(@NonNull final List<String> chunks, @NonNull final String truncationText, final boolean truncateStart, final boolean chunkOnNewlines, final boolean forceTruncationText) {
         this.chunks = Collections.unmodifiableList(Objects.requireNonNull(chunks));
         this.truncationText = Objects.requireNonNull(truncationText);
         this.truncateStart = truncateStart;
         this.chunkOnNewlines = chunkOnNewlines;
+        this.forceTruncationText = forceTruncationText;
     }
 
     /**
@@ -105,7 +107,7 @@ public class TruncatedString {
         if (truncateStart) {
             Collections.reverse(parts);
         }
-        List<String> truncatedParts = parts.stream().collect(new Joiner(truncationText, maxSize, chunkOnChars));
+        List<String> truncatedParts = parts.stream().collect(new Joiner(truncationText, maxSize, chunkOnChars, forceTruncationText));
         if (truncateStart) {
             Collections.reverse(truncatedParts);
         }
@@ -120,6 +122,7 @@ public class TruncatedString {
         private String truncationText = "Output truncated.";
         private boolean truncateStart = false;
         private boolean chunkOnNewlines = false;
+        private boolean forceTruncationText = false;
         private final List<String> chunks = new ArrayList<>();
 
         /**
@@ -128,7 +131,7 @@ public class TruncatedString {
          * @return the build {@link TruncatedString}.
          */
         public TruncatedString build() {
-            return new TruncatedString(chunks, truncationText, truncateStart, chunkOnNewlines);
+            return new TruncatedString(chunks, truncationText, truncateStart, chunkOnNewlines, forceTruncationText);
         }
 
         /**
@@ -151,6 +154,16 @@ public class TruncatedString {
         @SuppressWarnings("HiddenField")
         public Builder withTruncationText(@NonNull final String truncationText) {
             this.truncationText = Objects.requireNonNull(truncationText);
+            return this;
+        }
+
+        /**
+         * Sets the truncation text to be added even if the string is not truncated.
+         *
+         * @return this builder
+         */
+        public Builder setForceTruncationText() {
+            this.forceTruncationText = true;
             return this;
         }
 
@@ -178,12 +191,14 @@ public class TruncatedString {
     private static class Joiner implements Collector<String, Joiner.Accumulator, List<String>> {
         private final int maxLength;
         private final String truncationText;
+        private final boolean forceTruncationText;
         private final boolean chunkOnChars;
 
-        Joiner(final String truncationText, final int maxLength, final boolean chunkOnChars) {
+        Joiner(final String truncationText, final int maxLength, final boolean chunkOnChars, final boolean forceTruncationText) {
             this.truncationText = truncationText;
             this.maxLength = maxLength;
             this.chunkOnChars = chunkOnChars;
+            this.forceTruncationText = forceTruncationText;
             if (maxLength < getLength(truncationText)) {
                 throw new IllegalArgumentException("Maximum length is less than truncation text.");
             }
@@ -241,7 +256,7 @@ public class TruncatedString {
             }
 
             List<String> truncate() {
-                if (truncated) {
+                if (truncated || forceTruncationText) {
                     if (length + getLength(truncationText) > maxLength) {
                         chunks.remove(chunks.size() - 1);
                     }
