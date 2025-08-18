@@ -24,7 +24,7 @@ class ArchitectureTest {
             .that().haveSimpleNameEndingWith("Test")
                 .and().haveSimpleNameNotContaining("_jmh")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT).should().bePublic()
-            .andShould().notBeAnnotatedWith(RunWith.class)
+            .andShould()
             .because("test classes are not part of the API and should be hidden in a package");
 
     @ArchTest
