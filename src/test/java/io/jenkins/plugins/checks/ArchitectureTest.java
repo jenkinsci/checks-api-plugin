@@ -7,7 +7,6 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import edu.hm.hafner.util.ArchitectureRules;
 import io.jenkins.plugins.util.PluginArchitectureRules;
-import org.junit.runner.RunWith;
 
 /**
  * Defines several architecture rules for the static analysis model and parsers.
@@ -25,7 +24,6 @@ class ArchitectureTest {
             .that().haveSimpleNameEndingWith("Test")
                 .and().haveSimpleNameNotContaining("_jmh")
                 .and().doNotHaveModifier(JavaModifier.ABSTRACT).should().bePublic()
-            .andShould().notBeAnnotatedWith(RunWith.class)
             .because("test classes are not part of the API and should be hidden in a package");
 
     @ArchTest
