@@ -21,7 +21,7 @@
     <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
-    <testcontainers.version>1.21.4</testcontainers.version>
+    <testcontainers.version>2.0.3</testcontainers.version>
     <jenkins.baseline>2.492</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
