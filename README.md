@@ -1,7 +1,7 @@
 # Checks API Plugin
 [![Join the chat at https://gitter.im/jenkinsci/github-checks-api](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jenkinsci/github-checks-api)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://issues.jenkins-ci.org/issues/?jql=component%20%3D%20checks-api-plugin)
-[![Jenkins](https://ci.jenkins.io/job/Plugins/job/checks-api-plugin/job/master/badge/icon?subject=Jenkins%20CI)](https://ci.jenkins.io/job/Plugins/job/checks-api-plugin/job/master/)
+[![Jenkins](https://ci.jenkins.io/buildStatus/icon?job=Plugins%2Fchecks-api-plugin%2Fmaster)](https://ci.jenkins.io/job/Plugins/job/checks-api-plugin/job/master/)
 [![GitHub Actions](https://github.com/jenkinsci/checks-api-plugin/workflows/CI/badge.svg?branch=master)](https://github.com/jenkinsci/checks-api-plugin/actions)
 [![codecov](https://codecov.io/gh/jenkinsci/checks-api-plugin/branch/master/graph/badge.svg)](https://codecov.io/gh/jenkinsci/checks-api-plugin)
 
