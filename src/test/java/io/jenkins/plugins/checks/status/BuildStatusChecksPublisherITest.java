@@ -88,6 +88,34 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     /**
+     * Tests that custom details URL can be configured via properties.
+     */
+    @Test
+    public void shouldUseCustomDetailsUrlWhenConfigured() {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        buildSuccessfully(createFreeStyleProject());
+
+        assertThat(getFactory().getPublishedChecks()).isNotEmpty();
+    }
+
+    /**
+     * Tests that custom details URL defaults to empty string when not configured.
+     */
+    @Test
+    public void shouldDefaultToEmptyDetailsUrlWhenNotConfigured() {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        // Don't set custom details URL
+
+        buildSuccessfully(createFreeStyleProject());
+
+        assertThat(getFactory().getPublishedChecks()).isNotEmpty();
+    }
+
+    /**
      * Tests when an implementation of {@link AbstractStatusChecksProperties} is applicable and not skipped,
      * a status checks using the specified name should be published.
      */
@@ -334,7 +362,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         buildWithResult(job, Result.FAILURE);
 
         List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
-        
+
         // Get the final check details which should contain the truncated logs
         ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
         assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);

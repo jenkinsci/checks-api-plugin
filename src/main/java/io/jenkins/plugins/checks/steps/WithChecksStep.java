@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.steps;
 
 import edu.hm.hafner.util.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.Run;
@@ -34,6 +35,8 @@ public class WithChecksStep extends Step implements Serializable {
 
     private final String name;
     private boolean includeStage;
+    @CheckForNull
+    private String detailsURL;
 
     /**
      * Creates the step with a name to inject.
@@ -45,6 +48,7 @@ public class WithChecksStep extends Step implements Serializable {
         super();
 
         this.name = name;
+        this.detailsURL = null;
     }
 
     public String getName() {
@@ -58,6 +62,16 @@ public class WithChecksStep extends Step implements Serializable {
     @DataBoundSetter
     public void setIncludeStage(final boolean includeStage) {
         this.includeStage = includeStage;
+    }
+
+    @CheckForNull
+    public String getDetailsURL() {
+        return detailsURL;
+    }
+
+    @DataBoundSetter
+    public void setDetailsURL(final String detailsURL) {
+        this.detailsURL = detailsURL;
     }
 
     @Override
@@ -134,7 +148,7 @@ public class WithChecksStep extends Step implements Serializable {
 
         @VisibleForTesting
         ChecksInfo extractChecksInfo() throws IOException, InterruptedException {
-            return new ChecksInfo(getName());
+            return new ChecksInfo(getName(), step.getDetailsURL());
         }
 
         private String getName() throws IOException, InterruptedException {
@@ -200,8 +214,10 @@ public class WithChecksStep extends Step implements Serializable {
             }
 
             try {
+                // Use custom details URL if provided, otherwise use the default run URL
+                String detailsURL = StringUtils.defaultIfBlank(step.getDetailsURL(), DisplayURLProvider.get().getRunURL(run));
                 ChecksPublisherFactory.fromRun(run, listener)
-                        .publish(builder.withDetailsURL(DisplayURLProvider.get().getRunURL(run))
+                        .publish(builder.withDetailsURL(detailsURL)
                                 .build());
             }
             catch (RuntimeException e) {
