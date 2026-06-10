@@ -164,6 +164,61 @@ class WithChecksStepITest extends IntegrationTestWithJenkinsPerTest {
     }
 
     /**
+     * Test that withChecks accepts custom detailsURL using named parameters.
+     */
+    @Test
+    public void withChecksShouldAcceptCustomDetailsUrl() {
+        WorkflowJob job = createPipeline();
+        String customUrl = "https://example.com/custom/details";
+        job.setDefinition(asStage("withChecks(name: 'test details url', detailsURL: '" + customUrl + "') { publishChecks() }"));
+
+        buildSuccessfully(job);
+
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test details url");
+        assertThat(autoChecks.getDetailsURL()).isPresent().get().isEqualTo(customUrl);
+        // Note: publishChecks() does not inherit detailsURL from context - it has its own detailsURL parameter
+    }
+
+    /**
+     * Test that withChecks uses default detailsURL when not specified.
+     */
+    @Test
+    public void withChecksShouldUseDefaultDetailsUrlWhenNotSpecified() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks(name: 'test default url') { publishChecks() }"));
+
+        buildSuccessfully(job);
+
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("test default url");
+        // When detailsURL is not specified, it should use the default run URL (non-empty)
+        assertThat(autoChecks.getDetailsURL()).isPresent();
+        assertThat(autoChecks.getDetailsURL().get()).isNotEmpty();
+        assertThat(autoChecks.getDetailsURL().get()).contains(job.getName());
+    }
+
+    /**
+     * Test that withChecks with positional name parameter still works (backwards compatibility).
+     */
+    @Test
+    public void withChecksShouldWorkWithPositionalNameParameter() {
+        WorkflowJob job = createPipeline();
+        job.setDefinition(asStage("withChecks('positional name') { publishChecks() }"));
+
+        buildSuccessfully(job);
+
+        assertThat(getFactory().getPublishedChecks().size()).isEqualTo(2);
+        ChecksDetails autoChecks = getFactory().getPublishedChecks().get(0);
+
+        assertThat(autoChecks.getName()).isPresent().get().isEqualTo("positional name");
+    }
+
+    /**
      * Assert that the injected {@link ChecksInfo} is as expected.
      */
     @TestExtension

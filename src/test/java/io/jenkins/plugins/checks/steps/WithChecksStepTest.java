@@ -19,9 +19,29 @@ class WithChecksStepTest {
         when(context.get(Run.class)).thenReturn(mock(Run.class));
         when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
 
-        assertThat(((WithChecksStep.WithChecksStepExecution) new WithChecksStep("test").start(context))
-                .extractChecksInfo())
-                .hasFieldOrPropertyWithValue("name", "test");
+        ChecksInfo checksInfo = ((WithChecksStep.WithChecksStepExecution) new WithChecksStep("test").start(context))
+                .extractChecksInfo();
+
+        assertThat(checksInfo.getName()).isEqualTo("test");
+        assertThat(checksInfo.getDetailsURL()).isNull();
+    }
+
+    @Test
+    void shouldStartWithCorrectExecutionWithDetailsURL() throws IOException, InterruptedException {
+        StepContext context = mock(StepContext.class);
+        String customUrl = "https://example.com/custom/details";
+
+        when(context.get(Run.class)).thenReturn(mock(Run.class));
+        when(context.get(TaskListener.class)).thenReturn(TaskListener.NULL);
+
+        WithChecksStep step = new WithChecksStep("test");
+        step.setDetailsURL(customUrl);
+
+        ChecksInfo checksInfo = ((WithChecksStep.WithChecksStepExecution) step.start(context))
+                .extractChecksInfo();
+
+        assertThat(checksInfo.getName()).isEqualTo("test");
+        assertThat(checksInfo.getDetailsURL()).isEqualTo(customUrl);
     }
 
     @Test
