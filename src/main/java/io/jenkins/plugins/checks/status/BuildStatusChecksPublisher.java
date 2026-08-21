@@ -137,7 +137,7 @@ public final class BuildStatusChecksPublisher {
          * {@inheritDoc}
          *
          * <p>
-         * When a job enters queue, creates the check on "queued".
+         * When a job enters queue, creates the check on "queued", unless progress updates are skipped.
          * </p>
          */
         @Override
@@ -147,6 +147,10 @@ public final class BuildStatusChecksPublisher {
             }
 
             final Job<?, ?> job = (Job<?, ?>) wi.task;
+            if (findProperties(job).isSkipProgressUpdates(job)) {
+                return;
+            }
+
             getChecksName(job).ifPresent(checksName -> runAsync(() -> {
                 ChecksPublisher publisher = ChecksPublisherFactory.fromJob(job, TaskListener.NULL);
                 publish(publisher, ChecksStatus.QUEUED, ChecksConclusion.NONE, checksName, null);
@@ -169,13 +173,18 @@ public final class BuildStatusChecksPublisher {
          * {@inheritDoc}
          *
          * <p>
-         * When checkout finished, update the check to "in progress".
+         * When checkout finished, update the check to "in progress", unless progress updates are skipped.
          * </p>
          */
         @Override
         public void onCheckout(final Run<?, ?> run, final SCM scm, final FilePath workspace,
                                final TaskListener listener, @CheckForNull final File changelogFile,
                                @CheckForNull final SCMRevisionState pollingBaseline) {
+            Job<?, ?> job = run.getParent();
+            if (findProperties(job).isSkipProgressUpdates(job)) {
+                return;
+            }
+
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, null));
         }
