@@ -150,6 +150,29 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     /**
+     * Tests that when progress updates are skipped, the only published status is the final completed one:
+     * nothing is published when the job is scheduled or when checkout finishes.
+     */
+    @Test
+    public void shouldOnlyPublishCompletedStatusWhenProgressUpdatesAreSkipped() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setSkipProgressUpdates(true);
+        getProperties().setName("Test Status");
+
+        buildSuccessfully(createFreeStyleProject());
+        // Wait for the job to finish to work around slow Windows builds sometimes
+        this.getJenkins().waitUntilNoActivity();
+        assertThat(getFactory().getPublishedChecks()).hasSize(1);
+
+        ChecksDetails details = getFactory().getPublishedChecks().get(0);
+
+        assertThat(details.getName()).contains("Test Status");
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getConclusion()).isEqualTo(ChecksConclusion.SUCCESS);
+    }
+
+    /**
      * Test checks output includes pipeline details.
      */
     @Test
@@ -556,6 +579,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         private boolean skipped;
         private String name;
         private boolean suppressLogs;
+        private boolean skipProgressUpdates;
 
         public void setApplicable(final boolean applicable) {
             this.applicable = applicable;
@@ -571,6 +595,10 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
         public void setSuppressLogs(final boolean suppressLogs) {
             this.suppressLogs = suppressLogs;
+        }
+
+        public void setSkipProgressUpdates(final boolean skipProgressUpdates) {
+            this.skipProgressUpdates = skipProgressUpdates;
         }
 
         @Override
@@ -591,6 +619,11 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         @Override
         public boolean isSuppressLogs(final Job<?, ?> job) {
             return suppressLogs;
+        }
+
+        @Override
+        public boolean isSkipProgressUpdates(final Job<?, ?> job) {
+            return skipProgressUpdates;
         }
     }
 }
