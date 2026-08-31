@@ -64,8 +64,9 @@ public abstract class AbstractStatusChecksProperties implements ExtensionPoint {
     }
 
     /**
-     * Returns whether to suppress progress updates from the {@link io.jenkins.plugins.checks.status.FlowExecutionAnalyzer}.
-     * Queued, Checkout and Completed will still run but not 'onNewHead'
+     * Returns whether to suppress intermediate progress updates: the "queued" status published when the job is
+     * scheduled, the "in progress" status published after each SCM checkout, and the stage updates from the
+     * {@link io.jenkins.plugins.checks.status.FlowExecutionAnalyzer}. The final completed status is always published.
      *
      * @param job
      *         A jenkins job.
