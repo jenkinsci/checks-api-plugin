@@ -22,7 +22,7 @@
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
 
     <testcontainers.version>2.0.5</testcontainers.version>
-    <jenkins.baseline>2.492</jenkins.baseline>
+    <jenkins.baseline>2.555</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
   </properties>
@@ -47,7 +47,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-${jenkins.baseline}.x</artifactId>
-        <version>5473.vb_9533d9e5d88</version>
+        <version>6931.vea_a_b_c6fd017d</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
