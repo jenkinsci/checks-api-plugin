@@ -95,6 +95,27 @@ class ChecksOutputTest {
                 .containsExactlyInAnyOrderElementsOf(images);
     }
 
+    @Test
+    void shouldPreserveTruncationWhenCopyConstructing() {
+        final ChecksOutput checksOutput = new ChecksOutputBuilder()
+                .withTitle(TITLE)
+                .withSummary(new TruncatedString.Builder()
+                        .withTruncationText("summary truncated")
+                        .addText("first summary chunk ")
+                        .addText("second summary chunk")
+                        .build())
+                .withText(new TruncatedString.Builder()
+                        .withTruncationText("text truncated")
+                        .addText("first text chunk ")
+                        .addText("second text chunk")
+                        .build())
+                .build();
+
+        ChecksOutput copied = new ChecksOutput(checksOutput);
+        assertThat(copied.getSummary(37)).isEqualTo(Optional.of("first summary chunk summary truncated"));
+        assertThat(copied.getText(31)).isEqualTo(Optional.of("first text chunk text truncated"));
+    }
+
     private List<ChecksAnnotation> createAnnotations() {
         final ChecksAnnotationBuilder builder = new ChecksAnnotationBuilder()
                 .withPath("src/main/java/1.java")

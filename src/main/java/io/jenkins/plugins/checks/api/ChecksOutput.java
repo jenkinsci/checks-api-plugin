@@ -41,10 +41,7 @@ public class ChecksOutput {
      *         the source to copy from
      */
     public ChecksOutput(final ChecksOutput that) {
-        this(that.getTitle().orElse(null),
-                that.getSummary().map(TruncatedString::fromString).orElse(null),
-                that.getText().map(TruncatedString::fromString).orElse(null),
-                that.getChecksAnnotations(), that.getChecksImages());
+        this(that.title, that.summary, that.text, that.getChecksAnnotations(), that.getChecksImages());
     }
 
     public Optional<String> getTitle() {
