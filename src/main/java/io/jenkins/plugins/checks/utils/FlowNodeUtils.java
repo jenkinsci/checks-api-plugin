@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.actions.ThreadNameAction;
+import org.jenkinsci.plugins.workflow.graph.BlockStartNode;
 import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graph.StepNode;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
@@ -57,6 +58,18 @@ public class FlowNodeUtils {
             }
         }
         return names;
+    }
+
+    /**
+     * Whether this node starts a stage or a parallel branch. Atomic steps that merely have a label, such as
+     * {@code sh(label: 'x', ...)}, are not stage or branch start nodes.
+     * @param node A flownode.
+     * @return {@code true} if the node is a labelled stage or parallel branch start node.
+     */
+    public static boolean isStageOrParallelBranchStart(@NonNull final FlowNode node) {
+        return node instanceof BlockStartNode
+                && node.getAction(LabelAction.class) != null
+                && (isStageNode(node) || node.getAction(ThreadNameAction.class) != null);
     }
 
     private static boolean isStageNode(@NonNull final FlowNode node) {

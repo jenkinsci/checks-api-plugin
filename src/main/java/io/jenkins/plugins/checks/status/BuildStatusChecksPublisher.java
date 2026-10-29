@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import org.jenkinsci.plugins.workflow.actions.LabelAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.flow.FlowExecutionOwner;
 import org.jenkinsci.plugins.workflow.flow.GraphListener;
@@ -36,6 +35,7 @@ import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
 import io.jenkins.plugins.checks.api.ChecksStatus;
+import io.jenkins.plugins.checks.utils.FlowNodeUtils;
 import io.jenkins.plugins.util.JenkinsFacade;
 
 /**
@@ -245,8 +245,9 @@ public final class BuildStatusChecksPublisher {
     public static class ChecksGraphListener implements GraphListener {
         @Override
         public void onNewHead(final FlowNode node) {
-            if (node.getAction(LabelAction.class) == null) {
-                // It's not a branch or stage node, so let's not worry about updating.
+            if (!FlowNodeUtils.isStageOrParallelBranchStart(node)) {
+                // It's not a branch or stage node, so let's not worry about updating. A step with a label (for
+                // example sh(label: 'x')) also has a LabelAction, but must not trigger a publish.
                 return;
             }
 
