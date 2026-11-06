@@ -431,6 +431,39 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     /**
+     * Validates that steps with a label, such as {@code sh(label: 'x')}, do not trigger an in progress update. Only
+     * stage and parallel branch start nodes do.
+     */
+    @Test
+    public void shouldNotPublishInProgressUpdateForLabelledSteps() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  stage('Only Stage') {\n"
+                + "    for (int i = 0; i < 5; i++) {\n"
+                + "      if (isUnix()) {\n"
+                + "        sh(label: 'labelled ' + i, script: 'true')\n"
+                + "      } else {\n"
+                + "        bat(label: 'labelled ' + i, script: 'rem')\n"
+                + "      }\n"
+                + "    }\n"
+                + "  }\n"
+                + "}", true));
+
+        buildWithResult(job, Result.SUCCESS);
+
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+
+        // queued, one in progress update for the stage start, completed
+        assertThat(checksDetails).extracting(ChecksDetails::getStatus)
+                .containsExactly(ChecksStatus.QUEUED, ChecksStatus.IN_PROGRESS, ChecksStatus.COMPLETED);
+    }
+
+    /**
      * Tests that FreeStyleBuildAnalyzer publishes build log output in checks.
      */
     @Test
