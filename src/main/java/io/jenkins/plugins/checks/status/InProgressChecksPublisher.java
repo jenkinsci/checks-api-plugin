@@ -75,8 +75,18 @@ final class InProgressChecksPublisher {
      *         computes the output when the update is published
      */
     static void schedule(final Run<?, ?> run, final String checksName, final Supplier<ChecksOutput> output) {
-        RunState state = STATES.computeIfAbsent(run.getExternalizableId(), k -> new RunState(run));
-        state.request(checksName, output);
+        // Do not track a run that has already completed: a late notification would publish an update after the
+        // completed check, and nothing would remove the entry again. WorkflowRun stops building before it notifies
+        // the run listeners, and complete() removes the entry in the same map, so this check cannot miss it.
+        RunState state = STATES.compute(run.getExternalizableId(), (key, existing) -> {
+            if (existing != null) {
+                return existing;
+            }
+            return run.isBuilding() ? new RunState() : null;
+        });
+        if (state != null) {
+            state.request(new Request(run, checksName, output));
+        }
     }
 
     /**
@@ -106,9 +116,13 @@ final class InProgressChecksPublisher {
      * thread. {@code publishLock} is held while publishing, so {@link #complete()} waits for an update that is
      * being published.
      * </p>
+     *
+     * <p>
+     * Only the pending {@link Request} references the run. {@link #complete()} clears it, so a task that is still
+     * queued for a completed run does not keep the run in memory.
+     * </p>
      */
     private static final class RunState {
-        private final Run<?, ?> run;
         private final AtomicBoolean scheduled = new AtomicBoolean();
         private final Object stateLock = new Object();
         private final Object publishLock = new Object();
@@ -118,20 +132,14 @@ final class InProgressChecksPublisher {
         @CheckForNull
         private Request pending;
 
-        RunState(final Run<?, ?> run) {
-            this.run = run;
-        }
-
-        void request(final String name, final Supplier<ChecksOutput> outputSupplier) {
+        void request(final Request request) {
             synchronized (stateLock) {
                 if (completed) {
                     return;
                 }
-                pending = new Request(name, outputSupplier);
+                pending = request;
             }
-            if (scheduled.compareAndSet(false, true)) {
-                executor.execute(this::drain);
-            }
+            scheduleIfPending();
         }
 
         void complete() {
@@ -141,21 +149,29 @@ final class InProgressChecksPublisher {
             }
             synchronized (publishLock) {
                 // Wait for an update that is being published to finish.
-                LOGGER.log(Level.FINEST, "Stopped progress updates for {0}", run);
+                LOGGER.finest("Stopped progress updates");
             }
         }
 
-        private void drain() {
-            do {
-                try {
-                    publishPending();
-                }
-                finally {
-                    scheduled.set(false);
-                }
-                // A request may arrive after the last publish but before scheduled is reset. It does not submit a
-                // task then, so pick it up here.
-            } while (hasPending() && scheduled.compareAndSet(false, true));
+        private void scheduleIfPending() {
+            if (hasPending() && scheduled.compareAndSet(false, true)) {
+                executor.execute(this::run);
+            }
+        }
+
+        /**
+         * Publishes one update per task. If another update was requested meanwhile, a new task goes to the end of
+         * the queue, so a busy run cannot keep a thread from the runs waiting behind it.
+         */
+        private void run() {
+            try {
+                publishPending();
+            }
+            finally {
+                scheduled.set(false);
+            }
+            // A request that arrived while publishing did not submit a task, so submit it now.
+            scheduleIfPending();
         }
 
         private boolean hasPending() {
@@ -167,21 +183,20 @@ final class InProgressChecksPublisher {
         @SuppressWarnings({"PMD.AvoidCatchingGenericException", "IllegalCatch"})
         private void publishPending() {
             synchronized (publishLock) {
-                while (true) {
-                    Request request;
-                    synchronized (stateLock) {
-                        request = pending;
-                        if (completed || request == null) {
-                            return;
-                        }
-                        pending = null;
+                Request request;
+                synchronized (stateLock) {
+                    request = pending;
+                    if (completed || request == null) {
+                        return;
                     }
-                    try {
-                        BuildStatusChecksPublisher.publishInProgress(run, request.checksName, request.output.get());
-                    }
-                    catch (RuntimeException e) {
-                        LOGGER.log(Level.WARNING, "Failed to publish in progress check for " + run, e);
-                    }
+                    pending = null;
+                }
+                try {
+                    BuildStatusChecksPublisher.publishInProgress(request.run, request.checksName,
+                            request.output.get());
+                }
+                catch (RuntimeException e) {
+                    LOGGER.log(Level.WARNING, "Failed to publish in progress check for " + request.run, e);
                 }
             }
         }
@@ -191,10 +206,12 @@ final class InProgressChecksPublisher {
      * A pending progress update.
      */
     private static final class Request {
+        private final Run<?, ?> run;
         private final String checksName;
         private final Supplier<ChecksOutput> output;
 
-        Request(final String checksName, final Supplier<ChecksOutput> output) {
+        Request(final Run<?, ?> run, final String checksName, final Supplier<ChecksOutput> output) {
+            this.run = run;
             this.checksName = checksName;
             this.output = output;
         }

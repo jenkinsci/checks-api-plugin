@@ -190,6 +190,14 @@ public final class BuildStatusChecksPublisher {
                 return;
             }
 
+            if (run instanceof FlowExecutionOwner.Executable) {
+                // Stage updates of a pipeline are published in the background. Publish through the same queue, so
+                // the two never run at the same time: without a check ID stored yet, both would create a check.
+                getChecksName(run).ifPresent(checksName -> InProgressChecksPublisher.schedule(run, checksName,
+                        () -> getOutput(run)));
+                return;
+            }
+
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, null));
         }

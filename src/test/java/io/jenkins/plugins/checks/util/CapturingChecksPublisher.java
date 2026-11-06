@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.util;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 import hudson.ExtensionList;
 import hudson.model.Job;
@@ -12,7 +13,6 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
-import io.jenkins.plugins.checks.api.ChecksStatus;
 
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that records each captured checks in a simple list.
@@ -50,18 +50,11 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
 public class CapturingChecksPublisher extends ChecksPublisher {
     // Checks may be published from several threads
     private final List<ChecksDetails> publishedChecks = new CopyOnWriteArrayList<>();
-    private volatile long inProgressDelayMillis;
+    private volatile Consumer<ChecksDetails> beforePublish = details -> { };
 
     @Override
     public void publish(final ChecksDetails details) {
-        if (details.getStatus() == ChecksStatus.IN_PROGRESS && inProgressDelayMillis > 0) {
-            try {
-                Thread.sleep(inProgressDelayMillis);
-            }
-            catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
+        beforePublish.accept(details);
         publishedChecks.add(details);
     }
 
@@ -86,13 +79,13 @@ public class CapturingChecksPublisher extends ChecksPublisher {
         }
 
         /**
-         * Makes each {@code IN_PROGRESS} publish take the given time, to simulate a slow SCM API.
+         * Runs the given action before each check is recorded, for example to simulate a slow SCM API.
          *
-         * @param millis
-         *         the delay in milliseconds, or 0 for none
+         * @param action
+         *         the action, called on the publishing thread
          */
-        public void setInProgressDelayMillis(final long millis) {
-            ExtensionList.lookup(Factory.class).get(0).publisher.inProgressDelayMillis = millis;
+        public void setBeforePublish(final Consumer<ChecksDetails> action) {
+            ExtensionList.lookup(Factory.class).get(0).publisher.beforePublish = action;
         }
     }
 }
