@@ -1,8 +1,8 @@
 package io.jenkins.plugins.checks.util;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import hudson.ExtensionList;
 import hudson.model.Job;
@@ -12,6 +12,7 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.checks.api.ChecksDetails;
 import io.jenkins.plugins.checks.api.ChecksPublisher;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
+import io.jenkins.plugins.checks.api.ChecksStatus;
 
 /**
  * Implementation of {@link ChecksPublisher} for use in testing, that records each captured checks in a simple list.
@@ -47,10 +48,20 @@ import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
  * </p>
  */
 public class CapturingChecksPublisher extends ChecksPublisher {
-    private final List<ChecksDetails> publishedChecks = new ArrayList<>();
+    // Checks may be published from several threads
+    private final List<ChecksDetails> publishedChecks = new CopyOnWriteArrayList<>();
+    private volatile long inProgressDelayMillis;
 
     @Override
     public void publish(final ChecksDetails details) {
+        if (details.getStatus() == ChecksStatus.IN_PROGRESS && inProgressDelayMillis > 0) {
+            try {
+                Thread.sleep(inProgressDelayMillis);
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         publishedChecks.add(details);
     }
 
@@ -72,6 +83,16 @@ public class CapturingChecksPublisher extends ChecksPublisher {
 
         public List<ChecksDetails> getPublishedChecks() {
             return ExtensionList.lookup(Factory.class).get(0).publisher.publishedChecks;
+        }
+
+        /**
+         * Makes each {@code IN_PROGRESS} publish take the given time, to simulate a slow SCM API.
+         *
+         * @param millis
+         *         the delay in milliseconds, or 0 for none
+         */
+        public void setInProgressDelayMillis(final long millis) {
+            ExtensionList.lookup(Factory.class).get(0).publisher.inProgressDelayMillis = millis;
         }
     }
 }

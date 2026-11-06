@@ -1,6 +1,7 @@
 package io.jenkins.plugins.checks.status;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -9,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -45,11 +47,28 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 .orElseThrow(() -> new AssertionError("No CapturingChecksPublisher registered as @TestExtension?"));
     }
 
+    private static final Executor ASYNC_EXECUTOR = InProgressChecksPublisher.executor;
+
+    /**
+     * Publish in progress checks on the calling thread, so tests can assert on each update. Tests of the
+     * asynchronous publishing call {@link #useAsyncPublishing()}.
+     */
+    @BeforeEach
+    public void publishSynchronously() {
+        InProgressChecksPublisher.executor = Runnable::run;
+    }
+
+    private void useAsyncPublishing() {
+        InProgressChecksPublisher.executor = ASYNC_EXECUTOR;
+    }
+
     /**
      * Clean captured checks between tests.
      */
     @AfterEach
     public void clearChecks() {
+        InProgressChecksPublisher.executor = ASYNC_EXECUTOR;
+        getFactory().setInProgressDelayMillis(0);
         getFactory().getPublishedChecks().clear();
     }
 
@@ -461,6 +480,73 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         // queued, one in progress update for the stage start, completed
         assertThat(checksDetails).extracting(ChecksDetails::getStatus)
                 .containsExactly(ChecksStatus.QUEUED, ChecksStatus.IN_PROGRESS, ChecksStatus.COMPLETED);
+    }
+
+    /**
+     * Validates that a slow SCM API does not slow down the pipeline: in progress checks are published on a background
+     * thread, and updates that arrive while one is being published are merged into one.
+     */
+    @Test
+    public void shouldNotBlockPipelineWhilePublishingInProgressChecks() throws Exception {
+        useAsyncPublishing();
+        getFactory().setInProgressDelayMillis(1000);
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        // 10 parallel branches with a stage each: 21 stage or branch starts, so publishing each one on the CPS VM
+        // thread would take at least 21 seconds
+        job.setDefinition(new CpsFlowDefinition(""
+                + "def branches = [:]\n"
+                + "for (int i = 0; i < 10; i++) {\n"
+                + "  def name = 'b' + i\n"
+                + "  branches[name] = { stage(name) { echo name } }\n"
+                + "}\n"
+                + "stage('Parallel') {\n"
+                + "  parallel branches\n"
+                + "}", true));
+
+        Run<?, ?> run = buildWithResult(job, Result.SUCCESS);
+
+        assertThat(run.getDuration()).isLessThan(10_000L);
+
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        assertThat(checksDetails).extracting(ChecksDetails::getStatus)
+                .filteredOn(status -> status == ChecksStatus.IN_PROGRESS)
+                .isNotEmpty()
+                .hasSizeLessThan(21);
+        assertThat(checksDetails.get(checksDetails.size() - 1).getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(InProgressChecksPublisher.getTrackedRunCount()).isZero();
+    }
+
+    /**
+     * Validates that an in progress check being published when the run completes is published before the completed
+     * check, and that no in progress check is published after it.
+     */
+    @Test
+    public void shouldNotPublishInProgressCheckAfterCompletedCheck() throws Exception {
+        useAsyncPublishing();
+        getFactory().setInProgressDelayMillis(2000);
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "stage('First') { echo 'first' }\n"
+                + "stage('Second') { echo 'second' }", true));
+
+        buildWithResult(job, Result.SUCCESS);
+
+        // Leave time for an in progress update that was wrongly left pending to be published
+        Thread.sleep(3000);
+
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        assertThat(checksDetails).extracting(ChecksDetails::getStatus).endsWith(ChecksStatus.COMPLETED);
+        assertThat(checksDetails).extracting(ChecksDetails::getStatus)
+                .filteredOn(status -> status == ChecksStatus.COMPLETED)
+                .hasSize(1);
     }
 
     /**

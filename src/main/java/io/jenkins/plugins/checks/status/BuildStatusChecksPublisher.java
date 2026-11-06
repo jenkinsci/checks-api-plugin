@@ -66,6 +66,11 @@ public final class BuildStatusChecksPublisher {
         publisher.publish(builder.build());
     }
 
+    static void publishInProgress(final Run<?, ?> run, final String checksName, @CheckForNull final ChecksOutput output) {
+        publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
+                checksName, output);
+    }
+
     @Deprecated
     private static Optional<StatusChecksProperties> findDeprecatedProperties(final Job<?, ?> job) {
         return JENKINS.getExtensionsFor(StatusChecksProperties.class)
@@ -205,6 +210,8 @@ public final class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
+            // Discard pending progress updates, and wait for one being published, so it cannot overwrite this one.
+            InProgressChecksPublisher.complete(run);
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.COMPLETED, extractConclusion(run), checksName, getOutput(run)));
         }
@@ -240,6 +247,11 @@ public final class BuildStatusChecksPublisher {
 
     /**
      * As a job progresses, record a representation of the flow graph.
+     *
+     * <p>
+     * This listener runs on the build's CPS VM thread, so it only schedules the update. Computing the output and
+     * publishing it happens on a background thread, see {@link InProgressChecksPublisher}.
+     * </p>
      */
     @Extension
     public static class ChecksGraphListener implements GraphListener {
@@ -262,8 +274,9 @@ public final class BuildStatusChecksPublisher {
 
             Job<?, ?> job = run.getParent();
             if (!findProperties(job).isSkipProgressUpdates(job)) {
-                getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
-                        ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
+                FlowExecution execution = node.getExecution();
+                getChecksName(run).ifPresent(checksName -> InProgressChecksPublisher.schedule(run, checksName,
+                        () -> getOutput(run, execution)));
             }
         }
     }
