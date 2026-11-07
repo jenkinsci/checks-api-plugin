@@ -57,8 +57,12 @@ final class ChecksPublishingQueue {
     private static final int THREADS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".threads", 4);
 
+    /**
+     * There is one completed check per build, and builds often finish in bursts, for example the branches of one
+     * change. Idle threads expire, so a larger pool costs little.
+     */
     private static final int COMPLETED_THREADS = SystemProperties.getInteger(
-            ChecksPublishingQueue.class.getName() + ".completedThreads", 4);
+            ChecksPublishingQueue.class.getName() + ".completedThreads", 8);
 
     /** How long shutdown waits for queued checks, the completed ones in particular, to be published. */
     private static final int SHUTDOWN_TIMEOUT_SECONDS = SystemProperties.getInteger(
