@@ -16,9 +16,10 @@ import java.util.logging.Logger;
 import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 
-import hudson.init.Terminator;
+import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.model.listeners.ItemListener;
 import hudson.security.ACL;
 import hudson.util.DaemonThreadFactory;
 import hudson.util.NamingThreadFactory;
@@ -55,7 +56,7 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
  * any, so a progress update can never overwrite the completed check. Nothing waits on the calling thread.
  * </p>
  */
-// Public only so that Jenkins can call the @Terminator method
+// Public only for the shutdown listener extension
 @Restricted(NoExternalUse.class)
 public final class ChecksPublishingQueue {
     private static final Logger LOGGER = Logger.getLogger(ChecksPublishingQueue.class.getName());
@@ -70,7 +71,7 @@ public final class ChecksPublishingQueue {
     private static final int COMPLETED_THREADS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".completedThreads", 8);
 
-    /** How long shutdown waits for queued completed checks to be published. */
+    /** How long shutdown waits for completed checks to be published. */
     private static final int SHUTDOWN_TIMEOUT_SECONDS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".shutdownTimeoutSeconds", 30);
 
@@ -150,22 +151,53 @@ public final class ChecksPublishingQueue {
     /**
      * Stops publishing when Jenkins shuts down. Progress updates are dropped, as the completed check replaces them
      * anyway. Completed checks get some time to be published: one that is lost leaves the check in progress on the
-     * SCM for good.
+     * SCM for good. Builds that complete meanwhile are published too.
      *
      * @throws InterruptedException
      *         if interrupted while waiting
      */
-    @Terminator
-    @SuppressWarnings("unused")
-    public static void shutdown() throws InterruptedException {
+    @VisibleForTesting
+    static void shutdown() throws InterruptedException {
         Pools stopping = pools;
-        pools = new Pools();
         // Also interrupts a progress update being published, which a completed check of the same run may wait for
         stopping.progress.shutdownNow();
-        stopping.completed.shutdown();
-        if (!stopping.completed.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-            LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published",
-                    stopping.completed.getQueue().size() + stopping.completed.getActiveCount());
+
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
+        while (pendingCount(stopping.completed) > 0 && System.nanoTime() < deadline) {
+            Thread.sleep(100);
+        }
+
+        // New pools for a Jenkins started again in the same JVM, as in tests
+        pools = new Pools();
+        int lost = stopping.completed.shutdownNow().size() + stopping.completed.getActiveCount();
+        if (lost > 0) {
+            LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published", lost);
+        }
+    }
+
+    private static int pendingCount(final ThreadPoolExecutor pool) {
+        return pool.getQueue().size() + pool.getActiveCount();
+    }
+
+    /**
+     * Waits for completed checks when Jenkins shuts down.
+     *
+     * <p>
+     * This runs before the terminators. Waiting in a terminator instead would break builds: the terminators of the
+     * pipeline plugins pause the running pipelines and stop the threads that wait for {@code sh} steps first, so a
+     * step that finishes while Jenkins waits fails the build.
+     * </p>
+     */
+    @Extension
+    public static class ShutdownListener extends ItemListener {
+        @Override
+        public void onBeforeShutdown() {
+            try {
+                shutdown();
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
