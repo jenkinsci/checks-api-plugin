@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.jenkinsci.plugins.workflow.test.steps.SemaphoreStep;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -507,12 +508,16 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         WorkflowJob job = createPipeline();
 
         job.setDefinition(new CpsFlowDefinition(""
-                + "stage('First') { echo 'first' }\n"
+                + "stage('First') { semaphore 'first' }\n"
                 + "stage('Second') { echo 'second' }", true));
 
         QueueTaskFuture<WorkflowRun> future = job.scheduleBuild2(0);
         WorkflowRun run = future.waitForStart();
+        // Hold the pipeline in the first stage until its update is being published, otherwise the pipeline could
+        // finish before a worker picks the update up, and completion would discard it.
+        SemaphoreStep.waitForStart("first/1", run);
         assertThat(publishing.await(30, TimeUnit.SECONDS)).as("in progress check is being published").isTrue();
+        SemaphoreStep.success("first/1", null);
 
         // The program finishes while the update is still being published, so the CPS VM thread is not blocked.
         // WorkflowRun stops building before it notifies the run listeners.
