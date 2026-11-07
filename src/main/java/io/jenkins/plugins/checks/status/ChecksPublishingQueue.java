@@ -165,24 +165,31 @@ public final class ChecksPublishingQueue {
     @VisibleForTesting
     static void shutdown() throws InterruptedException {
         Pools stopping = pools;
-        // Drop the waiting progress updates; new ones are rejected from now on. Do not interrupt one that is being
-        // published: it may have created the check on the SCM already, and without its ID stored the completed check
-        // would create a second one.
+        // Drop the waiting progress updates; new ones are rejected from now on. Never interrupt a publish: it may have
+        // created the check on the SCM already, and without its ID stored a later publish would create a second one.
         stopping.progress.shutdown();
         stopping.progress.getQueue().clear();
 
-        // A completed check waits for a progress update of its run that is being published, so wait for those too
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
-        while ((!stopping.progress.isTerminated() || pendingCount(stopping.completed) > 0)
-                && System.nanoTime() < deadline) {
-            Thread.sleep(100);
+        try {
+            // Builds still run, so keep accepting completed checks until there are none left. A completed check may
+            // also be parked on a progress update being published, so wait for those too.
+            while ((!stopping.progress.isTerminated() || pendingCount(stopping.completed) > 0)
+                    && System.nanoTime() < deadline) {
+                Thread.sleep(100);
+            }
+            // Finish what was accepted meanwhile, but accept nothing more
+            stopping.completed.shutdown();
+            stopping.completed.awaitTermination(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
         }
-
-        int lost = stopping.completed.shutdownNow().size() + stopping.completed.getActiveCount();
-        if (lost > 0) {
-            LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published", lost);
+        finally {
+            stopping.completed.shutdown();
+            int lost = pendingCount(stopping.completed);
+            if (lost > 0) {
+                LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published", lost);
+            }
+            STATES.clear();
         }
-        STATES.clear();
     }
 
     private static int pendingCount(final ThreadPoolExecutor pool) {
@@ -415,15 +422,18 @@ public final class ChecksPublishingQueue {
          * without it a later publication for the run would create a second check.
          */
         private void saveRun() {
-            // Saving a deleted build would create its directory again
-            if (!run.getRootDir().isDirectory()) {
-                return;
-            }
-            try {
-                run.save();
-            }
-            catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Failed to save " + run + " after publishing its completed check", e);
+            // Saving a deleted build would create its directory again. Run.delete() removes the directory holding the
+            // run's lock, so check and save holding it too.
+            synchronized (run) {
+                if (!run.getRootDir().isDirectory()) {
+                    return;
+                }
+                try {
+                    run.save();
+                }
+                catch (IOException e) {
+                    LOGGER.log(Level.WARNING, "Failed to save " + run + " after publishing its completed check", e);
+                }
             }
         }
     }
