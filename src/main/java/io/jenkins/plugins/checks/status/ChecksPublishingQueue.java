@@ -41,10 +41,14 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
  * </p>
  *
  * <p>
- * Each run has at most one update waiting and one being published. A new progress update replaces the waiting one,
- * and its output is computed when it is published, so it always shows the latest state. Completing the run replaces
- * the waiting update with the completed check, which is published after the update being published, if any, so a
- * progress update can never overwrite the completed check. Nothing waits on the calling thread.
+ * Each run has at most one progress update waiting and one being published. A new progress update replaces the
+ * waiting one, and its output is computed when it is published, so it always shows the latest state.
+ * </p>
+ *
+ * <p>
+ * Completed checks have their own pool, so they never wait behind the progress updates of other runs. Completing a
+ * run discards its waiting progress update, and the completed check is published after the one being published, if
+ * any, so a progress update can never overwrite the completed check. Nothing waits on the calling thread.
  * </p>
  */
 final class ChecksPublishingQueue {
@@ -53,26 +57,36 @@ final class ChecksPublishingQueue {
     private static final int THREADS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".threads", 4);
 
+    private static final int COMPLETED_THREADS = SystemProperties.getInteger(
+            ChecksPublishingQueue.class.getName() + ".completedThreads", 4);
+
     /** How long shutdown waits for queued checks, the completed ones in particular, to be published. */
     private static final int SHUTDOWN_TIMEOUT_SECONDS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".shutdownTimeoutSeconds", 30);
 
     private static final Map<String, RunState> STATES = new ConcurrentHashMap<>();
 
-    private static final ThreadPoolExecutor POOL = createPool();
+    private static final ThreadPoolExecutor POOL = createPool(THREADS, "Checks API publisher");
+
+    private static final ThreadPoolExecutor COMPLETED_POOL = createPool(COMPLETED_THREADS,
+            "Checks API completed check publisher");
 
     // Replaced in tests only
     @VisibleForTesting
     static Executor executor = new ImpersonatingExecutorService(POOL, ACL.SYSTEM2);
 
+    // Replaced in tests only
+    @VisibleForTesting
+    static Executor completedExecutor = new ImpersonatingExecutorService(COMPLETED_POOL, ACL.SYSTEM2);
+
     private ChecksPublishingQueue() {
     }
 
     @SuppressWarnings("PMD.DoNotUseThreads")
-    private static ThreadPoolExecutor createPool() {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(THREADS, THREADS, 60, TimeUnit.SECONDS,
+    private static ThreadPoolExecutor createPool(final int threads, final String name) {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(),
-                new NamingThreadFactory(new DaemonThreadFactory(), "Checks API publisher"));
+                new NamingThreadFactory(new DaemonThreadFactory(), name));
         pool.allowCoreThreadTimeOut(true);
         return pool;
     }
@@ -103,8 +117,8 @@ final class ChecksPublishingQueue {
     }
 
     /**
-     * Completes the run: discards a waiting progress update, and publishes the completed check after the update
-     * being published, if any. Returns immediately.
+     * Completes the run: discards a waiting progress update, and publishes the completed check on its own pool, after
+     * the progress update being published, if any. Returns immediately.
      *
      * @param run
      *         the completing run
@@ -142,9 +156,14 @@ final class ChecksPublishingQueue {
     @SuppressWarnings("unused")
     public static void shutdown() throws InterruptedException {
         POOL.shutdown();
-        if (!POOL.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-            LOGGER.log(Level.WARNING, "Gave up waiting for {0} queued checks to be published",
-                    POOL.getQueue().size() + POOL.getActiveCount());
+        COMPLETED_POOL.shutdown();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
+        // Completed checks matter most, so wait for them first
+        for (ThreadPoolExecutor pool : new ThreadPoolExecutor[] {COMPLETED_POOL, POOL}) {
+            if (!pool.awaitTermination(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS)) {
+                LOGGER.log(Level.WARNING, "Gave up waiting for {0} queued checks to be published",
+                        pool.getQueue().size() + pool.getActiveCount());
+            }
         }
     }
 
@@ -153,12 +172,13 @@ final class ChecksPublishingQueue {
      *
      * <p>
      * {@code stateLock} guards the fields and is only held briefly, so requests never block the calling thread.
-     * {@code publishLock} is held while publishing, so a run never publishes two checks at the same time.
+     * {@code publishLock} is held while publishing, so a run never publishes two checks at the same time, and the
+     * completed check waits for a progress update that is being published.
      * </p>
      *
      * <p>
-     * Only the waiting {@link Request} references the run, so a task that is still queued for a published run does
-     * not keep the run in memory.
+     * Only the waiting {@link Request} references the run, and completion clears it, so a progress task that is
+     * still queued for a completed run does nothing and does not keep the run in memory.
      * </p>
      */
     private static final class RunState {
@@ -184,20 +204,32 @@ final class ChecksPublishingQueue {
         void complete(@CheckForNull final Request finalRequest) {
             synchronized (stateLock) {
                 completed = true;
-                pending = finalRequest;
+                // A progress update that is still waiting is obsolete now
+                pending = null;
             }
-            scheduleIfPending();
+            if (finalRequest != null) {
+                execute(completedExecutor, () -> {
+                    synchronized (publishLock) {
+                        finalRequest.publish();
+                    }
+                });
+            }
         }
 
         private void scheduleIfPending() {
-            if (hasPending() && scheduled.compareAndSet(false, true)) {
-                try {
-                    executor.execute(this::run);
-                }
-                catch (RejectedExecutionException e) {
-                    scheduled.set(false);
-                    LOGGER.log(Level.WARNING, "Jenkins is shutting down, not publishing check", e);
-                }
+            if (hasPending() && scheduled.compareAndSet(false, true) && !execute(executor, this::run)) {
+                scheduled.set(false);
+            }
+        }
+
+        private static boolean execute(final Executor target, final Runnable task) {
+            try {
+                target.execute(task);
+                return true;
+            }
+            catch (RejectedExecutionException e) {
+                LOGGER.log(Level.WARNING, "Jenkins is shutting down, not publishing check", e);
+                return false;
             }
         }
 

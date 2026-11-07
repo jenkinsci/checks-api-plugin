@@ -53,6 +53,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     private static final Executor ASYNC_EXECUTOR = ChecksPublishingQueue.executor;
+    private static final Executor ASYNC_COMPLETED_EXECUTOR = ChecksPublishingQueue.completedExecutor;
 
     /**
      * Publish in progress checks on the calling thread, so tests can assert on each update. Tests of the
@@ -61,10 +62,12 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     @BeforeEach
     public void publishSynchronously() {
         ChecksPublishingQueue.executor = Runnable::run;
+        ChecksPublishingQueue.completedExecutor = Runnable::run;
     }
 
     private void useAsyncPublishing() {
         ChecksPublishingQueue.executor = ASYNC_EXECUTOR;
+        ChecksPublishingQueue.completedExecutor = ASYNC_COMPLETED_EXECUTOR;
     }
 
     /**
@@ -73,6 +76,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     @AfterEach
     public void clearChecks() {
         ChecksPublishingQueue.executor = ASYNC_EXECUTOR;
+        ChecksPublishingQueue.completedExecutor = ASYNC_COMPLETED_EXECUTOR;
         getFactory().setBeforePublish(details -> { });
         getFactory().getPublishedChecks().clear();
     }
@@ -532,6 +536,33 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 .endsWith(ChecksStatus.IN_PROGRESS, ChecksStatus.COMPLETED)
                 .filteredOn(status -> status == ChecksStatus.COMPLETED)
                 .hasSize(1);
+        assertThat(ChecksPublishingQueue.getTrackedRunCount()).isZero();
+    }
+
+    /**
+     * Validates that completed checks have their own lane: they are published even when no progress update gets
+     * through, and the progress updates still waiting are discarded.
+     */
+    @Test
+    public void shouldPublishCompletedCheckWhileProgressUpdatesAreStuck() throws Exception {
+        useAsyncPublishing();
+        // A saturated progress pool: queued progress updates never run
+        ChecksPublishingQueue.executor = task -> { };
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        WorkflowJob job = createPipeline();
+
+        job.setDefinition(new CpsFlowDefinition(""
+                + "stage('First') { echo 'first' }\n"
+                + "stage('Second') { echo 'second' }", true));
+
+        buildWithResult(job, Result.SUCCESS);
+
+        List<ChecksDetails> checksDetails = awaitCompletedCheck();
+        assertThat(checksDetails).extracting(ChecksDetails::getStatus)
+                .doesNotContain(ChecksStatus.IN_PROGRESS)
+                .containsOnlyOnce(ChecksStatus.COMPLETED);
         assertThat(ChecksPublishingQueue.getTrackedRunCount()).isZero();
     }
 
