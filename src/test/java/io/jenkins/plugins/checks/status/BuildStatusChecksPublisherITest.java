@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.status;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -19,10 +20,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.jvnet.hudson.reactor.Reactor;
+import org.jvnet.hudson.reactor.Task;
 import org.jvnet.hudson.test.TestExtension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Functions;
+import hudson.init.TerminatorFinder;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -564,6 +568,60 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 .doesNotContain(ChecksStatus.IN_PROGRESS)
                 .containsOnlyOnce(ChecksStatus.COMPLETED);
         assertThat(ChecksPublishingQueue.getTrackedRunCount()).isZero();
+    }
+
+    /**
+     * Validates that shutdown waits for a completed check that is being published, running the terminator the way
+     * Jenkins does, and that publishing still works afterwards, as when Jenkins starts again in the same JVM.
+     */
+    @Test
+    public void shouldPublishCompletedCheckBeforeShuttingDown() throws Exception {
+        useAsyncPublishing();
+        CountDownLatch publishing = new CountDownLatch(1);
+        getFactory().setBeforePublish(details -> {
+            if (details.getStatus() == ChecksStatus.COMPLETED) {
+                publishing.countDown();
+                sleep(2000);
+            }
+        });
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        WorkflowJob job = createPipeline();
+        job.setDefinition(new CpsFlowDefinition("stage('Only') { echo 'only' }", true));
+
+        buildWithResult(job, Result.SUCCESS);
+        assertThat(publishing.await(30, TimeUnit.SECONDS)).as("completed check is being published").isTrue();
+
+        runTerminator();
+
+        assertThat(getFactory().getPublishedChecks()).extracting(ChecksDetails::getStatus)
+                .as("published before shutdown returned").containsOnlyOnce(ChecksStatus.COMPLETED);
+
+        getFactory().setBeforePublish(details -> { });
+        buildWithResult(job, Result.SUCCESS);
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline && getFactory().getPublishedChecks().stream()
+                .filter(details -> details.getStatus() == ChecksStatus.COMPLETED).count() < 2) {
+            Thread.sleep(50);
+        }
+        assertThat(getFactory().getPublishedChecks()).extracting(ChecksDetails::getStatus)
+                .as("published after shutdown, with new pools").filteredOn(ChecksStatus.COMPLETED::equals).hasSize(2);
+    }
+
+    /**
+     * Runs the terminator of {@link ChecksPublishingQueue} the way Jenkins does when it shuts down.
+     */
+    @SuppressWarnings("unchecked")
+    private static void runTerminator() throws Exception {
+        Reactor reactor = new Reactor();
+        Collection<Task> tasks = (Collection<Task>) new TerminatorFinder(ChecksPublishingQueue.class.getClassLoader())
+                .discoverTasks(reactor);
+        Task terminator = tasks.stream()
+                .filter(task -> task.getDisplayName().contains(ChecksPublishingQueue.class.getSimpleName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No @Terminator found in ChecksPublishingQueue"));
+        terminator.run(reactor);
     }
 
     /**

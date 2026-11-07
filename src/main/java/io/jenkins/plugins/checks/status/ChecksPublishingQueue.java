@@ -24,6 +24,9 @@ import hudson.util.NamingThreadFactory;
 import jenkins.security.ImpersonatingExecutorService;
 import jenkins.util.SystemProperties;
 
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
+
 import io.jenkins.plugins.checks.api.ChecksConclusion;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.ChecksPublisherFactory;
@@ -51,7 +54,9 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
  * any, so a progress update can never overwrite the completed check. Nothing waits on the calling thread.
  * </p>
  */
-final class ChecksPublishingQueue {
+// Public only so that Jenkins can call the @Terminator method
+@Restricted(NoExternalUse.class)
+public final class ChecksPublishingQueue {
     private static final Logger LOGGER = Logger.getLogger(ChecksPublishingQueue.class.getName());
 
     private static final int THREADS = SystemProperties.getInteger(
@@ -70,29 +75,21 @@ final class ChecksPublishingQueue {
 
     private static final Map<String, RunState> STATES = new ConcurrentHashMap<>();
 
-    private static final ThreadPoolExecutor POOL = createPool(THREADS, "Checks API publisher");
-
-    private static final ThreadPoolExecutor COMPLETED_POOL = createPool(COMPLETED_THREADS,
-            "Checks API completed check publisher");
-
-    // Replaced in tests only
-    @VisibleForTesting
-    static Executor executor = new ImpersonatingExecutorService(POOL, ACL.SYSTEM2);
+    /**
+     * Replaced with new pools on shutdown, so that a Jenkins started again in the same JVM, as in tests, can publish.
+     * The pools create threads only when needed.
+     */
+    private static volatile Pools pools = new Pools();
 
     // Replaced in tests only
     @VisibleForTesting
-    static Executor completedExecutor = new ImpersonatingExecutorService(COMPLETED_POOL, ACL.SYSTEM2);
+    static Executor executor = task -> pools.progressExecutor.execute(task);
+
+    // Replaced in tests only
+    @VisibleForTesting
+    static Executor completedExecutor = task -> pools.completedExecutor.execute(task);
 
     private ChecksPublishingQueue() {
-    }
-
-    @SuppressWarnings("PMD.DoNotUseThreads")
-    private static ThreadPoolExecutor createPool(final int threads, final String name) {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                new NamingThreadFactory(new DaemonThreadFactory(), name));
-        pool.allowCoreThreadTimeOut(true);
-        return pool;
     }
 
     /**
@@ -160,12 +157,34 @@ final class ChecksPublishingQueue {
     @Terminator
     @SuppressWarnings("unused")
     public static void shutdown() throws InterruptedException {
+        Pools stopping = pools;
+        pools = new Pools();
         // Also interrupts a progress update being published, which a completed check of the same run may wait for
-        POOL.shutdownNow();
-        COMPLETED_POOL.shutdown();
-        if (!COMPLETED_POOL.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        stopping.progress.shutdownNow();
+        stopping.completed.shutdown();
+        if (!stopping.completed.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published",
-                    COMPLETED_POOL.getQueue().size() + COMPLETED_POOL.getActiveCount());
+                    stopping.completed.getQueue().size() + stopping.completed.getActiveCount());
+        }
+    }
+
+    /**
+     * The thread pools that publish progress updates and completed checks.
+     */
+    private static final class Pools {
+        private final ThreadPoolExecutor progress = createPool(THREADS, "Checks API publisher");
+        private final ThreadPoolExecutor completed = createPool(COMPLETED_THREADS,
+                "Checks API completed check publisher");
+        private final Executor progressExecutor = new ImpersonatingExecutorService(progress, ACL.SYSTEM2);
+        private final Executor completedExecutor = new ImpersonatingExecutorService(completed, ACL.SYSTEM2);
+
+        @SuppressWarnings("PMD.DoNotUseThreads")
+        private static ThreadPoolExecutor createPool(final int threads, final String name) {
+            ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(),
+                    new NamingThreadFactory(new DaemonThreadFactory(), name));
+            pool.allowCoreThreadTimeOut(true);
+            return pool;
         }
     }
 
