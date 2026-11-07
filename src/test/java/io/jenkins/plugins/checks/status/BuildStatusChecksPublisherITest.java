@@ -52,7 +52,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 .orElseThrow(() -> new AssertionError("No CapturingChecksPublisher registered as @TestExtension?"));
     }
 
-    private static final Executor ASYNC_EXECUTOR = InProgressChecksPublisher.executor;
+    private static final Executor ASYNC_EXECUTOR = ChecksPublishingQueue.executor;
 
     /**
      * Publish in progress checks on the calling thread, so tests can assert on each update. Tests of the
@@ -60,11 +60,11 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      */
     @BeforeEach
     public void publishSynchronously() {
-        InProgressChecksPublisher.executor = Runnable::run;
+        ChecksPublishingQueue.executor = Runnable::run;
     }
 
     private void useAsyncPublishing() {
-        InProgressChecksPublisher.executor = ASYNC_EXECUTOR;
+        ChecksPublishingQueue.executor = ASYNC_EXECUTOR;
     }
 
     /**
@@ -72,7 +72,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
      */
     @AfterEach
     public void clearChecks() {
-        InProgressChecksPublisher.executor = ASYNC_EXECUTOR;
+        ChecksPublishingQueue.executor = ASYNC_EXECUTOR;
         getFactory().setBeforePublish(details -> { });
         getFactory().getPublishedChecks().clear();
     }
@@ -488,8 +488,8 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
     }
 
     /**
-     * Validates that publishing an in progress check does not block the pipeline, and that the completed check waits
-     * for an in progress check that is being published, so it is always the last one.
+     * Validates that publishing checks does not block the pipeline, not even its completion, and that the completed
+     * check waits for an in progress check that is being published, so it is always the last one.
      */
     @Test
     public void shouldPublishCompletedCheckAfterInProgressCheckWithoutBlockingPipeline() throws Exception {
@@ -519,25 +519,20 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         assertThat(publishing.await(30, TimeUnit.SECONDS)).as("in progress check is being published").isTrue();
         SemaphoreStep.success("first/1", null);
 
-        // The program finishes while the update is still being published, so the CPS VM thread is not blocked.
-        // WorkflowRun stops building before it notifies the run listeners.
-        long deadline = System.currentTimeMillis() + 30_000;
-        while (run.isBuilding() && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50);
-        }
-        assertThat(run.isBuilding()).as("pipeline finished while publishing").isFalse();
+        // The whole build, including the run listeners, finishes while the update is still being published, so
+        // neither the CPS VM thread nor the completion waits for it
+        assertThat(future.get(30, TimeUnit.SECONDS).getResult()).isEqualTo(Result.SUCCESS);
         assertThat(getFactory().getPublishedChecks()).extracting(ChecksDetails::getStatus)
                 .doesNotContain(ChecksStatus.COMPLETED);
 
         release.countDown();
-        getJenkins().assertBuildStatus(Result.SUCCESS, future);
 
-        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        List<ChecksDetails> checksDetails = awaitCompletedCheck();
         assertThat(checksDetails).extracting(ChecksDetails::getStatus)
                 .endsWith(ChecksStatus.IN_PROGRESS, ChecksStatus.COMPLETED)
                 .filteredOn(status -> status == ChecksStatus.COMPLETED)
                 .hasSize(1);
-        assertThat(InProgressChecksPublisher.getTrackedRunCount()).isZero();
+        assertThat(ChecksPublishingQueue.getTrackedRunCount()).isZero();
     }
 
     /**
@@ -569,12 +564,26 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
         buildWithResult(job, Result.SUCCESS);
 
-        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        List<ChecksDetails> checksDetails = awaitCompletedCheck();
         assertThat(checksDetails).extracting(ChecksDetails::getStatus)
                 .filteredOn(status -> status == ChecksStatus.IN_PROGRESS)
                 .hasSizeLessThan(21);
         assertThat(checksDetails).extracting(ChecksDetails::getStatus).endsWith(ChecksStatus.COMPLETED);
-        assertThat(InProgressChecksPublisher.getTrackedRunCount()).isZero();
+        assertThat(ChecksPublishingQueue.getTrackedRunCount()).isZero();
+    }
+
+    /**
+     * Waits until the completed check is published, which happens in the background for pipelines.
+     *
+     * @return the published checks
+     */
+    private List<ChecksDetails> awaitCompletedCheck() throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline && getFactory().getPublishedChecks().stream()
+                .noneMatch(details -> details.getStatus() == ChecksStatus.COMPLETED)) {
+            Thread.sleep(50);
+        }
+        return getFactory().getPublishedChecks();
     }
 
     private static void awaitLatch(final CountDownLatch latch) {

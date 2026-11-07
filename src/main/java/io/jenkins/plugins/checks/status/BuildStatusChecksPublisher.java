@@ -52,7 +52,7 @@ public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
-    private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
+    static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
         ChecksDetailsBuilder builder = new ChecksDetailsBuilder()
                 .withName(name)
@@ -64,11 +64,6 @@ public final class BuildStatusChecksPublisher {
         }
 
         publisher.publish(builder.build());
-    }
-
-    static void publishInProgress(final Run<?, ?> run, final String checksName, @CheckForNull final ChecksOutput output) {
-        publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL), ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE,
-                checksName, output);
     }
 
     @Deprecated
@@ -193,7 +188,7 @@ public final class BuildStatusChecksPublisher {
             if (run instanceof FlowExecutionOwner.Executable) {
                 // Stage updates of a pipeline are published in the background. Publish through the same queue, so
                 // the two never run at the same time: without a check ID stored yet, both would create a check.
-                getChecksName(run).ifPresent(checksName -> InProgressChecksPublisher.schedule(run, checksName,
+                getChecksName(run).ifPresent(checksName -> ChecksPublishingQueue.schedule(run, checksName,
                         () -> getOutput(run)));
                 return;
             }
@@ -218,10 +213,17 @@ public final class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            // Discard pending progress updates, and wait for one being published, so it cannot overwrite this one.
-            InProgressChecksPublisher.complete(run);
-            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
-                    ChecksStatus.COMPLETED, extractConclusion(run), checksName, getOutput(run)));
+            Optional<String> checksName = getChecksName(run);
+            if (run instanceof FlowExecutionOwner.Executable) {
+                // WorkflowRun fires this on the CPS VM thread, so publish in the background, after the progress
+                // update being published, if any, so that it cannot overwrite the completed check.
+                ChecksConclusion conclusion = checksName.isPresent() ? extractConclusion(run) : ChecksConclusion.NONE;
+                ChecksPublishingQueue.complete(run, checksName.orElse(null), conclusion, () -> getOutput(run));
+                return;
+            }
+
+            checksName.ifPresent(name -> publish(ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.COMPLETED, extractConclusion(run), name, getOutput(run)));
         }
 
         @SuppressWarnings("PMD.CyclomaticComplexity")
@@ -258,7 +260,7 @@ public final class BuildStatusChecksPublisher {
      *
      * <p>
      * This listener runs on the build's CPS VM thread, so it only schedules the update. Computing the output and
-     * publishing it happens on a background thread, see {@link InProgressChecksPublisher}.
+     * publishing it happens on a background thread, see {@link ChecksPublishingQueue}.
      * </p>
      */
     @Extension
@@ -283,7 +285,7 @@ public final class BuildStatusChecksPublisher {
             Job<?, ?> job = run.getParent();
             if (!findProperties(job).isSkipProgressUpdates(job)) {
                 FlowExecution execution = node.getExecution();
-                getChecksName(run).ifPresent(checksName -> InProgressChecksPublisher.schedule(run, checksName,
+                getChecksName(run).ifPresent(checksName -> ChecksPublishingQueue.schedule(run, checksName,
                         () -> getOutput(run, execution)));
             }
         }
