@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.status;
 
+import java.io.InterruptedIOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -316,8 +317,19 @@ public final class ChecksPublishingQueue {
                         conclusion, checksName, output.get());
             }
             catch (RuntimeException e) {
-                LOGGER.log(Level.WARNING, "Failed to publish " + status + " check for " + run, e);
+                // Shutdown interrupts progress updates on purpose
+                Level level = isInterruption(e) ? Level.FINE : Level.WARNING;
+                LOGGER.log(level, "Failed to publish " + status + " check for " + run, e);
             }
+        }
+
+        private static boolean isInterruption(final Throwable throwable) {
+            for (Throwable t = throwable; t != null; t = t.getCause()) {
+                if (t instanceof InterruptedException || t instanceof InterruptedIOException) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
