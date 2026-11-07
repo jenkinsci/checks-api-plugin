@@ -52,7 +52,7 @@ public final class BuildStatusChecksPublisher {
     private static final JenkinsFacade JENKINS = new JenkinsFacade();
     private static final AbstractStatusChecksProperties DEFAULT_PROPERTIES = new DefaultStatusCheckProperties();
 
-    private static void publish(final ChecksPublisher publisher, final ChecksStatus status,
+    static void publish(final ChecksPublisher publisher, final ChecksStatus status,
                                 final ChecksConclusion conclusion, final String name, @CheckForNull final ChecksOutput output) {
         ChecksDetailsBuilder builder = new ChecksDetailsBuilder()
                 .withName(name)
@@ -185,6 +185,14 @@ public final class BuildStatusChecksPublisher {
                 return;
             }
 
+            if (run instanceof FlowExecutionOwner.Executable) {
+                // Stage updates of a pipeline are published in the background. Publish through the same queue, so
+                // the two never run at the same time: without a check ID stored yet, both would create a check.
+                getChecksName(run).ifPresent(checksName -> ChecksPublishingQueue.schedule(run, checksName,
+                        () -> getOutput(run)));
+                return;
+            }
+
             getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
                     ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, null));
         }
@@ -205,8 +213,17 @@ public final class BuildStatusChecksPublisher {
          */
         @Override
         public void onCompleted(final Run run, @CheckForNull final TaskListener listener) {
-            getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, listener),
-                    ChecksStatus.COMPLETED, extractConclusion(run), checksName, getOutput(run)));
+            Optional<String> checksName = getChecksName(run);
+            if (run instanceof FlowExecutionOwner.Executable) {
+                // WorkflowRun fires this on the CPS VM thread, so publish in the background, after the progress
+                // update being published, if any, so that it cannot overwrite the completed check.
+                ChecksConclusion conclusion = checksName.isPresent() ? extractConclusion(run) : ChecksConclusion.NONE;
+                ChecksPublishingQueue.complete(run, checksName.orElse(null), conclusion, () -> getOutput(run));
+                return;
+            }
+
+            checksName.ifPresent(name -> publish(ChecksPublisherFactory.fromRun(run, listener),
+                    ChecksStatus.COMPLETED, extractConclusion(run), name, getOutput(run)));
         }
 
         @SuppressWarnings("PMD.CyclomaticComplexity")
@@ -240,6 +257,11 @@ public final class BuildStatusChecksPublisher {
 
     /**
      * As a job progresses, record a representation of the flow graph.
+     *
+     * <p>
+     * This listener runs on the build's CPS VM thread, so it only schedules the update. Computing the output and
+     * publishing it happens on a background thread, see {@link ChecksPublishingQueue}.
+     * </p>
      */
     @Extension
     public static class ChecksGraphListener implements GraphListener {
@@ -262,8 +284,9 @@ public final class BuildStatusChecksPublisher {
 
             Job<?, ?> job = run.getParent();
             if (!findProperties(job).isSkipProgressUpdates(job)) {
-                getChecksName(run).ifPresent(checksName -> publish(ChecksPublisherFactory.fromRun(run, TaskListener.NULL),
-                        ChecksStatus.IN_PROGRESS, ChecksConclusion.NONE, checksName, getOutput(run, node.getExecution())));
+                FlowExecution execution = node.getExecution();
+                getChecksName(run).ifPresent(checksName -> ChecksPublishingQueue.schedule(run, checksName,
+                        () -> getOutput(run, execution)));
             }
         }
     }
