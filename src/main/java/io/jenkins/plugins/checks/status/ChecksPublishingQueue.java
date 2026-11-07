@@ -255,9 +255,9 @@ public final class ChecksPublishingQueue {
      * </p>
      *
      * <p>
-     * When the run completes while one of its progress updates is being published, the completed check is parked
-     * until that publish is done, and then handed to the completed pool. So it is published after the progress
-     * update, and a completed-pool thread never waits for a progress update.
+     * When the run completes while one of its progress updates is being published, the completed check is parked,
+     * and the progress thread publishes it straight after that update. So it is published after the progress update
+     * without queuing again, and a completed-pool thread never waits for a progress update.
      * </p>
      *
      * <p>
@@ -368,7 +368,10 @@ public final class ChecksPublishingQueue {
                     parkedCompletion = null;
                 }
             }
-            submitCompletion(completion);
+            if (completion != null) {
+                // Straight away rather than at the end of the completed pool's queue: it has waited long enough
+                completion.publish();
+            }
         }
     }
 
