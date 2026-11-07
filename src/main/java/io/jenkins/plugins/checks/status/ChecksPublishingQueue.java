@@ -1,6 +1,5 @@
 package io.jenkins.plugins.checks.status;
 
-import java.io.InterruptedIOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -159,8 +158,10 @@ public final class ChecksPublishingQueue {
     @VisibleForTesting
     static void shutdown() throws InterruptedException {
         Pools stopping = pools;
-        // Also interrupts a progress update being published, which a completed check of the same run may wait for
-        stopping.progress.shutdownNow();
+        // Drop the waiting progress updates. Do not interrupt one that is being published: it may have created the
+        // check on the SCM already, and without its ID stored the completed check would create a second one.
+        stopping.progress.shutdown();
+        stopping.progress.getQueue().clear();
 
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
         while (pendingCount(stopping.completed) > 0 && System.nanoTime() < deadline) {
@@ -349,19 +350,8 @@ public final class ChecksPublishingQueue {
                         conclusion, checksName, output.get());
             }
             catch (RuntimeException e) {
-                // Shutdown interrupts progress updates on purpose
-                Level level = isInterruption(e) ? Level.FINE : Level.WARNING;
-                LOGGER.log(level, "Failed to publish " + status + " check for " + run, e);
+                LOGGER.log(Level.WARNING, "Failed to publish " + status + " check for " + run, e);
             }
-        }
-
-        private static boolean isInterruption(final Throwable throwable) {
-            for (Throwable t = throwable; t != null; t = t.getCause()) {
-                if (t instanceof InterruptedException || t instanceof InterruptedIOException) {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }
