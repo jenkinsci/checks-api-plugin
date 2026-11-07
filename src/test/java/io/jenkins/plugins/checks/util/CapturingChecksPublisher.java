@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.util;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import hudson.ExtensionList;
@@ -63,10 +64,18 @@ public class CapturingChecksPublisher extends ChecksPublisher {
      */
     public static class Factory extends ChecksPublisherFactory {
         private final CapturingChecksPublisher publisher = new CapturingChecksPublisher();
+        private volatile BiConsumer<Run<?, ?>, ChecksDetails> beforePublishForRun = (run, details) -> { };
 
         @Override
         protected Optional<ChecksPublisher> createPublisher(final Run<?, ?> run, final TaskListener listener) {
-            return Optional.of(publisher);
+            return Optional.of(new ChecksPublisher() {
+                @Override
+                public void publish(final ChecksDetails details) {
+                    Factory factory = ExtensionList.lookup(Factory.class).get(0);
+                    factory.beforePublishForRun.accept(run, details);
+                    factory.publisher.publish(details);
+                }
+            });
         }
 
         @Override
@@ -86,6 +95,17 @@ public class CapturingChecksPublisher extends ChecksPublisher {
          */
         public void setBeforePublish(final Consumer<ChecksDetails> action) {
             ExtensionList.lookup(Factory.class).get(0).publisher.beforePublish = action;
+        }
+
+        /**
+         * Runs the given action before each check of a run is recorded, for example to add an action to the run as
+         * github-checks does.
+         *
+         * @param action
+         *         the action, called on the publishing thread with the run and the check
+         */
+        public void setBeforePublishForRun(final BiConsumer<Run<?, ?>, ChecksDetails> action) {
+            ExtensionList.lookup(Factory.class).get(0).beforePublishForRun = action;
         }
     }
 }

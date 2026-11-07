@@ -1,5 +1,6 @@
 package io.jenkins.plugins.checks.status;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -16,6 +17,8 @@ import edu.hm.hafner.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 import hudson.Extension;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.ItemListener;
@@ -55,7 +58,7 @@ import io.jenkins.plugins.checks.api.ChecksStatus;
  * any, so a progress update can never overwrite the completed check. Nothing waits on the calling thread.
  * </p>
  */
-// Public only for the shutdown listener extension
+// Public only so that Jenkins can call the extension and the @Initializer
 @Restricted(NoExternalUse.class)
 public final class ChecksPublishingQueue {
     private static final Logger LOGGER = Logger.getLogger(ChecksPublishingQueue.class.getName());
@@ -152,32 +155,48 @@ public final class ChecksPublishingQueue {
      * anyway. Completed checks get some time to be published: one that is lost leaves the check in progress on the
      * SCM for good. Builds that complete meanwhile are published too.
      *
+     * <p>
+     * The pools stay shut down until Jenkins starts again, see {@link #start()}.
+     * </p>
+     *
      * @throws InterruptedException
      *         if interrupted while waiting
      */
     @VisibleForTesting
     static void shutdown() throws InterruptedException {
         Pools stopping = pools;
-        // Drop the waiting progress updates. Do not interrupt one that is being published: it may have created the
-        // check on the SCM already, and without its ID stored the completed check would create a second one.
+        // Drop the waiting progress updates; new ones are rejected from now on. Do not interrupt one that is being
+        // published: it may have created the check on the SCM already, and without its ID stored the completed check
+        // would create a second one.
         stopping.progress.shutdown();
         stopping.progress.getQueue().clear();
 
+        // A completed check waits for a progress update of its run that is being published, so wait for those too
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
-        while (pendingCount(stopping.completed) > 0 && System.nanoTime() < deadline) {
+        while ((!stopping.progress.isTerminated() || pendingCount(stopping.completed) > 0)
+                && System.nanoTime() < deadline) {
             Thread.sleep(100);
         }
 
-        // New pools for a Jenkins started again in the same JVM, as in tests
-        pools = new Pools();
         int lost = stopping.completed.shutdownNow().size() + stopping.completed.getActiveCount();
         if (lost > 0) {
             LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published", lost);
         }
+        STATES.clear();
     }
 
     private static int pendingCount(final ThreadPoolExecutor pool) {
         return pool.getQueue().size() + pool.getActiveCount();
+    }
+
+    /**
+     * Creates new pools if a previous Jenkins in the same JVM shut them down, as in tests.
+     */
+    @Initializer(after = InitMilestone.PLUGINS_STARTED)
+    public static void start() {
+        if (pools.isShutdown()) {
+            pools = new Pools();
+        }
     }
 
     /**
@@ -212,6 +231,10 @@ public final class ChecksPublishingQueue {
         private final Executor progressExecutor = new ImpersonatingExecutorService(progress, ACL.SYSTEM2);
         private final Executor completedExecutor = new ImpersonatingExecutorService(completed, ACL.SYSTEM2);
 
+        boolean isShutdown() {
+            return progress.isShutdown() || completed.isShutdown();
+        }
+
         @SuppressWarnings("PMD.DoNotUseThreads")
         private static ThreadPoolExecutor createPool(final int threads, final String name) {
             ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 60, TimeUnit.SECONDS,
@@ -226,28 +249,36 @@ public final class ChecksPublishingQueue {
      * Publishing state of one run.
      *
      * <p>
-     * {@code stateLock} guards the fields and is only held briefly, so requests never block the calling thread.
-     * {@code publishLock} is held while publishing, so a run never publishes two checks at the same time, and the
-     * completed check waits for a progress update that is being published.
+     * The lock guards the fields and is only held briefly, so requests never block the calling thread, and no thread
+     * ever waits for a publish. At most one progress task per run is queued or running, see {@code scheduled}, so a
+     * run never publishes two progress updates at the same time.
      * </p>
      *
      * <p>
-     * Only the waiting {@link Request} references the run, and completion clears it, so a progress task that is
-     * still queued for a completed run does nothing and does not keep the run in memory.
+     * When the run completes while one of its progress updates is being published, the completed check is parked
+     * until that publish is done, and then handed to the completed pool. So it is published after the progress
+     * update, and a completed-pool thread never waits for a progress update.
+     * </p>
+     *
+     * <p>
+     * Only the waiting {@link Request}s reference the run, and completion clears the progress one, so a progress
+     * task that is still queued for a completed run does nothing and does not keep the run in memory.
      * </p>
      */
     private static final class RunState {
         private final AtomicBoolean scheduled = new AtomicBoolean();
-        private final Object stateLock = new Object();
-        private final Object publishLock = new Object();
+        private final Object lock = new Object();
 
-        // Guarded by stateLock
+        // Guarded by lock
         private boolean completed;
         @CheckForNull
         private Request pending;
+        private boolean publishing;
+        @CheckForNull
+        private Request parkedCompletion;
 
         void request(final Request request) {
-            synchronized (stateLock) {
+            synchronized (lock) {
                 if (completed) {
                     return;
                 }
@@ -257,17 +288,24 @@ public final class ChecksPublishingQueue {
         }
 
         void complete(@CheckForNull final Request finalRequest) {
-            synchronized (stateLock) {
+            Request submitNow = null;
+            synchronized (lock) {
                 completed = true;
                 // A progress update that is still waiting is obsolete now
                 pending = null;
+                if (publishing) {
+                    parkedCompletion = finalRequest;
+                }
+                else {
+                    submitNow = finalRequest;
+                }
             }
-            if (finalRequest != null) {
-                execute(completedExecutor, () -> {
-                    synchronized (publishLock) {
-                        finalRequest.publish();
-                    }
-                }, Level.WARNING);
+            submitCompletion(submitNow);
+        }
+
+        private static void submitCompletion(@CheckForNull final Request request) {
+            if (request != null) {
+                execute(completedExecutor, request::publish, Level.WARNING);
             }
         }
 
@@ -289,8 +327,8 @@ public final class ChecksPublishingQueue {
         }
 
         /**
-         * Publishes one check per task. If another one was requested meanwhile, a new task goes to the end of the
-         * queue, so a busy run cannot keep a thread from the runs waiting behind it.
+         * Publishes one progress update per task. If another one was requested meanwhile, a new task goes to the end
+         * of the queue, so a busy run cannot keep a thread from the runs waiting behind it.
          */
         private void run() {
             try {
@@ -304,22 +342,33 @@ public final class ChecksPublishingQueue {
         }
 
         private boolean hasPending() {
-            synchronized (stateLock) {
+            synchronized (lock) {
                 return pending != null;
             }
         }
 
         private void publishPending() {
-            synchronized (publishLock) {
-                Request request;
-                synchronized (stateLock) {
-                    request = pending;
-                    pending = null;
+            Request request;
+            synchronized (lock) {
+                request = pending;
+                pending = null;
+                if (request == null) {
+                    return;
                 }
-                if (request != null) {
-                    request.publish();
+                publishing = true;
+            }
+            Request completion;
+            try {
+                request.publish();
+            }
+            finally {
+                synchronized (lock) {
+                    publishing = false;
+                    completion = parkedCompletion;
+                    parkedCompletion = null;
                 }
             }
+            submitCompletion(completion);
         }
     }
 
@@ -351,6 +400,27 @@ public final class ChecksPublishingQueue {
             }
             catch (RuntimeException e) {
                 LOGGER.log(Level.WARNING, "Failed to publish " + status + " check for " + run, e);
+            }
+            if (status == ChecksStatus.COMPLETED) {
+                saveRun();
+            }
+        }
+
+        /**
+         * Saves what the publisher added to the run, as Jenkins saved it for the last time when it completed, before
+         * this check was published. For example, github-checks adds the ID of a check it creates as an action, and
+         * without it a later publication for the run would create a second check.
+         */
+        private void saveRun() {
+            // Saving a deleted build would create its directory again
+            if (!run.getRootDir().isDirectory()) {
+                return;
+            }
+            try {
+                run.save();
+            }
+            catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Failed to save " + run + " after publishing its completed check", e);
             }
         }
     }

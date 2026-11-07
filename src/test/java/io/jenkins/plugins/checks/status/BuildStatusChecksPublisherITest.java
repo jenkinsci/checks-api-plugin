@@ -1,6 +1,14 @@
 package io.jenkins.plugins.checks.status;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -19,10 +27,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.jvnet.hudson.reactor.Reactor;
+import org.jvnet.hudson.reactor.Task;
 import org.jvnet.hudson.test.TestExtension;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Functions;
+import hudson.init.InitializerFinder;
+import hudson.model.InvisibleAction;
 import hudson.model.Job;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -79,6 +91,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         ChecksPublishingQueue.executor = ASYNC_EXECUTOR;
         ChecksPublishingQueue.completedExecutor = ASYNC_COMPLETED_EXECUTOR;
         getFactory().setBeforePublish(details -> { });
+        getFactory().setBeforePublishForRun((run, details) -> { });
         getFactory().getPublishedChecks().clear();
     }
 
@@ -569,7 +582,8 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
 
     /**
      * Validates that shutdown waits for a completed check that is being published, calling the listeners the way
-     * Jenkins does, and that publishing still works afterwards, as when Jenkins starts again in the same JVM.
+     * Jenkins does, and that publishing works again once Jenkins starts again in the same JVM, running the
+     * initializer the way Jenkins does.
      */
     @Test
     public void shouldPublishCompletedCheckBeforeShuttingDown() throws Exception {
@@ -597,6 +611,7 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 .as("published before shutdown returned").containsOnlyOnce(ChecksStatus.COMPLETED);
 
         getFactory().setBeforePublish(details -> { });
+        runInitializer();
         buildWithResult(job, Result.SUCCESS);
         long deadline = System.currentTimeMillis() + 30_000;
         while (System.currentTimeMillis() < deadline && getFactory().getPublishedChecks().stream()
@@ -605,6 +620,146 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
         }
         assertThat(getFactory().getPublishedChecks()).extracting(ChecksDetails::getStatus)
                 .as("published after shutdown, with new pools").filteredOn(ChecksStatus.COMPLETED::equals).hasSize(2);
+    }
+
+    /**
+     * Runs the initializer of {@link ChecksPublishingQueue} the way Jenkins does when it starts.
+     */
+    @SuppressWarnings("unchecked")
+    private static void runInitializer() throws Exception {
+        Reactor reactor = new Reactor();
+        Collection<Task> tasks = (Collection<Task>) new InitializerFinder(ChecksPublishingQueue.class.getClassLoader())
+                .discoverTasks(reactor);
+        tasks.stream()
+                .filter(task -> task.getDisplayName().contains(ChecksPublishingQueue.class.getSimpleName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No @Initializer found in ChecksPublishingQueue"))
+                .run(reactor);
+    }
+
+    /**
+     * Validates that a completed check never waits on a completed-pool thread for a progress update of its run, so
+     * other runs' completed checks are not delayed: with a single completed-pool thread, run B's completed check is
+     * published while run A's progress update is stuck, and run A's completed check follows its progress update.
+     */
+    @Test
+    public void shouldNotBlockCompletedChecksOfOtherRunsWhileProgressUpdateIsPublished() throws Exception {
+        useAsyncPublishing();
+        ExecutorService singleCompletedThread = Executors.newSingleThreadExecutor();
+        ChecksPublishingQueue.completedExecutor = singleCompletedThread;
+        try {
+            CountDownLatch publishing = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            List<String> published = new CopyOnWriteArrayList<>();
+            getFactory().setBeforePublishForRun((run, details) -> {
+                String job = run.getParent().getName();
+                if ("a".equals(job) && details.getStatus() == ChecksStatus.IN_PROGRESS) {
+                    publishing.countDown();
+                    awaitLatch(release);
+                }
+                published.add(job + ":" + details.getStatus());
+            });
+            getProperties().setApplicable(true);
+            getProperties().setSkipped(false);
+            getProperties().setName("Test Status");
+
+            WorkflowJob a = createPipeline("a");
+            a.setDefinition(new CpsFlowDefinition("stage('A') { semaphore 'a' }", true));
+            WorkflowJob b = createPipeline("b");
+            b.setDefinition(new CpsFlowDefinition("echo 'no stages, so only a completed check'", true));
+
+            QueueTaskFuture<WorkflowRun> futureA = a.scheduleBuild2(0);
+            SemaphoreStep.waitForStart("a/1", futureA.waitForStart());
+            assertThat(publishing.await(30, TimeUnit.SECONDS)).as("progress update of A is being published").isTrue();
+            SemaphoreStep.success("a/1", null);
+            assertThat(futureA.get(30, TimeUnit.SECONDS).getResult()).isEqualTo(Result.SUCCESS);
+
+            buildWithResult(b, Result.SUCCESS);
+            awaitPublished(published, "b:COMPLETED");
+            assertThat(published).as("A still waits for its progress update").doesNotContain("a:COMPLETED");
+
+            release.countDown();
+            awaitPublished(published, "a:COMPLETED");
+            assertThat(published).containsSubsequence("a:IN_PROGRESS", "a:COMPLETED");
+        }
+        finally {
+            singleCompletedThread.shutdownNow();
+        }
+    }
+
+    /**
+     * Validates that what the publisher adds to the run with the completed check is saved, as github-checks stores
+     * the ID of a check it creates as an action without saving the run, and the run was saved for the last time
+     * before the completed check was published.
+     */
+    @Test
+    public void shouldSaveRunAfterPublishingCompletedCheck() throws Exception {
+        useAsyncPublishing();
+        getFactory().setBeforePublishForRun((run, details) -> {
+            if (details.getStatus() == ChecksStatus.COMPLETED) {
+                // Like a slow SCM API: the check is created after Jenkins saved the completed run for the last time
+                awaitFinalSave(run);
+                run.addAction(new CheckIdAction(42));
+            }
+        });
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        // No progress updates, so the completed check is the first one, created after the run was saved
+        getProperties().setSkipProgressUpdates(true);
+        WorkflowJob job = createPipeline();
+        job.setDefinition(new CpsFlowDefinition("stage('Only') { echo 'only' }", true));
+
+        WorkflowRun run = (WorkflowRun) buildWithResult(job, Result.SUCCESS);
+        awaitCompletedCheck();
+        File buildXml = new File(run.getRootDir(), "build.xml");
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline
+                && !Files.readString(buildXml.toPath()).contains(CheckIdAction.class.getSimpleName())) {
+            Thread.sleep(50);
+        }
+
+        run.reload();
+        assertThat(run.getAction(CheckIdAction.class)).as("action survives reloading the build").isNotNull()
+                .extracting(action -> action.id).isEqualTo(42L);
+    }
+
+    private static void awaitFinalSave(final Run<?, ?> run) {
+        File buildXml = new File(run.getRootDir(), "build.xml");
+        long deadline = System.currentTimeMillis() + 30_000;
+        try {
+            while (System.currentTimeMillis() < deadline && !(buildXml.isFile()
+                    && Files.readString(buildXml.toPath()).contains("<completed>true</completed>"))) {
+                Thread.sleep(50);
+            }
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+        }
+    }
+
+    /**
+     * Stands in for the action in which github-checks stores the ID of a check.
+     */
+    public static class CheckIdAction extends InvisibleAction {
+        private final long id;
+
+        CheckIdAction(final long id) {
+            this.id = id;
+        }
+    }
+
+    private static void awaitPublished(final List<String> published, final String expected)
+            throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < deadline && !published.contains(expected)) {
+            Thread.sleep(50);
+        }
+        assertThat(published).contains(expected);
     }
 
     /**
