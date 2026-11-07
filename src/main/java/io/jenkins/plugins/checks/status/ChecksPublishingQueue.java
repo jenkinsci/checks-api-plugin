@@ -64,7 +64,7 @@ final class ChecksPublishingQueue {
     private static final int COMPLETED_THREADS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".completedThreads", 8);
 
-    /** How long shutdown waits for queued checks, the completed ones in particular, to be published. */
+    /** How long shutdown waits for queued completed checks to be published. */
     private static final int SHUTDOWN_TIMEOUT_SECONDS = SystemProperties.getInteger(
             ChecksPublishingQueue.class.getName() + ".shutdownTimeoutSeconds", 30);
 
@@ -150,8 +150,9 @@ final class ChecksPublishingQueue {
     }
 
     /**
-     * Gives queued checks some time to be published when Jenkins shuts down. A completed check that is not published
-     * leaves the check in progress on the SCM for good.
+     * Stops publishing when Jenkins shuts down. Progress updates are dropped, as the completed check replaces them
+     * anyway. Completed checks get some time to be published: one that is lost leaves the check in progress on the
+     * SCM for good.
      *
      * @throws InterruptedException
      *         if interrupted while waiting
@@ -159,15 +160,12 @@ final class ChecksPublishingQueue {
     @Terminator
     @SuppressWarnings("unused")
     public static void shutdown() throws InterruptedException {
-        POOL.shutdown();
+        // Also interrupts a progress update being published, which a completed check of the same run may wait for
+        POOL.shutdownNow();
         COMPLETED_POOL.shutdown();
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(SHUTDOWN_TIMEOUT_SECONDS);
-        // Completed checks matter most, so wait for them first
-        for (ThreadPoolExecutor pool : new ThreadPoolExecutor[] {COMPLETED_POOL, POOL}) {
-            if (!pool.awaitTermination(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS)) {
-                LOGGER.log(Level.WARNING, "Gave up waiting for {0} queued checks to be published",
-                        pool.getQueue().size() + pool.getActiveCount());
-            }
+        if (!COMPLETED_POOL.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            LOGGER.log(Level.WARNING, "Gave up waiting for {0} completed checks to be published",
+                    COMPLETED_POOL.getQueue().size() + COMPLETED_POOL.getActiveCount());
         }
     }
 
@@ -216,23 +214,23 @@ final class ChecksPublishingQueue {
                     synchronized (publishLock) {
                         finalRequest.publish();
                     }
-                });
+                }, Level.WARNING);
             }
         }
 
         private void scheduleIfPending() {
-            if (hasPending() && scheduled.compareAndSet(false, true) && !execute(executor, this::run)) {
+            if (hasPending() && scheduled.compareAndSet(false, true) && !execute(executor, this::run, Level.FINE)) {
                 scheduled.set(false);
             }
         }
 
-        private static boolean execute(final Executor target, final Runnable task) {
+        private static boolean execute(final Executor target, final Runnable task, final Level level) {
             try {
                 target.execute(task);
                 return true;
             }
             catch (RejectedExecutionException e) {
-                LOGGER.log(Level.WARNING, "Jenkins is shutting down, not publishing check", e);
+                LOGGER.log(level, "Jenkins is shutting down, not publishing check", e);
                 return false;
             }
         }
