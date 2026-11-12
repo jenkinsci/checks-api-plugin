@@ -53,7 +53,9 @@ class FlowExecutionAnalyzerTest {
                         lines("line\n", 300_000, "y".repeat(MIN_LOG_SIZE_TO_READ + 10) + "\n")),
                 Arguments.of("last line without newline longer than the first read",
                         lines("line\n", 100, "y".repeat(MIN_LOG_SIZE_TO_READ + 10))),
-                Arguments.of("no newline", lines("", 0, "y".repeat(MIN_LOG_SIZE_TO_READ + 10))));
+                Arguments.of("no newline", lines("", 0, "y".repeat(MIN_LOG_SIZE_TO_READ + 10))),
+                Arguments.of("lines shorter than the truncation text", lines("x\n", 40_000, "")),
+                Arguments.of("empty lines", lines("\n", 80_000, "")));
         // shift the cut through every byte of a 4-byte character and through a console note
         Stream<Arguments> shifted = IntStream.range(0, 4).boxed().flatMap(shift -> Stream.of(
                 Arguments.of("cut in a 4-byte character, shift " + shift,
@@ -72,6 +74,7 @@ class FlowExecutionAnalyzerTest {
 
         assertThat(tail).isEqualTo(readWholeLog(log(content), MAX_SIZE));
         assertThat(tail).doesNotContain("\uFFFD", ConsoleNote.PREAMBLE_STR);
+        assertThat(tail.getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(MAX_SIZE);
     }
 
     @Test
@@ -110,6 +113,22 @@ class FlowExecutionAnalyzerTest {
         String kept = tail.substring(TRUNCATED.length());
         assertThat(kept).isNotEmpty();
         assertThat(kept.split("(?<=\n)")).containsOnly("text\n");
+        assertThat(readWholeLog(log(content), MAX_SIZE)).endsWith(kept);
+    }
+
+    @Test
+    void shouldNotExceedTheMaxSizeWhenTheTruncationTextIsForcedBeforeShortLines() throws IOException {
+        // more than the read limit of ANSI codes, then exactly the max size of text in lines of 2 bytes
+        byte[] content = lines("", 0, "\u001B[0m".repeat(MAX_LOG_SIZE_TO_READ / 4 + 1024 * 1024)
+                + "x\n".repeat(MAX_SIZE / 2));
+
+        String tail = FlowExecutionAnalyzer.getLogTail(log(content), MAX_SIZE);
+
+        assertThat(tail).startsWith(TRUNCATED);
+        assertThat(tail.getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(MAX_SIZE);
+        String kept = tail.substring(TRUNCATED.length());
+        assertThat(kept.length()).isGreaterThan(MAX_SIZE - TRUNCATED.length() - 2);
+        assertThat(kept.split("(?<=\n)")).containsOnly("x\n");
         assertThat(readWholeLog(log(content), MAX_SIZE)).endsWith(kept);
     }
 

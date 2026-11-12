@@ -257,8 +257,8 @@ public class TruncatedString {
 
             List<String> truncate() {
                 if (truncated || forceTruncationText) {
-                    if (length + getLength(truncationText) > maxLength) {
-                        chunks.remove(chunks.size() - 1);
+                    while (!chunks.isEmpty() && length + getLength(truncationText) > maxLength) {
+                        length -= getLength(chunks.remove(chunks.size() - 1));
                     }
                     chunks.add(truncationText);
                 }

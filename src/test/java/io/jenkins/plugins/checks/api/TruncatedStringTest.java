@@ -101,7 +101,7 @@ class TruncatedStringTest {
         builder.addText("cccc\n"); // 5, doesn't cause overflow
         assertThat(build(chunkOnChars, 20)).isEqualTo("zzzz\nxxxx\ncccc\n");
         builder.addText("aaaaaa\n"); // 7, does cause overflow
-        assertThat(build(chunkOnChars, 20)).isEqualTo("Truncatedcccc\naaaaaa\n");
+        assertThat(build(chunkOnChars, 20)).isEqualTo("Truncatedaaaaaa\n");
     }
 
     @ParameterizedTest
@@ -184,5 +184,35 @@ class TruncatedStringTest {
         builder.setForceTruncationText();
         builder.addText("Hello\n");
         assertThat(build(chunkOnChars, 20)).isEqualTo("Hello\nTruncated");
+    }
+
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldRemoveEnoughChunksForTheTruncationText(final boolean chunkOnNewlines, final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
+        for (int i = 0; i < 15; i++) {
+            builder.addText("x\n"); // 2, shorter than the truncation text
+        }
+        assertThat(build(chunkOnChars, 20)).isEqualTo("x\nx\nx\nx\nx\nTruncated");
+        builder.setTruncateStart();
+        assertThat(build(chunkOnChars, 20)).isEqualTo("Truncatedx\nx\nx\nx\nx\n");
+    }
+
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void shouldRemoveEnoughChunksForTheForcedTruncationText(final boolean chunkOnNewlines,
+            final boolean chunkOnChars) {
+        if (chunkOnNewlines) {
+            builder.setChunkOnNewlines();
+        }
+        builder.setForceTruncationText();
+        for (int i = 0; i < 10; i++) {
+            builder.addText("x\n"); // 20 in total: fits exactly, but not with the truncation text
+        }
+        assertThat(build(chunkOnChars, 20)).isEqualTo("x\nx\nx\nx\nx\nTruncated");
+        builder.setTruncateStart();
+        assertThat(build(chunkOnChars, 20)).isEqualTo("Truncatedx\nx\nx\nx\nx\n");
     }
 }
