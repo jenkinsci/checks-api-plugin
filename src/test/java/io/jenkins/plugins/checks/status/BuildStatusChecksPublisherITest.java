@@ -3,6 +3,7 @@ package io.jenkins.plugins.checks.status;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
@@ -447,6 +448,50 @@ class BuildStatusChecksPublisherITest extends IntegrationTestWithJenkinsPerTest 
                 assertThat(summary.length()).isLessThanOrEqualTo(65_535);
             });
         });
+    }
+
+    /**
+     * Test that only the end of a step log is published, cut at a line start, when the log is larger than the part
+     * of it that is read ({@link FlowExecutionAnalyzer#MIN_LOG_SIZE_TO_READ}).
+     */
+    @Test
+    public void shouldPublishTheEndOfVeryLargeLogs() throws Exception {
+        getProperties().setApplicable(true);
+        getProperties().setSkipped(false);
+        getProperties().setName("Test Status");
+        getProperties().setSuppressLogs(false);
+        WorkflowJob job = createPipeline();
+
+        // 20,000 lines of about 130 bytes: 2.6 MB
+        String padding = "x".repeat(120);
+        job.setDefinition(new CpsFlowDefinition(""
+                + "node {\n"
+                + "  stage('Very Large Log Stage') {\n"
+                + "    if (isUnix()) {\n"
+                + "      sh '''set +x\n"
+                + "i=1; while [ $i -le 20000 ]; do echo \"Line $i: " + padding + "\"; i=$((i+1)); done; exit 1'''\n"
+                + "    } else {\n"
+                + "      bat '''@echo off\n"
+                + "for /L %%i in (1,1,20000) do echo Line %%i: " + padding + "\n"
+                + "exit /b 1'''\n"
+                + "    }\n"
+                + "  }\n"
+                + "}", true));
+
+        buildWithResult(job, Result.FAILURE);
+
+        List<ChecksDetails> checksDetails = getFactory().getPublishedChecks();
+        ChecksDetails details = checksDetails.get(checksDetails.size() - 1);
+        assertThat(details.getStatus()).isEqualTo(ChecksStatus.COMPLETED);
+        assertThat(details.getOutput()).isPresent().get().satisfies(output ->
+                assertThat(output.getSummary()).isPresent().get().satisfies(summary -> {
+                    assertThat(summary.getBytes(StandardCharsets.UTF_8).length).isLessThanOrEqualTo(65_535);
+                    assertThat(summary).contains("Build log truncated.", "Line 20000: " + padding);
+                    assertThat(summary).doesNotContain("Line 1: ", "Line 10000: ");
+                    String log = StringUtils.substringBetween(summary, "Build log truncated.\n\n", "```");
+                    assertThat(log.split("\r?\n")).hasSizeGreaterThan(400)
+                            .allMatch(line -> line.matches("Line \\d+: x{120}"), "is a whole line");
+                }));
     }
 
     /**
