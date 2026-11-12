@@ -202,7 +202,8 @@ public final class BuildStatusChecksPublisher {
     /**
      * Listens to the run and publishes checks.
      */
-    @Extension
+    // Run after core refreshes completed-build permalinks used by SCM eligibility.
+    @Extension(ordinal = -100)
     public static class JobCompletedListener extends RunListener<Run<?, ?>> {
         /**
          * {@inheritDoc}

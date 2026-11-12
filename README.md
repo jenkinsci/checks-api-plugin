@@ -35,6 +35,8 @@ It depends on the implementation to decide whether to skip them and what name to
 
 If enabled, the statuses will be published in different stages of a Jenkins build (enters the queue, checkout, and completes).
 
+Completion resolves SCM eligibility after Jenkins refreshes the completed-build permalinks, including the first build of a multibranch job that becomes a draft.
+
 ### Pipeline Usage
 
 - publishChecks: you can publish checks directly in the pipeline script instead of depending on consumer plugins:
