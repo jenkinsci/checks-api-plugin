@@ -4,6 +4,7 @@ import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingBlockNam
 import static io.jenkins.plugins.checks.utils.FlowNodeUtils.getEnclosingStagesAndParallels;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import hudson.console.AnnotatedLargeText;
 import hudson.model.Run;
 import io.jenkins.plugins.checks.api.ChecksOutput;
 import io.jenkins.plugins.checks.api.TruncatedString;
@@ -33,6 +34,16 @@ import org.jenkinsci.plugins.workflow.support.visualization.table.FlowGraphTable
 
 @SuppressWarnings("PMD.GodClass")
 class FlowExecutionAnalyzer extends AbstractRunAnalyzer {
+    /**
+     * The summary keeps at most {@link #MAX_MESSAGE_SIZE_TO_CHECKS_API} bytes from the end of a step log, so only the
+     * end of the log is read: a step log can be gigabytes. The first read takes this many bytes from the end.
+     */
+    static final int MIN_LOG_SIZE_TO_READ = 1024 * 1024;
+    /**
+     * While the text read is shorter than the summary can hold, the read size doubles, up to this many bytes.
+     */
+    static final int MAX_LOG_SIZE_TO_READ = 16 * 1024 * 1024;
+
     private final FlowExecution execution;
     private final Stack<Integer> indentationStack = new Stack<>(); // NOPMD TODO: replace with DeQueue
 
@@ -207,27 +218,86 @@ class FlowExecutionAnalyzer extends AbstractRunAnalyzer {
         if (logAction == null) {
             return null;
         }
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            if (logAction.getLogText().writeLogTo(0, out) == 0) {
-                return null;
-            }
-
-            String outputString = out.toString(StandardCharsets.UTF_8);
-            // strip ansi color codes
-            String log = outputString.replaceAll("\u001B\\[[;\\d]*m", "");
-
-            return new TruncatedString.Builder()
-                    .setChunkOnNewlines()
-                    .setTruncateStart()
-                    .withTruncationText(TRUNCATED_MESSAGE_BUILD_LOG)
-                    .addText(log)
-                    .build()
-                    .build(maxMessageSize);
+        try {
+            return getLogTail(logAction.getLogText(), maxMessageSize);
         }
         catch (IOException e) {
             LOGGER.log(Level.WARNING, String.format("Failed to extract logs for step '%s'",
                     flowNode.getDisplayName()).replaceAll("[\r\n]", ""), e);
             return null;
+        }
+    }
+
+    /**
+     * Returns the end of a log as plain text, at most {@code maxMessageSize} bytes, cut at a line start. Reads only the
+     * end of the log: {@link #MIN_LOG_SIZE_TO_READ} bytes, doubled while the text is not longer than
+     * {@code maxMessageSize}, up to {@link #MAX_LOG_SIZE_TO_READ} bytes. The result is the same as if the whole log
+     * was read, unless the last {@link #MAX_LOG_SIZE_TO_READ} bytes hold less text than {@code maxMessageSize} (for
+     * example, mostly console notes): then it has fewer lines.
+     *
+     * @param logText
+     *         the log
+     * @param maxMessageSize
+     *         the maximum size in bytes of the returned text
+     *
+     * @return the end of the log, or {@code null} if the log is empty
+     * @throws IOException
+     *         if the log cannot be read
+     */
+    @CheckForNull
+    static String getLogTail(final AnnotatedLargeText<?> logText, final int maxMessageSize) throws IOException {
+        long length = logText.length();
+        long size = MIN_LOG_SIZE_TO_READ;
+        long start;
+        String log;
+        do {
+            start = Math.max(0, length - size);
+            log = readLog(logText, start);
+            if (log == null) {
+                return null;
+            }
+            size *= 2;
+        }
+        while (start > 0 && size <= MAX_LOG_SIZE_TO_READ
+                && log.getBytes(StandardCharsets.UTF_8).length <= maxMessageSize);
+
+        TruncatedString.Builder builder = new TruncatedString.Builder()
+                .setChunkOnNewlines()
+                .setTruncateStart()
+                .withTruncationText(TRUNCATED_MESSAGE_BUILD_LOG)
+                .addText(log);
+        if (start > 0) {
+            builder.setForceTruncationText();
+        }
+        return builder.build().build(maxMessageSize);
+    }
+
+    /**
+     * Reads a log from {@code start} to its end as plain text. If {@code start > 0}, drops the first line: it starts
+     * at an arbitrary byte, maybe inside a character or a console note.
+     *
+     * @param logText
+     *         the log
+     * @param start
+     *         the byte offset to read from
+     *
+     * @return the text, or {@code null} if there are no bytes after {@code start}
+     * @throws IOException
+     *         if the log cannot be read
+     */
+    @CheckForNull
+    private static String readLog(final AnnotatedLargeText<?> logText, final long start) throws IOException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (logText.writeLogTo(start, out) == start) {
+                return null;
+            }
+            String log = out.toString(StandardCharsets.UTF_8);
+            if (start > 0) {
+                int firstLineEnd = log.indexOf('\n');
+                log = firstLineEnd < 0 ? "" : log.substring(firstLineEnd + 1);
+            }
+            // strip ansi color codes
+            return log.replaceAll("\u001B\\[[;\\d]*m", "");
         }
     }
 }
