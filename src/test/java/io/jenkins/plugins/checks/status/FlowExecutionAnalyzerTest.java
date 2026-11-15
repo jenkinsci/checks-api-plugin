@@ -80,7 +80,10 @@ class FlowExecutionAnalyzerTest {
     @Test
     void shouldReadOnlyTheEndOfAVeryLargeLog() throws IOException {
         String line = "line of a very large log\n";
-        GeneratedLog source = new GeneratedLog(line, 8L * 1024 * 1024 * 1024); // 8 GiB, more than a byte[] can hold
+        // about 8 GiB, more than a byte[] can hold; a whole number of lines, so the log does not end in a partial
+        // line (Jenkins 2.582 and later write a trailing partial line of a complete log, older versions drop it)
+        long length = 8L * 1024 * 1024 * 1024 / line.length() * line.length();
+        GeneratedLog source = new GeneratedLog(line, length);
 
         String tail = FlowExecutionAnalyzer.getLogTail(source.toLogText(), MAX_SIZE);
 
